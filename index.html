@@ -2930,7 +2930,8 @@
           + '&high_quality=1'
           + '&autoplay=1'
           + '&danmaku=0'
-          + '&t=0';
+          + '&t=0'
+          + '&volume=' + (volume / 100);
       }
 
       function loadStream(bvid, name) {
@@ -2986,6 +2987,7 @@
 
       // ==================== Canvas Visualizer ====================
       const NUM_BARS = 64;
+      let gainNode = null;
 
       function initAudioContext() {
         if (!audioCtx) {
@@ -2993,9 +2995,13 @@
           analyser = audioCtx.createAnalyser();
           analyser.fftSize = 256;
           analyser.smoothingTimeConstant = 0.7;
+          gainNode = audioCtx.createGain();
           const source = audioCtx.createMediaElementSource(audioPlayer);
           source.connect(analyser);
-          analyser.connect(audioCtx.destination);
+          analyser.connect(gainNode);
+          gainNode.connect(audioCtx.destination);
+          // Sync gain with current volume
+          gainNode.gain.value = volume / 100;
         }
       }
 
@@ -3052,10 +3058,21 @@
       }
 
       // ==================== Volume ====================
-      // Bilibili iframe has its own volume, but we keep the slider as a visual
       function setVolume(val) {
         volume = val;
         volumeSlider.value = val;
+        // Search mode: set audio element volume
+        audioPlayer.volume = val / 100;
+        // Search mode: set Web Audio gain node
+        if (gainNode) gainNode.gain.value = val / 100;
+        // Channel mode: try postMessage to Bilibili iframe
+        try {
+          biliFrame.contentWindow.postMessage(JSON.stringify({
+            type: 'volume',
+            value: val / 100,
+          }), 'https://player.bilibili.com');
+        } catch (e) { /* cross-origin may block */ }
+        // Update icon
         if (val === 0) {
           volumeIcon.textContent = '🔇';
         } else if (val < 33) {
