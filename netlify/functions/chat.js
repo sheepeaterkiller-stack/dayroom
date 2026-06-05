@@ -124,7 +124,7 @@ function getJoke() {
 // ---- DeepSeek API ----
 async function callDeepSeek(message, history, systemPrompt) {
   // Use custom system prompt if provided, otherwise default
-  const systemContent = systemPrompt || '你是一个温暖、幽默、聪明的AI助手，叫"小助手"。你乐于聊任何话题，没有限制。回答简洁但有料，用中文，适当加emoji让对话更生动。像朋友一样聊天，不要太正式。';
+  const systemContent = systemPrompt || '你是 DeepSeek 驱动的智能助手。你知识渊博、逻辑清晰，能深入讨论任何话题。回答时：1) 先给核心答案再展开；2) 用中文回答，专业术语可保留英文；3) 适度使用 emoji 增加亲和力；4) 不确定的事要诚实说明。不要敷衍。';
 
   const messages = [
     { role: 'system', content: systemContent },
@@ -143,10 +143,12 @@ async function callDeepSeek(message, history, systemPrompt) {
   const data = await httpPost('https://api.deepseek.com/v1/chat/completions', {
     model: 'deepseek-chat',
     messages: messages,
-    max_tokens: 1500,
-    temperature: 0.8,
+    max_tokens: 2048,
+    temperature: 0.7,
+    top_p: 0.9,
   }, {
     'Authorization': 'Bearer ' + DEEPSEEK_KEY,
+    'Accept': 'application/json',
   });
 
   if (data.choices && data.choices[0]) {
