@@ -1026,12 +1026,33 @@
       transition: all 0.2s ease;
       font-family: inherit;
       flex-shrink: 0;
-      z-index: 1;
+      z-index: 5;
     }
 
     .btn-video-toggle:hover {
       background: rgba(255, 255, 255, 0.14);
       color: rgba(255,255,255,0.8);
+    }
+
+    /* Floating close button when video is ON */
+    .btn-video-toggle.floating-close {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      z-index: 20;
+      background: rgba(0, 0, 0, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+    }
+    .btn-video-toggle.floating-close:hover {
+      background: rgba(239, 68, 68, 0.8);
+      border-color: rgba(239, 68, 68, 0.5);
     }
 
     /* Loading placeholder */
@@ -2321,8 +2342,9 @@
               <div class="audio-mini-title" id="miniTitle">选择一个分类开始播放</div>
               <div class="audio-mini-sub" id="miniSub">纯音频 · 节省流量</div>
             </div>
-            <button class="btn-video-toggle" id="btnVideoToggle" title="开启画面">📺 看画面</button>
           </div>
+          <!-- Video toggle button (visible in both modes) -->
+          <button class="btn-video-toggle" id="btnVideoToggle" title="开启画面">📺 看画面</button>
         </div>
       </div>
 
@@ -2894,15 +2916,24 @@
         if (on) {
           biliContainer.classList.remove('video-off');
           biliContainer.classList.add('video-on');
-          btnVideoToggle.textContent = '🎧 只听';
-          btnVideoToggle.title = '关闭画面，节省流量';
           miniSub.textContent = '正在播放画面';
         } else {
           biliContainer.classList.remove('video-on');
           biliContainer.classList.add('video-off');
+          miniSub.textContent = '纯音频 · 节省流量';
+        }
+        updateVideoToggleBtn();
+      }
+
+      function updateVideoToggleBtn() {
+        if (videoOn) {
+          btnVideoToggle.textContent = '🎧 只听';
+          btnVideoToggle.title = '关闭画面，节省流量';
+          btnVideoToggle.classList.add('floating-close');
+        } else {
           btnVideoToggle.textContent = '📺 看画面';
           btnVideoToggle.title = '开启画面';
-          miniSub.textContent = '纯音频 · 节省流量';
+          btnVideoToggle.classList.remove('floating-close');
         }
       }
 
@@ -3065,13 +3096,6 @@
         audioPlayer.volume = val / 100;
         // Search mode: set Web Audio gain node
         if (gainNode) gainNode.gain.value = val / 100;
-        // Channel mode: try postMessage to Bilibili iframe
-        try {
-          biliFrame.contentWindow.postMessage(JSON.stringify({
-            type: 'volume',
-            value: val / 100,
-          }), 'https://player.bilibili.com');
-        } catch (e) { /* cross-origin may block */ }
         // Update icon
         if (val === 0) {
           volumeIcon.textContent = '🔇';
@@ -3084,8 +3108,17 @@
         }
       }
 
+      // Real-time volume update (search mode)
       volumeSlider.addEventListener('input', () => {
         setVolume(parseInt(volumeSlider.value));
+      });
+
+      // On release: reload Bilibili iframe with new volume (channel mode)
+      volumeSlider.addEventListener('change', () => {
+        if (playerMode === 'channel' && isPlaying) {
+          const stream = getCurrentStream();
+          loadStream(stream.bvid, stream.name);
+        }
       });
 
       volumeIcon.addEventListener('click', () => {
@@ -3093,6 +3126,11 @@
           setVolume(0);
         } else {
           setVolume(40);
+        }
+        // Reload for channel mode
+        if (playerMode === 'channel' && isPlaying) {
+          const stream = getCurrentStream();
+          loadStream(stream.bvid, stream.name);
         }
       });
 
