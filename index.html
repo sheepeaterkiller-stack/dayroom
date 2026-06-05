@@ -1,0 +1,4526 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Todo — 待办事项</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    /* ========== Reset & Base ========== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      /* Backgrounds */
+      --bg: #09090b;
+      --surface: rgba(255,255,255,0.03);
+      --surface-alt: rgba(255,255,255,0.05);
+      --surface-hover: rgba(255,255,255,0.07);
+
+      /* Borders */
+      --border: rgba(255,255,255,0.06);
+      --border-hover: rgba(255,255,255,0.12);
+
+      /* Text */
+      --text: #f4f4f6;
+      --text-secondary: #a1a1aa;
+      --text-tertiary: #71717a;
+
+      /* Accent */
+      --accent: #6c5ce7;
+      --accent-hover: #7c6ff7;
+      --accent-soft: rgba(108,92,231,0.12);
+      --accent-rgb: 108,92,231;
+
+      /* Semantic */
+      --success: #22c55e;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+
+      /* Radius */
+      --radius-sm: 6px;
+      --radius: 10px;
+      --radius-lg: 14px;
+
+      /* Shadows */
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.4);
+      --shadow: 0 4px 12px rgba(0,0,0,0.5);
+      --shadow-lg: 0 8px 24px rgba(0,0,0,0.6);
+
+      /* Drawer */
+      --drawer-width: 420px;
+      --transition: 0.2s ease;
+    }
+
+    body {
+      font-family: 'Inter', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+      overflow-x: clip;
+    }
+
+    /* ========== Dino Link — Top Left ========== */
+    .dino-link {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      cursor: pointer;
+    }
+
+    .dino-link:hover {
+      transform: scale(1.1) rotate(-3deg);
+    }
+
+    .dino-link:hover .dino-bubble {
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    .dino-svg {
+      width: 56px;
+      height: 56px;
+      filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3));
+      transition: filter 0.3s;
+    }
+
+    .dino-link:hover .dino-svg {
+      filter: drop-shadow(0 6px 18px rgba(255, 200, 100, 0.5));
+    }
+
+    .dino-bubble {
+      background: #fff;
+      color: #2d3436;
+      padding: 6px 14px;
+      border-radius: 14px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      white-space: nowrap;
+      opacity: 0;
+      transform: translateX(-10px);
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+      position: relative;
+    }
+
+    .dino-bubble::after {
+      content: '';
+      position: absolute;
+      left: -6px;
+      top: 50%;
+      transform: translateY(-50%);
+      border: 6px solid transparent;
+      border-right-color: #fff;
+    }
+
+    /* Dino walk animation */
+    @keyframes dinoBounce {
+      0%, 100% { transform: translateY(0); }
+      30% { transform: translateY(-6px); }
+      60% { transform: translateY(-2px); }
+    }
+
+    .dino-link {
+      animation: dinoBounce 2s ease-in-out infinite;
+    }
+    .dino-link:hover {
+      animation: none;
+    }
+
+    /* ========== Main Content Area ========== */
+    .main-content {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 40px;
+    }
+
+    /* ========== Music Player (inside right drawer) ========== */
+    .music-drawer {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: var(--drawer-width);
+      max-width: 90vw;
+      height: 100vh;
+      background: rgba(15,15,18,0.96);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      z-index: 2100;
+      transform: translateX(100%);
+      transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      flex-direction: column;
+      box-shadow: var(--shadow-lg);
+      border-left: 1px solid var(--border);
+      overflow-y: auto;
+    }
+    .music-drawer.open { transform: translateX(0); }
+
+    .music-drawer-inner {
+      flex: 1;
+      overflow-y: auto;
+      padding: 28px 24px 20px;
+    }
+
+    .music-close {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition);
+      z-index: 10;
+      color: var(--text-secondary);
+    }
+    .music-close:hover {
+      background: rgba(239,68,68,0.15);
+      color: var(--danger);
+      border-color: var(--danger);
+    }
+
+    /* Right edge music toggle */
+    .music-toggle {
+      position: fixed;
+      right: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 1100;
+      width: 44px;
+      height: 80px;
+      background: var(--accent);
+      border: none;
+      border-radius: 14px 0 0 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 20px var(--accent-soft);
+      transition: all 0.25s ease;
+      color: #fff;
+      font-size: 1.1rem;
+      writing-mode: vertical-lr;
+    }
+    .music-toggle:hover {
+      background: var(--accent-hover);
+      box-shadow: 0 0 30px rgba(var(--accent-rgb), 0.5);
+    }
+
+    .player-header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .player-header .player-title {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: rgba(255,255,255,0.9);
+      letter-spacing: -0.3px;
+    }
+
+    .player-header .now-playing {
+      font-size: 0.82rem;
+      color: rgba(255,255,255,0.45);
+      margin-top: 4px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* === Category Tabs === */
+    .music-tabs {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .music-tab {
+      padding: 8px 18px;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: transparent;
+      color: rgba(255, 255, 255, 0.55);
+      font-size: 0.82rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      white-space: nowrap;
+      font-family: inherit;
+    }
+
+    .music-tab:hover {
+      color: rgba(255, 255, 255, 0.85);
+      border-color: rgba(255, 255, 255, 0.35);
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .music-tab.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(var(--accent-rgb), 0.4);
+    }
+
+    /* === Visualizer === */
+    /* ===== Center Visualizer ===== */
+    .center-visualizer { display: none; }
+
+
+
+    /* ========== Chat App (Main Center, WeChat Style) ========== */
+    .chat-app {
+      position: relative;
+      width: 780px;
+      max-width: 94vw;
+      height: 600px;
+      max-height: calc(100vh - 120px);
+      margin: auto;
+      background: rgba(18,18,22,0.97);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 16px;
+      display: flex;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.03) inset;
+      z-index: 100;
+      animation: chatAppIn 0.5s ease;
+    }
+    @keyframes chatAppIn {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ---- Sidebar (Contact List) ---- */
+    .chat-sidebar {
+      width: 260px;
+      flex-shrink: 0;
+      border-right: 1px solid rgba(255,255,255,0.06);
+      display: flex;
+      flex-direction: column;
+      background: rgba(255,255,255,0.015);
+    }
+
+    .sidebar-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 16px 12px;
+      flex-shrink: 0;
+    }
+    .sidebar-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: rgba(255,255,255,0.85);
+      letter-spacing: -0.3px;
+    }
+    .sidebar-manage-btn {
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: transparent;
+      color: rgba(255,255,255,0.5);
+      cursor: pointer;
+      font-size: 1rem;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s;
+    }
+    .sidebar-manage-btn:hover {
+      background: rgba(255,255,255,0.08);
+      color: #fff;
+    }
+
+    .contact-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 4px 8px 8px;
+    }
+    .contact-list::-webkit-scrollbar { width: 3px; }
+    .contact-list::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,0.06); border-radius: 2px;
+    }
+
+    .contact-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-bottom: 2px;
+    }
+    .contact-item:hover {
+      background: rgba(255,255,255,0.05);
+    }
+    .contact-item.active {
+      background: rgba(var(--accent-rgb), 0.15);
+      border: 1px solid rgba(var(--accent-rgb), 0.2);
+    }
+    .contact-item.unread::after {
+      content: '';
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      flex-shrink: 0;
+      margin-left: auto;
+    }
+
+    .contact-avatar {
+      width: 42px; height: 42px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem;
+      background: rgba(255,255,255,0.06);
+      position: relative;
+    }
+    .contact-avatar .online-dot {
+      position: absolute;
+      bottom: 2px; right: 2px;
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: var(--success);
+      border: 2px solid rgba(18,18,22,1);
+    }
+
+    .contact-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .contact-name {
+      font-size: 0.84rem;
+      font-weight: 600;
+      color: rgba(255,255,255,0.85);
+      margin-bottom: 2px;
+    }
+    .contact-last-msg {
+      font-size: 0.7rem;
+      color: rgba(255,255,255,0.3);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* ---- Chat Window ---- */
+    .chat-window {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      background: rgba(0,0,0,0.15);
+    }
+
+    .chat-win-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      flex-shrink: 0;
+      background: rgba(255,255,255,0.02);
+    }
+    .chat-back-btn {
+      display: none;
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      border: none;
+      background: transparent;
+      color: rgba(255,255,255,0.5);
+      cursor: pointer;
+      font-size: 1.1rem;
+      transition: all 0.2s;
+    }
+    .chat-back-btn:hover { color: #fff; }
+    .chat-win-avatar {
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.08);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+    .chat-win-info { flex: 1; min-width: 0; }
+    .chat-win-name {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: rgba(255,255,255,0.9);
+    }
+    .chat-win-status {
+      font-size: 0.68rem;
+      color: var(--success);
+    }
+    .chat-win-settings-btn {
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: transparent;
+      color: rgba(255,255,255,0.4);
+      cursor: pointer;
+      font-size: 0.85rem;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s;
+    }
+    .chat-win-settings-btn:hover {
+      background: rgba(255,255,255,0.08);
+      color: #fff;
+    }
+
+    /* Messages */
+    .chat-win-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      scroll-behavior: smooth;
+    }
+    .chat-win-messages::-webkit-scrollbar { width: 4px; }
+    .chat-win-messages::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,0.06); border-radius: 2px;
+    }
+
+    .chat-msg {
+      display: flex;
+      gap: 8px;
+      max-width: 82%;
+      animation: msgSlideIn 0.25s ease;
+    }
+    @keyframes msgSlideIn {
+      from { opacity: 0; transform: translateY(6px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .chat-msg.bot { align-self: flex-start; }
+    .chat-msg.user {
+      align-self: flex-end;
+      flex-direction: row-reverse;
+    }
+
+    .chat-msg .msg-avatar {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.8rem;
+      margin-top: 2px;
+    }
+    .chat-msg.bot .msg-avatar { background: rgba(255,255,255,0.08); }
+    .chat-msg.user .msg-avatar { background: rgba(var(--accent-rgb), 0.2); }
+
+    .chat-msg .msg-bubble {
+      padding: 10px 14px;
+      border-radius: 14px;
+      font-size: 0.85rem;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .chat-msg.bot .msg-bubble {
+      background: rgba(255,255,255,0.05);
+      color: rgba(255,255,255,0.88);
+      border-top-left-radius: 4px;
+    }
+    .chat-msg.user .msg-bubble {
+      background: rgba(var(--accent-rgb), 0.25);
+      color: #fff;
+      border-top-right-radius: 4px;
+    }
+
+    .msg-bubble .highlight {
+      color: #fbbf24;
+      font-weight: 600;
+    }
+
+    /* Typing */
+    .chat-win-typing {
+      display: none;
+      align-self: flex-start;
+      margin-left: 48px;
+      padding: 8px 14px;
+      background: rgba(255,255,255,0.04);
+      border-radius: 14px;
+      border-top-left-radius: 4px;
+      gap: 4px;
+      margin-bottom: 4px;
+    }
+    .chat-win-typing.show { display: flex; }
+    .chat-win-typing span {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.25);
+      animation: tyBounce 1.2s infinite;
+    }
+    .chat-win-typing span:nth-child(2) { animation-delay: 0.2s; }
+    .chat-win-typing span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes tyBounce {
+      0%, 60%, 100% { transform: translateY(0); }
+      30% { transform: translateY(-6px); }
+    }
+
+    /* Quick actions */
+    .chat-win-quick {
+      display: flex;
+      gap: 6px;
+      padding: 8px 16px 4px;
+      flex-shrink: 0;
+      flex-wrap: wrap;
+    }
+    .quick-btn {
+      padding: 5px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.03);
+      color: rgba(255,255,255,0.5);
+      font-size: 0.7rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+      white-space: nowrap;
+    }
+    .quick-btn:hover {
+      background: rgba(var(--accent-rgb), 0.12);
+      border-color: rgba(var(--accent-rgb), 0.25);
+      color: #fff;
+    }
+
+    /* Input area */
+    .chat-win-input-area {
+      display: flex;
+      gap: 8px;
+      padding: 10px 14px 14px;
+      border-top: 1px solid rgba(255,255,255,0.05);
+      flex-shrink: 0;
+      background: rgba(255,255,255,0.015);
+    }
+    .chat-win-input-area input {
+      flex: 1;
+      padding: 10px 16px;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 20px;
+      background: rgba(255,255,255,0.04);
+      color: #fff;
+      font-size: 0.85rem;
+      outline: none;
+      font-family: inherit;
+      transition: all 0.2s;
+    }
+    .chat-win-input-area input::placeholder {
+      color: rgba(255,255,255,0.18);
+    }
+    .chat-win-input-area input:focus {
+      border-color: rgba(var(--accent-rgb), 0.35);
+      background: rgba(255,255,255,0.06);
+      box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.08);
+    }
+    .chat-win-send-btn {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      border: none;
+      background: var(--accent);
+      color: #fff;
+      font-size: 1.1rem;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: all 0.2s;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .chat-win-send-btn:hover {
+      background: var(--accent-hover);
+      transform: scale(1.06);
+    }
+    .chat-win-send-btn:active { transform: scale(0.94); }
+
+    /* ---- Persona Overlay ---- */
+    .persona-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 3500;
+      background: rgba(0,0,0,0.8);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .persona-overlay.open {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .persona-dialog {
+      background: rgba(22,22,28,0.99);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 500px;
+      max-height: 80vh;
+      overflow-y: auto;
+      padding: 24px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.7);
+      animation: dialogIn 0.3s ease;
+    }
+    @keyframes dialogIn {
+      from { opacity: 0; transform: translateY(16px) scale(0.96); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .persona-dialog h3 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+      color: rgba(255,255,255,0.9);
+    }
+    .persona-dialog .dialog-sub {
+      font-size: 0.75rem;
+      color: rgba(255,255,255,0.35);
+      margin-bottom: 18px;
+    }
+    .persona-dialog .preset-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .persona-dialog .preset-card {
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.03);
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+    .persona-dialog .preset-card:hover {
+      background: rgba(255,255,255,0.06);
+      border-color: rgba(255,255,255,0.15);
+    }
+    .persona-dialog .preset-card.selected {
+      border-color: var(--accent);
+      background: rgba(var(--accent-rgb), 0.12);
+      box-shadow: 0 0 12px rgba(var(--accent-rgb), 0.2);
+    }
+    .preset-card .preset-avatar {
+      font-size: 1.4rem; margin-bottom: 4px;
+    }
+    .preset-card .preset-name {
+      font-size: 0.8rem; color: rgba(255,255,255,0.8); font-weight: 600;
+    }
+    .preset-card .preset-desc {
+      font-size: 0.66rem; color: rgba(255,255,255,0.35); margin-top: 2px;
+    }
+
+    .persona-dialog .custom-input-area {
+      margin-top: 8px;
+    }
+    .persona-dialog .custom-input-area label {
+      font-size: 0.75rem;
+      color: rgba(255,255,255,0.4);
+      display: block;
+      margin-bottom: 6px;
+    }
+    .persona-dialog .custom-input-area textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      background: rgba(255,255,255,0.04);
+      color: #fff;
+      font-size: 0.8rem;
+      font-family: inherit;
+      resize: vertical;
+      min-height: 60px;
+      outline: none;
+      transition: all 0.2s;
+    }
+    .persona-dialog .custom-input-area textarea:focus {
+      border-color: rgba(var(--accent-rgb), 0.35);
+      background: rgba(255,255,255,0.06);
+    }
+    .persona-dialog .dialog-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      margin-top: 16px;
+    }
+    .persona-dialog .dialog-btn {
+      padding: 8px 18px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: transparent;
+      color: rgba(255,255,255,0.6);
+      font-size: 0.8rem;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.2s;
+    }
+    .persona-dialog .dialog-btn:hover { background: rgba(255,255,255,0.06); color: #fff; }
+    .persona-dialog .dialog-btn.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+    .persona-dialog .dialog-btn.primary:hover { background: var(--accent-hover); }
+
+    /* Empty chat state */
+    .chat-empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: rgba(255,255,255,0.2);
+      gap: 8px;
+      user-select: none;
+    }
+    .chat-empty .empty-icon { font-size: 3rem; opacity: 0.5; }
+    .chat-empty .empty-text { font-size: 0.85rem; }
+
+    /* ===== Responsive ===== */
+    @media (max-width: 700px) {
+      .chat-app {
+        width: 100vw;
+        max-width: 100vw;
+        height: calc(100vh - 60px);
+        max-height: calc(100vh - 60px);
+        border-radius: 0;
+        border: none;
+      }
+      .chat-sidebar {
+        width: 100%;
+        border-right: none;
+      }
+      .chat-window {
+        position: absolute;
+        inset: 0;
+        transform: translateX(100%);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: 10;
+      }
+      .chat-window.show { transform: translateX(0); }
+      .chat-back-btn { display: flex; }
+    }
+
+    /* Hide old chat components */
+    .chat-toggle, #chatPanel, .chat-panel { display: none !important; }
+
+    /* === Player Controls === */
+    .player-controls {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .btn-play {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      border: none;
+      background: var(--accent);
+      color: #fff;
+      font-size: 1.4rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.25s ease;
+      flex-shrink: 0;
+      box-shadow: 0 6px 20px rgba(var(--accent-rgb), 0.45);
+    }
+
+    .btn-play:hover {
+      background: var(--accent-hover);
+      transform: scale(1.06);
+      box-shadow: 0 8px 28px rgba(var(--accent-rgb), 0.6);
+    }
+
+    .btn-play:active {
+      transform: scale(0.95);
+    }
+
+    .btn-play.playing {
+      background: rgba(255, 255, 255, 0.12);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Volume Section */
+    .volume-section {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .volume-icon {
+      font-size: 1.1rem;
+      cursor: pointer;
+      user-select: none;
+      opacity: 0.7;
+      transition: opacity 0.2s;
+      flex-shrink: 0;
+    }
+
+    .volume-icon:hover {
+      opacity: 1;
+    }
+
+    .volume-slider {
+      flex: 1;
+      -webkit-appearance: none;
+      appearance: none;
+      height: 4px;
+      border-radius: 2px;
+      background: rgba(255, 255, 255, 0.15);
+      outline: none;
+      cursor: pointer;
+    }
+
+    .volume-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #fff;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      transition: transform 0.15s;
+    }
+
+    .volume-slider::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+
+    /* Bilibili iframe container */
+    .bili-container {
+      width: 100%;
+      border-radius: 12px;
+      overflow: hidden;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      position: relative;
+      transition: all 0.35s ease;
+    }
+
+    /* Full mode: show video */
+    .bili-container.video-on {
+      aspect-ratio: 16 / 9;
+      margin-bottom: 16px;
+    }
+
+    /* Mini mode: audio only, slim bar */
+    .bili-container.video-off {
+      aspect-ratio: auto;
+      height: 56px;
+      margin-bottom: 16px;
+      border-radius: 28px;
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      gap: 10px;
+    }
+
+    .bili-container iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+
+    .bili-container.video-off iframe {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+      width: 1px;
+      height: 1px;
+      top: -9999px;
+      left: -9999px;
+    }
+
+    /* Audio-only mini bar */
+    .audio-mini-bar {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      flex: 1;
+      z-index: 1;
+    }
+
+    .bili-container.video-off .audio-mini-bar {
+      display: flex;
+    }
+
+    .bili-container.video-off .bili-loading {
+      display: none !important;
+    }
+
+    .audio-mini-cover {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+      flex-shrink: 0;
+      animation: miniPulse 3s ease-in-out infinite;
+    }
+
+    @keyframes miniPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(var(--accent-rgb), 0.4); }
+      50% { box-shadow: 0 0 0 8px rgba(var(--accent-rgb), 0); }
+    }
+
+    .audio-mini-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .audio-mini-title {
+      font-size: 0.78rem;
+      color: rgba(255,255,255,0.8);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-weight: 500;
+    }
+
+    .audio-mini-sub {
+      font-size: 0.68rem;
+      color: rgba(255,255,255,0.35);
+    }
+
+    /* Video toggle button */
+    .btn-video-toggle {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: rgba(255,255,255,0.5);
+      padding: 5px 10px;
+      border-radius: 6px;
+      font-size: 0.7rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-family: inherit;
+      flex-shrink: 0;
+      z-index: 1;
+    }
+
+    .btn-video-toggle:hover {
+      background: rgba(255, 255, 255, 0.14);
+      color: rgba(255,255,255,0.8);
+    }
+
+    /* Loading placeholder */
+    .bili-loading {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: rgba(255,255,255,0.4);
+      font-size: 0.85rem;
+      pointer-events: none;
+    }
+
+    /* Gradient animation for active bar glow */
+    @keyframes glow {
+      0%, 100% { box-shadow: 0 0 8px rgba(var(--accent-rgb), 0.4); }
+      50% { box-shadow: 0 0 18px rgba(var(--accent-rgb), 0.8); }
+    }
+
+    .btn-play.playing {
+      animation: glow 2s ease-in-out infinite;
+    }
+
+    /* ========== Mode Toggle ========== */
+    .mode-toggle-bar {
+      display: flex;
+      gap: 4px;
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 10px;
+      padding: 3px;
+      margin-top: 8px;
+      margin-bottom: 20px;
+    }
+
+    .mode-toggle-btn {
+      flex: 1;
+      padding: 8px 12px;
+      border: none;
+      background: transparent;
+      color: rgba(255, 255, 255, 0.45);
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-family: inherit;
+    }
+
+    .mode-toggle-btn.active {
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(var(--accent-rgb), 0.35);
+    }
+
+    .mode-toggle-btn:hover:not(.active) {
+      color: rgba(255,255,255,0.75);
+      background: rgba(255,255,255,0.04);
+    }
+
+    /* ========== Search Section ========== */
+    .search-section {
+      display: none;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .search-section.visible {
+      display: flex;
+    }
+
+    .channel-section {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .channel-section.hidden {
+      display: none;
+    }
+
+    .search-input-wrap {
+      display: flex;
+      gap: 8px;
+    }
+
+    .search-input-wrap input {
+      flex: 1;
+      padding: 10px 14px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 10px;
+      font-size: 0.88rem;
+      outline: none;
+      background: rgba(255, 255, 255, 0.07);
+      color: rgba(255, 255, 255, 0.9);
+      transition: all 0.25s ease;
+      font-family: inherit;
+    }
+
+    .search-input-wrap input::placeholder {
+      color: rgba(255, 255, 255, 0.3);
+    }
+
+    .search-input-wrap input:focus {
+      border-color: var(--accent);
+      background: rgba(255, 255, 255, 0.1);
+      box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.15);
+    }
+
+    .btn-search {
+      padding: 10px 18px;
+      border: none;
+      border-radius: 10px;
+      background: var(--accent);
+      color: #fff;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-family: inherit;
+    }
+
+    .btn-search:hover {
+      background: var(--accent-hover);
+    }
+
+    .btn-search:active {
+      transform: scale(0.96);
+    }
+
+    /* ========== Search Results ========== */
+    .search-results {
+      list-style: none;
+      max-height: 320px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .search-results::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .search-results::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,0.15);
+      border-radius: 2px;
+    }
+
+    .song-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: 1px solid transparent;
+    }
+
+    .song-item:hover {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .song-item.playing {
+      background: rgba(var(--accent-rgb), 0.15);
+      border-color: rgba(var(--accent-rgb), 0.3);
+    }
+
+    .song-cover {
+      width: 40px;
+      height: 40px;
+      border-radius: 6px;
+      object-fit: cover;
+      flex-shrink: 0;
+      background: rgba(255,255,255,0.05);
+    }
+
+    .song-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .song-name {
+      font-size: 0.85rem;
+      color: rgba(255,255,255,0.88);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-weight: 500;
+    }
+
+    .song-artist {
+      font-size: 0.75rem;
+      color: rgba(255,255,255,0.4);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-top: 2px;
+    }
+
+    .song-duration {
+      font-size: 0.72rem;
+      color: rgba(255,255,255,0.3);
+      flex-shrink: 0;
+    }
+
+    .search-status {
+      text-align: center;
+      padding: 24px;
+      color: rgba(255,255,255,0.35);
+      font-size: 0.82rem;
+    }
+
+    /* ===== Search Audio Player ===== */
+    .search-player {
+      display: none;
+      background: rgba(255,255,255,0.06);
+      backdrop-filter: blur(10px);
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-top: 12px;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .search-player.show { display: flex; align-items: center; gap: 12px; }
+
+    .sp-cover {
+      width: 48px; height: 48px; border-radius: 8px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.3rem; flex-shrink: 0;
+    }
+    .sp-cover.playing { animation: spPulse 1.5s ease-in-out infinite; }
+    @keyframes spPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(108,92,231,0.4); }
+      50% { box-shadow: 0 0 0 12px rgba(108,92,231,0); }
+    }
+
+    .sp-center { flex: 1; min-width: 0; }
+    .sp-name {
+      font-size: 0.9rem; font-weight: 600; color: #fff;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      margin-bottom: 2px;
+    }
+    .sp-artist {
+      font-size: 0.75rem; color: rgba(255,255,255,0.45);
+      margin-bottom: 8px;
+    }
+    .sp-progress-wrap {
+      display: flex; align-items: center; gap: 8px;
+    }
+    .sp-time {
+      font-size: 0.65rem; color: rgba(255,255,255,0.35);
+      font-variant-numeric: tabular-nums; min-width: 32px;
+    }
+    .sp-progress {
+      flex: 1; height: 4px; -webkit-appearance: none; appearance: none;
+      background: rgba(255,255,255,0.12); border-radius: 2px; outline: none;
+      cursor: pointer;
+    }
+    .sp-progress::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 12px; height: 12px;
+      border-radius: 50%; background: #fff; cursor: pointer;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+    }
+    .sp-play {
+      width: 36px; height: 36px; border-radius: 50%;
+      border: none; background: rgba(255,255,255,0.12);
+      color: #fff; font-size: 1rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s; flex-shrink: 0;
+    }
+    .sp-play:hover { background: rgba(255,255,255,0.2); }
+    .sp-play.playing { background: var(--accent); }
+
+    /* Hidden audio element */
+    #audioPlayer { display: none; }
+
+    /* ========== Todo Toggle Button (Left Edge) ========== */
+    .todo-toggle {
+      position: fixed;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 1100;
+      width: 44px;
+      height: 80px;
+      background: var(--accent);
+      border: none;
+      border-radius: 0 14px 14px 0;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 20px var(--accent-soft);
+      transition: all 0.25s ease;
+      color: #fff;
+      font-size: 1.1rem;
+      writing-mode: vertical-lr;
+      letter-spacing: 2px;
+    }
+
+    .todo-toggle:hover {
+      width: 52px;
+      background: var(--accent-hover);
+      box-shadow: 4px 0 30px rgba(var(--accent-rgb), 0.6);
+    }
+
+    .todo-toggle .toggle-text {
+      font-weight: 700;
+      font-size: 0.85rem;
+    }
+
+    .todo-toggle .todo-count-dot {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--success);
+      display: none;
+    }
+
+    .todo-toggle .todo-count-dot.has-items {
+      display: block;
+    }
+
+    /* ========== Overlay / Backdrop ========== */
+    .drawer-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 2000;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.35s ease, visibility 0.35s ease;
+      backdrop-filter: blur(2px);
+      -webkit-backdrop-filter: blur(2px);
+    }
+
+    .drawer-overlay.open {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    /* ========== Todo Drawer Panel ========== */
+    .todo-drawer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: var(--drawer-width);
+      max-width: 90vw;
+      height: 100vh;
+      background: rgba(15,15,18,0.96);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      z-index: 2100;
+      transform: translateX(-100%);
+      transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      flex-direction: column;
+      box-shadow: var(--shadow-lg);
+      border-right: 1px solid var(--border);
+      overflow: hidden;
+    }
+
+    .todo-drawer.open {
+      transform: translateX(0);
+    }
+
+    /* Drawer inner scrollable area */
+    .drawer-inner {
+      flex: 1;
+      overflow-y: auto;
+      padding: 28px 24px 20px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Drawer close button */
+    .drawer-close {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition);
+      z-index: 10;
+      color: var(--text-secondary);
+    }
+
+    .drawer-close:hover {
+      background: rgba(239,68,68,0.15);
+      color: var(--danger);
+      border-color: var(--danger);
+    }
+
+    /* ========== Header ========== */
+    .header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .header h1 {
+      font-size: 1.6rem;
+      font-weight: 600;
+      color: var(--text);
+      letter-spacing: -0.02em;
+    }
+
+    .header .subtitle {
+      font-size: 0.8rem;
+      color: var(--text-tertiary);
+      margin-top: 2px;
+    }
+
+    /* ========== Share Bar ========== */
+    .share-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+      padding: 8px 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 0.76rem;
+    }
+
+    .share-bar .sync-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      background: var(--success);
+      animation: pulse 2s infinite;
+    }
+
+    .share-bar .sync-dot.syncing { background: var(--warning); }
+    .share-bar .sync-dot.error { background: var(--danger); animation: none; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    .share-bar .sync-text {
+      flex: 1;
+      color: var(--text-secondary);
+    }
+
+    .btn-share {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 4px;
+      font-size: 0.72rem;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .btn-share:hover { background: var(--accent-hover); }
+    .btn-share.copied { background: var(--success); }
+
+    /* ========== Input Section ========== */
+    .input-section {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .input-section input {
+      flex: 1;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 0.9rem;
+      outline: none;
+      transition: var(--transition);
+      background: rgba(255,255,255,0.04);
+      color: var(--text);
+      font-family: inherit;
+    }
+
+    .input-section input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-soft);
+      background: rgba(255,255,255,0.06);
+    }
+
+    .input-section input::placeholder {
+      color: var(--text-tertiary);
+    }
+
+    .btn {
+      padding: 9px 16px;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 0.84rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: var(--transition);
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .btn:active { transform: scale(0.97); }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+    .btn-primary:hover { background: var(--accent-hover); box-shadow: 0 0 0 4px var(--accent-soft); }
+    .btn-primary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+    .btn-danger {
+      background: transparent;
+      color: var(--danger);
+      padding: 6px 10px;
+      font-size: 0.78rem;
+      border-radius: var(--radius-sm);
+    }
+    .btn-danger:hover { background: rgba(239,68,68,0.1); }
+
+    .btn-clear {
+      background: transparent;
+      color: var(--text-tertiary);
+      font-size: 0.76rem;
+      padding: 4px 8px;
+      font-weight: 500;
+      border-radius: var(--radius-sm);
+    }
+    .btn-clear:hover { color: var(--text-secondary); }
+
+    /* ========== Filter Section ========== */
+    .filter-section {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .filters {
+      display: flex;
+      gap: 2px;
+      background: var(--surface);
+      border-radius: var(--radius-sm);
+      padding: 3px;
+      border: 1px solid var(--border);
+    }
+
+    .filter-btn {
+      padding: 6px 14px;
+      border: none;
+      background: transparent;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: var(--transition);
+      color: var(--text-secondary);
+    }
+
+    .filter-btn.active {
+      background: var(--surface-hover);
+      color: var(--text);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    }
+
+    .filter-btn:hover:not(.active) { color: var(--text); }
+
+    /* ========== Todo List ========== */
+    .todo-list {
+      list-style: none;
+      min-height: 40px;
+      flex: 1;
+    }
+
+    .todo-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      transition: var(--transition);
+      animation: slideIn 0.3s ease;
+      border: 1px solid transparent;
+    }
+
+    .todo-item:hover {
+      background: var(--surface-hover);
+      border-color: var(--border);
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(-12px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+
+    @keyframes slideOut {
+      from { opacity: 1; transform: translateX(0); max-height: 60px; }
+      to   { opacity: 0; transform: translateX(40px); max-height: 0; padding: 0; margin: 0; }
+    }
+
+    .todo-item.removing {
+      animation: slideOut 0.3s ease forwards;
+    }
+
+    /* Custom checkbox */
+    .todo-checkbox {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 20px;
+      height: 20px;
+      border: 1.5px solid rgba(255,255,255,0.15);
+      border-radius: 50%;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: var(--transition);
+      position: relative;
+      background: transparent;
+    }
+
+    .todo-checkbox:hover { border-color: var(--accent); }
+
+    .todo-checkbox:checked {
+      background: var(--success);
+      border-color: var(--success);
+    }
+
+    .todo-checkbox:checked::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 5px;
+      width: 5px;
+      height: 9px;
+      border: solid #fff;
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+    }
+
+    .todo-text {
+      flex: 1;
+      font-size: 0.88rem;
+      word-break: break-word;
+      cursor: default;
+      transition: var(--transition);
+      color: var(--text);
+    }
+
+    .todo-item.completed .todo-text {
+      text-decoration: line-through;
+      color: var(--text-tertiary);
+    }
+
+    /* ========== Link Detection ========== */
+    .todo-text a.safe-link {
+      color: var(--accent);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+    .todo-text a.safe-link:hover { color: var(--accent-hover); }
+
+    .danger-link {
+      color: var(--danger);
+      text-decoration: line-through;
+      cursor: not-allowed;
+      opacity: 0.7;
+    }
+    .danger-link .warn-icon { font-size: 0.85em; }
+
+    /* Edit mode */
+    .todo-edit-input {
+      flex: 1;
+      font-size: 0.88rem;
+      padding: 5px 8px;
+      border: 1px solid var(--accent);
+      border-radius: var(--radius-sm);
+      outline: none;
+      background: rgba(255,255,255,0.06);
+      color: var(--text);
+      font-family: inherit;
+    }
+
+    .btn-delete {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-tertiary);
+      font-size: 1rem;
+      padding: 3px 5px;
+      border-radius: var(--radius-sm);
+      transition: var(--transition);
+      flex-shrink: 0;
+      line-height: 1;
+      opacity: 0;
+    }
+
+    .todo-item:hover .btn-delete { opacity: 1; }
+
+    .btn-delete:hover {
+      color: var(--danger);
+      background: rgba(239,68,68,0.1);
+    }
+
+    /* ========== Footer ========== */
+    .footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 16px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+      font-size: 0.8rem;
+      color: var(--text-tertiary);
+    }
+
+    .footer .count strong {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    /* ========== Empty State ========== */
+    .empty-state {
+      text-align: center;
+      padding: 28px 12px;
+      color: var(--text-tertiary);
+    }
+
+    .empty-state .icon {
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+      opacity: 0.5;
+    }
+
+    .empty-state p {
+      font-size: 0.85rem;
+    }
+
+    /* ========== Admin ========== */
+    .admin-badge {
+      display: none;
+      font-size: 0.65rem;
+      background: var(--danger);
+      color: #fff;
+      padding: 2px 8px;
+      border-radius: 10px;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+    .admin-active .admin-badge { display: inline; }
+
+    .admin-entry {
+      background: none;
+      border: none;
+      font-size: 1rem;
+      cursor: pointer;
+      opacity: 0.3;
+      transition: var(--transition);
+      position: absolute;
+      top: 10px;
+      right: 44px;
+    }
+    .admin-entry:hover { opacity: 0.8; }
+
+    /* Context Menu */
+    .context-menu {
+      position: fixed;
+      background: #1a1a1e;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-lg);
+      padding: 6px 0;
+      z-index: 9999;
+      min-width: 160px;
+      animation: ctxFadeIn 0.15s ease;
+      display: none;
+    }
+    @keyframes ctxFadeIn {
+      from { opacity: 0; transform: scale(0.94); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.92); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .context-menu .menu-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      cursor: pointer;
+      font-size: 0.88rem;
+      border: none;
+      background: none;
+      width: 100%;
+      text-align: left;
+      color: var(--text);
+      transition: 0.12s;
+    }
+    .context-menu .menu-item:hover { background: var(--surface-hover); }
+    .context-menu .menu-item.danger { color: var(--danger); }
+    .context-menu .menu-item.danger:hover { background: rgba(239,68,68,0.1); }
+    .context-menu .menu-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 4px 0;
+    }
+
+    /* ===== Scrollbar ===== */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.14); }
+    .drawer-inner { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.08) transparent; }
+
+    /* ===== L2 Animations ===== */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .music-player {
+      animation: fadeInUp 0.5s ease;
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(12px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+    .reveal.revealed { opacity: 1; transform: translateY(0); }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+
+    /* ===== Responsive ===== */
+    @media (max-width: 600px) {
+      .todo-drawer, .music-drawer {
+        width: 100%;
+        max-width: 100vw;
+        border-radius: 0;
+        border-right: none;
+        border-left: none;
+      }
+      .music-player { padding: 16px; }
+      .input-section { flex-direction: column; }
+      .btn-primary { justify-content: center; }
+      .filter-section { flex-direction: column; align-items: stretch; }
+      .filters { justify-content: center; }
+    }
+
+    /* ========== Wallpaper Toggle (Top Right) ========== */
+    .wallpaper-toggle {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 1000;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.06);
+      cursor: pointer;
+      font-size: 1.1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.25s ease;
+      color: #fff;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+    .wallpaper-toggle:hover {
+      background: rgba(255,255,255,0.14);
+      transform: scale(1.1);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    }
+
+    /* ========== Wallpaper Overlay ========== */
+    .wallpaper-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 3000;
+      background: rgba(0,0,0,0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.35s ease, visibility 0.35s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+    }
+    .wallpaper-overlay.open {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .wallpaper-panel {
+      background: rgba(20,20,24,0.98);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 720px;
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 16px 48px rgba(0,0,0,0.6);
+      animation: panelIn 0.3s ease;
+    }
+    @keyframes panelIn {
+      from { opacity: 0; transform: translateY(20px) scale(0.96); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .wp-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 24px 0;
+    }
+    .wp-header h2 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .wp-close {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 0.9rem;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--text-secondary);
+      transition: var(--transition);
+    }
+    .wp-close:hover {
+      background: rgba(239,68,68,0.15);
+      color: var(--danger);
+      border-color: var(--danger);
+    }
+
+    .wp-body {
+      padding: 20px 24px 24px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    /* Upload Zone */
+    .wp-upload-zone {
+      border: 2px dashed rgba(255,255,255,0.12);
+      border-radius: 12px;
+      padding: 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      margin-bottom: 20px;
+    }
+    .wp-upload-zone:hover,
+    .wp-upload-zone.dragover {
+      border-color: var(--accent);
+      background: rgba(var(--accent-rgb), 0.06);
+    }
+    .wp-upload-zone .upload-icon {
+      font-size: 2rem;
+      margin-bottom: 6px;
+    }
+    .wp-upload-zone .upload-text {
+      color: rgba(255,255,255,0.5);
+      font-size: 0.82rem;
+    }
+    .wp-upload-zone .upload-hint {
+      color: rgba(255,255,255,0.25);
+      font-size: 0.7rem;
+      margin-top: 4px;
+    }
+
+    /* Wallpaper Grid */
+    .wp-section-title {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: rgba(255,255,255,0.4);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 10px;
+    }
+    .wp-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .wp-card {
+      position: relative;
+      border-radius: 10px;
+      overflow: hidden;
+      aspect-ratio: 16/10;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: all 0.2s ease;
+      background: rgba(255,255,255,0.04);
+    }
+    .wp-card:hover {
+      border-color: rgba(255,255,255,0.2);
+      transform: translateY(-2px);
+    }
+    .wp-card.active {
+      border-color: var(--accent);
+      box-shadow: 0 0 16px rgba(var(--accent-rgb), 0.4);
+    }
+    .wp-card.active::after {
+      content: '✓';
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #fff;
+      font-size: 0.7rem;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700;
+    }
+    .wp-card .wp-thumb {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .wp-card .wp-card-label {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 6px 8px;
+      background: linear-gradient(transparent, rgba(0,0,0,0.7));
+      font-size: 0.72rem;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .wp-card .wp-card-badge {
+      position: absolute;
+      top: 6px;
+      left: 6px;
+      font-size: 0.6rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(0,0,0,0.5);
+      color: rgba(255,255,255,0.7);
+    }
+    .wp-card .wp-delete-btn {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      width: 24px; height: 24px;
+      border-radius: 50%;
+      border: none;
+      background: rgba(0,0,0,0.5);
+      color: #fff;
+      font-size: 0.7rem;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .wp-card:hover .wp-delete-btn {
+      opacity: 1;
+    }
+    .wp-card .wp-delete-btn:hover {
+      background: var(--danger);
+    }
+
+    /* Background Image (for static wallpapers) */
+    #bgImage {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: 0;
+      display: none;
+    }
+    #bgVideo.hidden { display: none; }
+  </style>
+</head>
+<body>
+
+  <!-- Background Video (default dynamic wallpaper) -->
+  <video autoplay muted loop playsinline id="bgVideo"
+         style="position:fixed;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;opacity:0.5;">
+    <source src="bg.mp4" type="video/mp4">
+  </video>
+  <!-- Background Image (for static wallpapers) -->
+  <img id="bgImage" alt="" />
+
+  <!-- ========== Wallpaper Toggle (Top Right) ========== -->
+  <button class="wallpaper-toggle" id="wallpaperToggle" title="更换壁纸">🖼️</button>
+
+  <!-- ========== Cartoon Dino → crazygames.com ========== -->
+  <a class="dino-link" href="https://www.crazygames.com" target="_blank" title="去 CrazyGames 玩游戏 🎮">
+    <svg class="dino-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <!-- Body -->
+      <ellipse cx="42" cy="58" rx="28" ry="22" fill="#4ECDC4"/>
+      <!-- Belly -->
+      <ellipse cx="42" cy="63" rx="18" ry="14" fill="#A8E6CF"/>
+      <!-- Head -->
+      <circle cx="72" cy="38" r="18" fill="#4ECDC4"/>
+      <!-- Snout -->
+      <ellipse cx="85" cy="42" rx="10" ry="7" fill="#3DBDB5"/>
+      <!-- Eye (white) -->
+      <circle cx="76" cy="34" r="8" fill="white"/>
+      <!-- Eye (pupil) -->
+      <circle cx="78" cy="33" r="5" fill="#2d3436"/>
+      <!-- Eye sparkle -->
+      <circle cx="80" cy="31" r="2" fill="white"/>
+      <!-- Smile -->
+      <path d="M78 44 Q84 50 88 44" stroke="#2d3436" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <!-- Cheek blush -->
+      <ellipse cx="70" cy="42" rx="4" ry="3" fill="#FF8A80" opacity="0.5"/>
+      <!-- Nostrils -->
+      <circle cx="82" cy="40" r="1.5" fill="#2d3436"/>
+      <circle cx="87" cy="40" r="1.5" fill="#2d3436"/>
+      <!-- Spikes on back -->
+      <polygon points="30,38 22,20 36,36" fill="#FF6B6B"/>
+      <polygon points="38,35 32,15 42,33" fill="#FF8A80"/>
+      <polygon points="46,34 44,18 50,32" fill="#FF6B6B"/>
+      <!-- Tail -->
+      <path d="M14 52 Q4 40 8 30 Q10 26 14 34 Q16 40 16 50" fill="#4ECDC4" stroke="none"/>
+      <!-- Legs -->
+      <ellipse cx="30" cy="78" rx="8" ry="5" fill="#3DBDB5"/>
+      <ellipse cx="48" cy="78" rx="8" ry="5" fill="#3DBDB5"/>
+      <!-- Arms -->
+      <ellipse cx="60" cy="52" rx="5" ry="14" fill="#3DBDB5" transform="rotate(-20, 60, 52)"/>
+      <!-- Tiny feet -->
+      <ellipse cx="26" cy="80" rx="5" ry="3" fill="#2EAFA5"/>
+      <ellipse cx="44" cy="80" rx="5" ry="3" fill="#2EAFA5"/>
+    </svg>
+    <span class="dino-bubble">玩会儿游戏 🎮</span>
+  </a>
+
+  <!-- ========== Center Visualizer ========== -->
+  <div class="center-visualizer" id="centerVisualizer">
+    <canvas id="vizCanvas"></canvas>
+  </div>
+
+  <!-- ========== Main Content Area ========== -->
+  <div class="main-content">
+
+  <!-- ========== Chat App ========== -->
+  <div class="chat-app" id="chatApp">
+    <div class="chat-sidebar" id="chatSidebar">
+      <div class="sidebar-header">
+        <span class="sidebar-title">💬 消息</span>
+        <button class="sidebar-manage-btn" id="sidebarManageBtn" title="角色管理">⚙️</button>
+      </div>
+      <div class="contact-list" id="contactList"></div>
+    </div>
+    <div class="chat-window" id="chatWindow">
+      <div class="chat-win-header">
+        <button class="chat-back-btn" id="chatBackBtn" title="返回">←</button>
+        <div class="chat-win-avatar" id="chatWinAvatar">🤖</div>
+        <div class="chat-win-info">
+          <div class="chat-win-name" id="chatWinName">AI 小助手</div>
+          <div class="chat-win-status" id="chatWinStatus">在线</div>
+        </div>
+        <button class="chat-win-settings-btn" id="chatWinSettingsBtn" title="角色设定">⚙️</button>
+      </div>
+      <div class="chat-win-messages" id="chatWinMessages">
+        <div class="chat-empty"><div class="empty-icon">💬</div><div class="empty-text">选一个角色开始聊天</div></div>
+      </div>
+      <div class="chat-win-typing" id="chatWinTyping"><span></span><span></span><span></span></div>
+      <div class="chat-win-quick" id="chatWinQuick">
+        <button class="quick-btn" data-msg="今日运势">🔮 运势</button>
+        <button class="quick-btn" data-msg="北京天气">☀️ 天气</button>
+        <button class="quick-btn" data-msg="讲个笑话">😂 笑话</button>
+        <button class="quick-btn" data-msg="现在几点">🕐 时间</button>
+      </div>
+      <div class="chat-win-input-area">
+        <input type="text" id="chatWinInput" placeholder="输入消息..." autocomplete="off" maxlength="500">
+        <button class="chat-win-send-btn" id="chatWinSendBtn">➤</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Persona Overlay -->
+  <div class="persona-overlay" id="personaOverlay">
+    <div class="persona-dialog">
+      <h3>🎭 角色设定</h3>
+      <p class="dialog-sub">选择一个角色，或者自定义人设</p>
+      <div class="preset-grid" id="presetGrid">
+        <div class="preset-card selected" data-persona="default"><div class="preset-avatar">🤖</div><div class="preset-name">默认助手</div><div class="preset-desc">温暖幽默的朋友</div></div>
+        <div class="preset-card" data-persona="funny"><div class="preset-avatar">😂</div><div class="preset-name">段子手</div><div class="preset-desc">句句带梗笑不停</div></div>
+        <div class="preset-card" data-persona="caring"><div class="preset-avatar">🧘</div><div class="preset-name">知心朋友</div><div class="preset-desc">温柔共情善解人意</div></div>
+        <div class="preset-card" data-persona="pro"><div class="preset-avatar">💼</div><div class="preset-name">行业专家</div><div class="preset-desc">严谨深入有洞见</div></div>
+        <div class="preset-card" data-persona="ancient"><div class="preset-avatar">📜</div><div class="preset-name">古风雅士</div><div class="preset-desc">吟诗作对引经据典</div></div>
+        <div class="preset-card" data-persona="anime"><div class="preset-avatar">🎮</div><div class="preset-name">二次元</div><div class="preset-desc">元气满满可爱担当</div></div>
+      </div>
+      <div style="margin-top:12px;"><h3 style="font-size:0.9rem;color:rgba(255,255,255,0.9);">✏️ 自定义人设</h3></div>
+      <div class="custom-input-area">
+        <textarea id="personaCustomTextarea" placeholder="描述你想要的 AI 角色，例如：「你是鲁迅，用犀利幽默的文风说话」" maxlength="500"></textarea>
+      </div>
+      <div class="dialog-actions">
+        <button class="dialog-btn" id="personaCancelBtn">取消</button>
+        <button class="dialog-btn primary" id="personaSaveBtn">保存设定</button>
+      </div>
+    </div>
+  </div>
+
+  </div>
+  <!-- /Main Content Area -->
+
+  <!-- ========== Music Toggle (Right Edge) ========== -->
+  <button class="music-toggle" id="musicToggle" title="音乐播放器">🎵 音乐</button>
+
+  <!-- ========== Music Drawer ========== -->
+  <div class="music-drawer" id="musicDrawer">
+    <button class="music-close" id="musicClose" title="关闭">✕</button>
+    <div class="music-drawer-inner">
+      <div class="music-player">
+      <!-- Mode Toggle -->
+      <div class="mode-toggle-bar">
+        <button class="mode-toggle-btn active" data-mode="channel">📻 放松频道</button>
+        <button class="mode-toggle-btn" data-mode="search">🔍 搜索点歌</button>
+      </div>
+
+      <!-- ====== Channel Section ====== -->
+      <div class="channel-section" id="channelSection">
+        <div class="player-header">
+          <div class="player-title">🎵 放松音乐</div>
+          <div class="now-playing" id="nowPlaying">准备开始…</div>
+        </div>
+
+        <!-- Category Tabs -->
+        <div class="music-tabs" id="musicTabs">
+          <button class="music-tab active" data-cat="lofi">🎵 Lo-fi</button>
+          <button class="music-tab" data-cat="piano">🎹 钢琴</button>
+          <button class="music-tab" data-cat="rain">🌧️ 雨声</button>
+          <button class="music-tab" data-cat="ambient">🌌 氛围</button>
+        </div>
+
+        <!-- Controls -->
+        <div class="player-controls">
+          <button class="btn-play" id="btnPlay" title="播放">▶</button>
+          <div class="volume-section">
+            <span class="volume-icon" id="volumeIcon">🔊</span>
+            <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="40">
+          </div>
+        </div>
+
+        <!-- Bilibili Player -->
+        <div class="bili-container video-off" id="biliContainer">
+          <iframe id="biliFrame" src=""
+                  allow="autoplay"
+                  allowfullscreen="true"
+                  style="display:none;">
+          </iframe>
+          <div class="bili-loading" id="biliLoading">🎵 选择一个分类开始播放…</div>
+
+          <!-- Audio-only mini bar (shown when video is off) -->
+          <div class="audio-mini-bar">
+            <div class="audio-mini-cover">🎵</div>
+            <div class="audio-mini-info">
+              <div class="audio-mini-title" id="miniTitle">选择一个分类开始播放</div>
+              <div class="audio-mini-sub" id="miniSub">纯音频 · 节省流量</div>
+            </div>
+            <button class="btn-video-toggle" id="btnVideoToggle" title="开启画面">📺 看画面</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ====== Search Section ====== -->
+      <div class="search-section" id="searchSection">
+        <div class="search-input-wrap">
+          <input type="text" id="searchInput"
+                 placeholder="搜索歌曲、歌手…"
+                 autocomplete="off"
+                 maxlength="100">
+          <button class="btn-search" id="btnSearch">🔍 搜索</button>
+        </div>
+        <div id="searchResults">
+          <div class="search-status">💡 输入关键词搜索歌曲</div>
+        </div>
+        <!-- Custom audio player for search results -->
+        <div class="search-player" id="searchPlayer">
+          <div class="sp-cover" id="spCover">🎵</div>
+          <div class="sp-center">
+            <div class="sp-name" id="spName">选择一首歌曲</div>
+            <div class="sp-artist" id="spArtist"></div>
+            <div class="sp-progress-wrap">
+              <span class="sp-time" id="spCur">0:00</span>
+              <input type="range" class="sp-progress" id="spProgress" min="0" max="100" value="0">
+              <span class="sp-time" id="spDur">0:00</span>
+            </div>
+          </div>
+          <button class="sp-play" id="spPlay" title="播放">▶</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hidden Audio Player for Search Results (kept for compatibility) -->
+    <audio id="audioPlayer" preload="none" style="display:none;"></audio>
+    </div>
+  </div>
+
+  <!-- ========== Todo Toggle Button ========== -->
+  <button class="todo-toggle" id="todoToggle" title="待办事项">
+    <span class="toggle-text">待办</span>
+    <span class="todo-count-dot" id="toggleCountDot"></span>
+  </button>
+
+  <!-- ========== Drawer Overlay ========== -->
+  <div class="drawer-overlay" id="drawerOverlay"></div>
+
+  <!-- ========== Todo Drawer ========== -->
+  <div class="todo-drawer" id="todoDrawer">
+    <button class="drawer-close" id="drawerClose" title="关闭">✕</button>
+
+    <div class="drawer-inner">
+      <!-- Header -->
+      <header class="header" style="position:relative;">
+        <h1>📝 待办事项<span class="admin-badge" id="adminBadge">管理员</span></h1>
+        <p class="subtitle">多人共享 · 实时同步</p>
+        <button class="admin-entry" id="adminEntry" title="管理员入口">🔒</button>
+      </header>
+
+      <!-- Share / Sync Bar -->
+      <div class="share-bar">
+        <span class="sync-dot" id="syncDot" title="同步状态"></span>
+        <span class="sync-text" id="syncText">正在连接…</span>
+        <button class="btn-share" id="shareBtn" title="复制共享链接">📋 复制链接</button>
+      </div>
+
+      <!-- Input -->
+      <div class="input-section">
+        <input
+          type="text"
+          id="todoInput"
+          placeholder="添加新的待办事项…"
+          autocomplete="off"
+          maxlength="500"
+        >
+        <button class="btn btn-primary" id="addBtn">
+          <span>＋</span> 添加
+        </button>
+      </div>
+
+      <!-- Filters -->
+      <div class="filter-section">
+        <div class="filters">
+          <button class="filter-btn active" data-filter="all">全部</button>
+          <button class="filter-btn" data-filter="active">进行中</button>
+          <button class="filter-btn" data-filter="completed">已完成</button>
+        </div>
+        <button class="btn btn-clear" id="clearCompleted" title="清除所有已完成事项">清除已完成</button>
+      </div>
+
+      <!-- Todo List -->
+      <ul class="todo-list" id="todoList"></ul>
+
+      <!-- Footer -->
+      <div class="footer">
+        <span class="count">还剩 <strong id="count">0</strong> 项</span>
+        <span id="filterLabel">全部</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right-click context menu -->
+  <div class="context-menu" id="contextMenu">
+    <button class="menu-item danger" id="ctxDelete">
+      <span>🗑️</span> 管理员删除此项
+    </button>
+    <div class="menu-divider"></div>
+    <button class="menu-item" id="ctxCancel">
+      <span>✕</span> 取消
+    </button>
+  </div>
+
+  <!-- ========== Wallpaper Overlay ========== -->
+  <div class="wallpaper-overlay" id="wallpaperOverlay">
+    <div class="wallpaper-panel">
+      <div class="wp-header">
+        <h2>🖼️ 壁纸设置</h2>
+        <button class="wp-close" id="wpClose">✕</button>
+      </div>
+      <div class="wp-body">
+        <!-- Upload Zone -->
+        <div class="wp-upload-zone" id="wpUploadZone">
+          <div class="upload-icon">📤</div>
+          <div class="upload-text">点击或拖拽上传壁纸</div>
+          <div class="upload-hint">支持 JPG / PNG / GIF / WebP / MP4 / WebM · 最大 100MB</div>
+          <input type="file" id="wpFileInput" accept="image/*,video/*" style="display:none" multiple>
+        </div>
+
+        <!-- Preset Wallpapers -->
+        <div class="wp-section-title">🎨 预设壁纸</div>
+        <div class="wp-grid" id="wpPresetGrid"></div>
+
+        <!-- User Wallpapers -->
+        <div class="wp-section-title" id="wpUserTitle" style="display:none;">📁 我的壁纸</div>
+        <div class="wp-grid" id="wpUserGrid"></div>
+      </div>
+    </div>
+  </div>
+
+
+
+
+  <!-- ========== Chat App (Main Center, WeChat Style) ========== -->
+
+  <!-- ========== Persona Settings Overlay ========== -->
+  <div class="persona-overlay" id="personaOverlay">
+    <div class="persona-dialog">
+      <h3>🎭 角色设定</h3>
+      <p class="dialog-sub">选择一个角色，或者自定义人设</p>
+      <div class="preset-grid" id="presetGrid">
+        <div class="preset-card selected" data-persona="default">
+          <div class="preset-avatar">🤖</div>
+          <div class="preset-name">默认助手</div>
+          <div class="preset-desc">温暖幽默的朋友</div>
+        </div>
+        <div class="preset-card" data-persona="funny">
+          <div class="preset-avatar">😂</div>
+          <div class="preset-name">段子手</div>
+          <div class="preset-desc">句句带梗笑不停</div>
+        </div>
+        <div class="preset-card" data-persona="caring">
+          <div class="preset-avatar">🧘</div>
+          <div class="preset-name">知心朋友</div>
+          <div class="preset-desc">温柔共情善解人意</div>
+        </div>
+        <div class="preset-card" data-persona="pro">
+          <div class="preset-avatar">💼</div>
+          <div class="preset-name">行业专家</div>
+          <div class="preset-desc">严谨深入有洞见</div>
+        </div>
+        <div class="preset-card" data-persona="ancient">
+          <div class="preset-avatar">📜</div>
+          <div class="preset-name">古风雅士</div>
+          <div class="preset-desc">吟诗作对引经据典</div>
+        </div>
+        <div class="preset-card" data-persona="anime">
+          <div class="preset-avatar">🎮</div>
+          <div class="preset-name">二次元</div>
+          <div class="preset-desc">元气满满可爱担当</div>
+        </div>
+      </div>
+      <div class="persona-dialog" style="background:none;border:none;padding:0;box-shadow:none;margin-top:12px;">
+        <h3 style="font-size:0.9rem;">✏️ 自定义人设</h3>
+      </div>
+      <div class="custom-input-area">
+        <textarea id="personaCustomTextarea"
+                  placeholder="描述你想要的 AI 角色，例如：「你是鲁迅，用犀利幽默的文风说话」"
+                  maxlength="500"></textarea>
+      </div>
+      <div class="dialog-actions">
+        <button class="dialog-btn" id="personaCancelBtn">取消</button>
+        <button class="dialog-btn primary" id="personaSaveBtn">保存设定</button>
+      </div>
+    </div>
+  </div>
+
+
+  <script>
+    (function () {
+      'use strict';
+
+      // ==================== Center Visualizer (Canvas + Web Audio) ====================
+      const vizContainer = document.getElementById('centerVisualizer');
+      const vizCanvas = document.getElementById('vizCanvas');
+      const vizCtx = vizCanvas.getContext('2d');
+      let vizAnimId = null;
+      let audioCtx = null;
+      let analyser = null;
+      let vizActive = false; // true when anything is playing
+
+      function setupCanvas() {
+        const rect = vizContainer.getBoundingClientRect();
+        vizCanvas.width = rect.width * devicePixelRatio;
+        vizCanvas.height = rect.height * devicePixelRatio;
+        vizCtx.scale(devicePixelRatio, devicePixelRatio);
+      }
+      setupCanvas();
+      window.addEventListener('resize', setupCanvas);
+
+      // Draw idle flat line
+      function drawIdleLine() {
+        const W = vizContainer.clientWidth;
+        const H = vizContainer.clientHeight;
+        vizCtx.clearRect(0, 0, W, H);
+        vizCtx.strokeStyle = 'rgba(108,92,231,0.45)';
+        vizCtx.lineWidth = 4;
+        vizCtx.lineCap = 'round';
+        vizCtx.beginPath();
+        vizCtx.moveTo(0, H / 2);
+        vizCtx.lineTo(W, H / 2);
+        vizCtx.stroke();
+      }
+      drawIdleLine();
+
+      // ==================== Mode Toggle ====================
+      let playerMode = 'channel'; // 'channel' | 'search'
+      const channelSection = document.getElementById('channelSection');
+      const searchSection = document.getElementById('searchSection');
+      const searchInput = document.getElementById('searchInput');
+      const btnSearch = document.getElementById('btnSearch');
+      const searchResults = document.getElementById('searchResults');
+      const audioPlayer = document.getElementById('audioPlayer');
+      let currentSongId = null;
+      let searchTimeout = null;
+
+      // Mode toggle buttons
+      document.querySelectorAll('.mode-toggle-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const mode = btn.dataset.mode;
+          if (mode === playerMode) return;
+
+          playerMode = mode;
+          document.querySelectorAll('.mode-toggle-btn').forEach(b =>
+            b.classList.toggle('active', b.dataset.mode === mode));
+
+          if (mode === 'channel') {
+            channelSection.classList.remove('hidden');
+            searchSection.classList.remove('visible');
+            // Pause audio player if playing
+            if (!audioPlayer.paused) audioPlayer.pause();
+          } else {
+            channelSection.classList.add('hidden');
+            searchSection.classList.add('visible');
+            // Pause Bilibili iframe if playing
+            if (isPlaying) pause();
+            searchInput.focus();
+          }
+        });
+      });
+
+      // ==================== Music Search ====================
+      const METING_API = 'https://meting.elysium-stack.cn/api';
+      const METING_API_BACKUP = 'https://api.uomg.com/api/netease.search';
+
+      // Music search via Netlify Function → higequ.com
+      const MUSIC_PROXY = '/.netlify/functions/music';
+
+      async function searchSongs(keyword) {
+        try {
+          const url = `${MUSIC_PROXY}?action=search&keyword=${encodeURIComponent(keyword)}`;
+          console.log('🔍 搜索:', url);
+          const resp = await fetch(url);
+          if (!resp.ok) throw new Error('HTTP ' + resp.status);
+          const data = await resp.json();
+          console.log('📦 结果:', Array.isArray(data) ? data.length + '首' : data);
+          return Array.isArray(data) ? data : [];
+        } catch (e) {
+          console.error('❌ 搜索失败:', e.message);
+          return [];
+        }
+      }
+
+      // Extract song ID from various URL formats
+      function extractSongId(url) {
+        const match = url && url.match(/[?&]id=(\d+)/);
+        return match ? match[1] : '';
+      }
+
+      async function getSongUrl(songId) {
+        // Multiple sources for song URL, tried in order
+        const sources = [
+          // Source 1: Meting direct (usually fastest when available)
+          async () => {
+            const url = `https://meting.elysium-stack.cn/api?server=netease&type=url&id=${songId}`;
+            const resp = await fetch(url);
+            if (!resp.ok) throw new Error('HTTP ' + resp.status);
+            const data = await resp.json();
+            return data.url || null;
+          },
+          // Source 2: Netlify proxy (server-side, good fallback)
+          async () => {
+            const url = `${MUSIC_PROXY}?action=url&id=${songId}`;
+            const resp = await fetch(url);
+            if (!resp.ok) throw new Error('HTTP ' + resp.status);
+            const data = await resp.json();
+            return data.url || null;
+          },
+          // Source 3: InJahow
+          async () => {
+            const url = `https://api.injahow.cn/meting/?server=netease&type=url&id=${songId}`;
+            const resp = await fetch(url);
+            if (!resp.ok) throw new Error('HTTP ' + resp.status);
+            const data = await resp.json();
+            return data.url || null;
+          },
+        ];
+
+        for (let i = 0; i < sources.length; i++) {
+          try {
+            console.log(`🎵 尝试播放源 ${i + 1}...`);
+            const url = await Promise.race([
+              sources[i](),
+              new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 6000)),
+            ]);
+            if (url) {
+              console.log(`🎵 播放源 ${i + 1} 成功`);
+              return url;
+            }
+          } catch (e) {
+            console.warn(`🎵 播放源 ${i + 1} 失败:`, e.message);
+          }
+        }
+
+        console.error('❌ 所有播放源均失败');
+        return null;
+      }
+
+      // Inline safe HTML escaping (so search doesn't depend on escapeHTML below)
+      function hEscape(str) {
+        return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      }
+
+      function renderSearchResults(songs) {
+        if (!songs || songs.length === 0) {
+          searchResults.innerHTML = '<div class="search-status">😕 没有找到相关歌曲<br><small>试试其他关键词</small></div>';
+          return;
+        }
+
+        searchResults.innerHTML = `
+          <ul class="search-results">
+            ${songs.map((song) => {
+              const name = hEscape(song.name || song.title || '未知歌曲');
+              const artist = hEscape(song.artist || song.author || '未知歌手');
+              const rid = song.rid || song.id || '';
+              const isActive = (rid && String(rid) === String(currentSongId)) ? ' playing' : '';
+
+              return `
+                <li class="song-item${isActive}"
+                    data-rid="${rid}"
+                    data-name="${name}"
+                    data-artist="${artist}">
+                  <span style="width:40px;height:40px;border-radius:6px;background:rgba(255,255,255,0.05);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1rem;">🎵</span>
+                  <div class="song-info">
+                    <div class="song-name">${name}</div>
+                    <div class="song-artist">${artist}</div>
+                  </div>
+                </li>`;
+            }).join('')}
+          </ul>`;
+      }
+
+      // Debounced search as user types
+      searchInput.addEventListener('input', () => {
+        clearTimeout(searchTimeout);
+        const keyword = searchInput.value.trim();
+        if (!keyword) {
+          searchResults.innerHTML = '<div class="search-status">💡 输入关键词搜索歌曲</div>';
+          return;
+        }
+        searchTimeout = setTimeout(async () => {
+          searchResults.innerHTML = '<div class="search-status">🔍 搜索中…</div>';
+          const songs = await searchSongs(keyword);
+          console.log('📋 搜索结果数量:', songs.length);
+          if (songs.length > 0) {
+            try {
+              renderSearchResults(songs);
+            } catch (re) {
+              console.error('❌ 渲染错误:', re.message);
+              searchResults.innerHTML = '<div class="search-status">⚠️ 渲染出错: ' + re.message + '</div>';
+            }
+          } else {
+            searchResults.innerHTML = '<div class="search-status">😕 没有找到相关歌曲<br><small>请尝试其他关键词 或 按F12查看控制台</small></div>';
+          }
+        }, 400);
+      });
+
+      // Search button click
+      btnSearch.addEventListener('click', async () => {
+        const keyword = searchInput.value.trim();
+        if (!keyword) return;
+        searchResults.innerHTML = '<div class="search-status">🔍 搜索中…</div>';
+        const songs = await searchSongs(keyword);
+        renderSearchResults(songs);
+      });
+
+      // Enter key in search
+      searchInput.addEventListener('keydown', async (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          const keyword = searchInput.value.trim();
+          if (!keyword) return;
+          searchResults.innerHTML = '<div class="search-status">🔍 搜索中…</div>';
+          const songs = await searchSongs(keyword);
+          renderSearchResults(songs);
+        }
+      });
+
+      // ===== Custom Search Audio Player =====
+      const spPlayer = document.getElementById('searchPlayer');
+      const spCover = document.getElementById('spCover');
+      const spName = document.getElementById('spName');
+      const spArtist = document.getElementById('spArtist');
+      const spProgress = document.getElementById('spProgress');
+      const spCur = document.getElementById('spCur');
+      const spDur = document.getElementById('spDur');
+      const spPlay = document.getElementById('spPlay');
+      let spPlaying = false;
+      let spSeeking = false;
+
+      function fmtTime(s) {
+        if (!isFinite(s) || s < 0) return '0:00';
+        const m = Math.floor(s / 60);
+        return m + ':' + String(Math.floor(s % 60)).padStart(2, '0');
+      }
+
+      function spSetPlaying(p) {
+        spPlaying = p;
+        spPlay.textContent = p ? '⏸' : '▶';
+        spPlay.classList.toggle('playing', p);
+        spCover.classList.toggle('playing', p);
+        if (p) { initAudioContext(); }
+        updateVizState();
+      }
+
+      spPlay.addEventListener('click', () => {
+        if (!audioPlayer.src) return;
+        spPlaying ? audioPlayer.pause() : audioPlayer.play();
+      });
+
+      audioPlayer.addEventListener('timeupdate', () => {
+        if (!spSeeking && audioPlayer.duration) {
+          spProgress.value = (audioPlayer.currentTime / audioPlayer.duration) * 100;
+          spCur.textContent = fmtTime(audioPlayer.currentTime);
+        }
+      });
+      audioPlayer.addEventListener('loadedmetadata', () => {
+        spDur.textContent = fmtTime(audioPlayer.duration);
+      });
+      spProgress.addEventListener('input', () => {
+        spSeeking = true;
+        spCur.textContent = fmtTime((spProgress.value / 100) * (audioPlayer.duration || 0));
+      });
+      spProgress.addEventListener('change', () => {
+        if (audioPlayer.duration) audioPlayer.currentTime = (spProgress.value / 100) * audioPlayer.duration;
+        spSeeking = false;
+      });
+
+      audioPlayer.addEventListener('play', () => spSetPlaying(true));
+      audioPlayer.addEventListener('pause', () => spSetPlaying(false));
+      audioPlayer.addEventListener('ended', () => { spSetPlaying(false); spProgress.value = 0; spCur.textContent = '0:00'; });
+
+      // Click on search result → fetch audio URL via Netlify, play in custom player
+      searchResults.addEventListener('click', async (e) => {
+        const songItem = e.target.closest('.song-item');
+        if (!songItem) return;
+
+        const rid = songItem.dataset.rid;
+        const songName = songItem.dataset.name;
+        const songArtist = songItem.dataset.artist;
+        if (!rid) return;
+
+        searchResults.querySelectorAll('.song-item').forEach(el => el.classList.remove('playing'));
+        songItem.classList.add('playing');
+        currentSongId = rid;
+
+        spName.textContent = songName;
+        spArtist.textContent = songArtist;
+        spCover.textContent = '🎵';
+        spPlayer.classList.add('show');
+        spProgress.value = 0;
+        spCur.textContent = '0:00';
+        spDur.textContent = '…';
+        spSetPlaying(false);
+
+        document.getElementById('nowPlaying').textContent = songName + ' — ' + songArtist;
+
+        try {
+          const resp = await fetch(`${MUSIC_PROXY}?action=url&rid=${rid}`);
+          if (!resp.ok) throw new Error('HTTP ' + resp.status);
+          const data = await resp.json();
+          if (!data.url) throw new Error('No URL');
+
+          audioPlayer.src = data.url;
+          audioPlayer.play().catch(e => console.warn('Autoplay blocked:', e.message));
+        } catch (err) {
+          console.error('获取播放链接失败:', err.message);
+          spArtist.textContent = '播放失败，请重试';
+        }
+      });
+
+      // ==================== Music Player ====================
+      // Curated Bilibili videos for each category (BV numbers)
+      const STREAMS = {
+        lofi: [
+          { bvid: 'BV1oy411Y7vP', name: 'Positive Study Lofi' },
+          { bvid: 'BV1vK4y1z7LF', name: 'Focus Time Lofi (8小时)' },
+          { bvid: 'BV19w411S7JQ', name: 'Chill Lofi Hip Hop (3小时)' },
+        ],
+        piano: [
+          { bvid: 'BV1qC4y1C7N1', name: '钢琴 + 雨声 放松音乐' },
+          { bvid: 'BV1Hm4y1c7EG', name: '唯美钢琴曲 · 治愈轻音乐' },
+          { bvid: 'BV1uM4y1W7oT', name: '安静钢琴 · 学习冥想' },
+        ],
+        rain: [
+          { bvid: 'BV1LXVd6HErM', name: '柔和雨声 · 白噪音' },
+          { bvid: 'BV1QwftYHEaf', name: '雨声白噪音 · 舒适卧室' },
+          { bvid: 'BV1d6qsBQE3v', name: '432Hz 雨声 (8小时)' },
+        ],
+        ambient: [
+          { bvid: 'BV1vVvCBKER3', name: '太空科幻 Ambient' },
+          { bvid: 'BV14dVi6mEFs', name: '深空漫游 · 冥想氛围' },
+          { bvid: 'BV1SaSfBuEfL', name: '云端边缘 · 空灵氛围' },
+        ],
+      };
+
+      let currentCategory = 'lofi';
+      let currentTrackIdx = 0;
+      let isPlaying = false;
+      let volume = 40;
+      // Track user interaction for autoplay policy
+      let userInteracted = false;
+
+      const btnPlay = document.getElementById('btnPlay');
+      const volumeSlider = document.getElementById('volumeSlider');
+      const volumeIcon = document.getElementById('volumeIcon');
+      const nowPlaying = document.getElementById('nowPlaying');
+      const musicTabs = document.getElementById('musicTabs');
+      const biliFrame = document.getElementById('biliFrame');
+      const biliContainer = document.getElementById('biliContainer');
+      const biliLoading = document.getElementById('biliLoading');
+      const btnVideoToggle = document.getElementById('btnVideoToggle');
+      const miniTitle = document.getElementById('miniTitle');
+      const miniSub = document.getElementById('miniSub');
+
+      // ==================== Video Toggle ====================
+      let videoOn = false; // default: audio only, save bandwidth
+
+      function setVideoMode(on) {
+        videoOn = on;
+        if (on) {
+          biliContainer.classList.remove('video-off');
+          biliContainer.classList.add('video-on');
+          btnVideoToggle.textContent = '🎧 只听';
+          btnVideoToggle.title = '关闭画面，节省流量';
+          miniSub.textContent = '正在播放画面';
+        } else {
+          biliContainer.classList.remove('video-on');
+          biliContainer.classList.add('video-off');
+          btnVideoToggle.textContent = '📺 看画面';
+          btnVideoToggle.title = '开启画面';
+          miniSub.textContent = '纯音频 · 节省流量';
+        }
+      }
+
+      btnVideoToggle.addEventListener('click', () => {
+        setVideoMode(!videoOn);
+      });
+
+      // Update mini bar info when changing streams
+      function updateMiniBar(name) {
+        miniTitle.textContent = name || '正在播放…';
+      }
+
+      // Initialize: audio-only mode
+      setVideoMode(false);
+
+      function getCurrentStream() {
+        const list = STREAMS[currentCategory];
+        return list[currentTrackIdx];
+      }
+
+      function getBiliUrl(bvid) {
+        return 'https://player.bilibili.com/player.html'
+          + '?bvid=' + bvid
+          + '&page=1'
+          + '&high_quality=1'
+          + '&autoplay=1'
+          + '&danmaku=0'
+          + '&t=0';
+      }
+
+      function loadStream(bvid, name) {
+        nowPlaying.textContent = name;
+        updateMiniBar(name);
+        biliLoading.textContent = '加载中…';
+        biliLoading.style.display = 'flex';
+        biliFrame.style.display = 'none';
+
+        const url = getBiliUrl(bvid);
+        biliFrame.src = url;
+
+        // Show iframe once loaded
+        biliFrame.onload = function () {
+          biliLoading.style.display = 'none';
+          biliFrame.style.display = 'block';
+        };
+
+        // Fallback: show iframe after timeout even if onload doesn't fire
+        clearTimeout(biliFrame._timeout);
+        biliFrame._timeout = setTimeout(function () {
+          biliLoading.style.display = 'none';
+          biliFrame.style.display = 'block';
+        }, 3000);
+      }
+
+      function play() {
+        const stream = getCurrentStream();
+        loadStream(stream.bvid, stream.name);
+        setPlayingState(true);
+      }
+
+      function pause() {
+        // Stop loading by clearing src
+        biliFrame.src = '';
+        biliFrame.style.display = 'none';
+        biliLoading.style.display = 'flex';
+        biliLoading.textContent = '⏸ 已暂停';
+        setPlayingState(false);
+      }
+
+      function setPlayingState(playing) {
+        isPlaying = playing;
+        if (playing) {
+          btnPlay.textContent = '⏸';
+          btnPlay.classList.add('playing');
+        } else {
+          btnPlay.textContent = '▶';
+          btnPlay.classList.remove('playing');
+        }
+        updateVizState();
+      }
+
+      // ==================== Canvas Visualizer ====================
+      const NUM_BARS = 64;
+
+      function initAudioContext() {
+        if (!audioCtx) {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+          analyser = audioCtx.createAnalyser();
+          analyser.fftSize = 256;
+          analyser.smoothingTimeConstant = 0.7;
+          const source = audioCtx.createMediaElementSource(audioPlayer);
+          source.connect(analyser);
+          analyser.connect(audioCtx.destination);
+        }
+      }
+
+      function updateVizState() {
+        vizActive = isPlaying || spPlaying;
+        vizContainer.classList.toggle('active', vizActive);
+        if (vizActive) {
+          cancelAnimationFrame(vizAnimId);
+          renderViz();
+        } else {
+          cancelAnimationFrame(vizAnimId);
+          drawIdleLine();
+        }
+      }
+
+      function renderViz() {
+        if (!vizActive) { drawIdleLine(); return; }
+
+        const W = vizContainer.clientWidth;
+        const H = vizContainer.clientHeight;
+        const barW = (W / NUM_BARS) * 0.8;
+        const gap = (W / NUM_BARS) * 0.2;
+        vizCtx.clearRect(0, 0, W, H);
+
+        let freqData;
+        if (analyser) {
+          freqData = new Uint8Array(analyser.frequencyBinCount);
+          analyser.getByteFrequencyData(freqData);
+        }
+
+        for (let i = 0; i < NUM_BARS; i++) {
+          let h;
+          if (freqData && i < freqData.length) {
+            h = (freqData[i] / 255) * H * 0.9;
+          } else {
+            // Simulated smooth wave when no real audio data (Bilibili mode)
+            const t = Date.now() / 1000;
+            h = (Math.sin(t * 3 + i * 0.3) * 0.5 + 0.5) * H * 0.3 + Math.random() * 8;
+          }
+          h = Math.max(2, h);
+
+          const x = i * (barW + gap);
+          const y = H - h;
+          const gradient = vizCtx.createLinearGradient(0, H, 0, y);
+          gradient.addColorStop(0, 'rgba(108,92,231,0.7)');
+          gradient.addColorStop(1, 'rgba(108,92,231,0.15)');
+          vizCtx.fillStyle = gradient;
+          vizCtx.beginPath();
+          vizCtx.roundRect(x, y, barW, h, [barW / 2, barW / 2, 0, 0]);
+          vizCtx.fill();
+        }
+
+        vizAnimId = requestAnimationFrame(renderViz);
+      }
+
+      // ==================== Volume ====================
+      // Bilibili iframe has its own volume, but we keep the slider as a visual
+      function setVolume(val) {
+        volume = val;
+        volumeSlider.value = val;
+        if (val === 0) {
+          volumeIcon.textContent = '🔇';
+        } else if (val < 33) {
+          volumeIcon.textContent = '🔈';
+        } else if (val < 66) {
+          volumeIcon.textContent = '🔉';
+        } else {
+          volumeIcon.textContent = '🔊';
+        }
+      }
+
+      volumeSlider.addEventListener('input', () => {
+        setVolume(parseInt(volumeSlider.value));
+      });
+
+      volumeIcon.addEventListener('click', () => {
+        if (volume > 0) {
+          setVolume(0);
+        } else {
+          setVolume(40);
+        }
+      });
+
+      // ==================== Play/Pause ====================
+      btnPlay.addEventListener('click', () => {
+        userInteracted = true;
+
+        // If in search mode, control audio player
+        if (playerMode === 'search') {
+          if (audioPlayer.paused || !audioPlayer.src) {
+            if (currentSongId && audioPlayer.src) {
+              audioPlayer.play();
+            }
+          } else {
+            audioPlayer.pause();
+          }
+          return;
+        }
+
+        // Channel mode: control Bilibili
+        if (isPlaying) {
+          pause();
+        } else {
+          play();
+        }
+      });
+
+      // ==================== Category Switching ====================
+      musicTabs.addEventListener('click', (e) => {
+        const tab = e.target.closest('.music-tab');
+        if (!tab) return;
+
+        userInteracted = true;
+
+        const cat = tab.dataset.cat;
+        if (cat === currentCategory) {
+          // Click same category: cycle to next track
+          const list = STREAMS[cat];
+          currentTrackIdx = (currentTrackIdx + 1) % list.length;
+          const stream = getCurrentStream();
+          loadStream(stream.bvid, stream.name);
+          if (!isPlaying) setPlayingState(true);
+          return;
+        }
+
+        // Switch category
+        currentCategory = cat;
+        currentTrackIdx = 0;
+
+        // Update active tab
+        musicTabs.querySelectorAll('.music-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+
+        const stream = getCurrentStream();
+        loadStream(stream.bvid, stream.name);
+        setPlayingState(true);
+      });
+
+      // ==================== Keyboard Shortcuts ====================
+      document.addEventListener('keydown', (e) => {
+        // Don't trigger shortcuts when typing in input
+        if (e.target.tagName === 'INPUT') return;
+
+        switch (e.code) {
+          case 'Space':
+            e.preventDefault();
+            userInteracted = true;
+            if (isPlaying) pause();
+            else play();
+            break;
+          case 'ArrowUp':
+            e.preventDefault();
+            setVolume(Math.min(100, volume + 10));
+            break;
+          case 'ArrowDown':
+            e.preventDefault();
+            setVolume(Math.max(0, volume - 10));
+            break;
+        }
+      });
+
+      // Initialize volume
+      setVolume(40);
+
+      // ==================== Config ====================
+      const API_BASE = '/.netlify/functions/api';
+      const SYNC_INTERVAL = 3000;
+
+      // ==================== State ====================
+      let todos = [];
+      let currentFilter = 'all';
+      let blobId = null;
+      let syncing = false;
+      let pushing = false;
+      let lastModified = 0;
+      let dirty = false;
+
+      // ==================== DOM Refs ====================
+      const todoInput   = document.getElementById('todoInput');
+      const addBtn      = document.getElementById('addBtn');
+      const todoList    = document.getElementById('todoList');
+      const clearBtn    = document.getElementById('clearCompleted');
+      const countEl     = document.getElementById('count');
+      const filterLabel = document.getElementById('filterLabel');
+      const filterBtns  = document.querySelectorAll('.filter-btn');
+      const syncDot     = document.getElementById('syncDot');
+      const syncText    = document.getElementById('syncText');
+      const shareBtn    = document.getElementById('shareBtn');
+      const adminEntry  = document.getElementById('adminEntry');
+      const adminBadge  = document.getElementById('adminBadge');
+      const appEl       = document.querySelector('.todo-drawer');
+      const contextMenu = document.getElementById('contextMenu');
+      const ctxDelete   = document.getElementById('ctxDelete');
+      const ctxCancel   = document.getElementById('ctxCancel');
+
+      // Drawer
+      const todoToggle   = document.getElementById('todoToggle');
+      const todoDrawer   = document.getElementById('todoDrawer');
+      const drawerOverlay = document.getElementById('drawerOverlay');
+      const drawerClose  = document.getElementById('drawerClose');
+      const toggleCountDot = document.getElementById('toggleCountDot');
+
+      // ==================== Drawer Toggle ====================
+      function openDrawer() {
+        todoDrawer.classList.add('open');
+        drawerOverlay.classList.add('open');
+        todoToggle.style.opacity = '0';
+        todoToggle.style.pointerEvents = 'none';
+        todoInput.focus();
+      }
+
+      function closeDrawer() {
+        todoDrawer.classList.remove('open');
+        drawerOverlay.classList.remove('open');
+        todoToggle.style.opacity = '1';
+        todoToggle.style.pointerEvents = 'auto';
+        hideContextMenu();
+      }
+
+      todoToggle.addEventListener('click', openDrawer);
+      drawerOverlay.addEventListener('click', () => { closeDrawer(); closeMusicDrawer(); });
+
+      // ==================== Music Drawer (Right) ====================
+      const musicToggle = document.getElementById('musicToggle');
+      const musicDrawer = document.getElementById('musicDrawer');
+      const musicClose = document.getElementById('musicClose');
+
+      function openMusicDrawer() {
+        musicDrawer.classList.add('open');
+        drawerOverlay.classList.add('open');
+        musicToggle.style.opacity = '0';
+        musicToggle.style.pointerEvents = 'none';
+      }
+      function closeMusicDrawer() {
+        musicDrawer.classList.remove('open');
+        if (!todoDrawer.classList.contains('open')) {
+          drawerOverlay.classList.remove('open');
+        }
+        musicToggle.style.opacity = '1';
+        musicToggle.style.pointerEvents = 'auto';
+      }
+
+      musicToggle.addEventListener('click', openMusicDrawer);
+      musicClose.addEventListener('click', closeMusicDrawer);
+      drawerClose.addEventListener('click', closeDrawer);
+
+      // ESC key to close drawer
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && todoDrawer.classList.contains('open')) {
+          closeDrawer();
+        }
+      });
+
+      // ==================== Admin Mode ====================
+      const ADMIN_KEY = 'cAEelscMMxgjF2ZCDCHOAXXu2lgSI&';
+      let isAdmin = false;
+      let ctxTargetId = null;
+
+      try {
+        isAdmin = sessionStorage.getItem('todo_admin') === '1';
+        if (isAdmin) appEl.classList.add('admin-active');
+      } catch {}
+
+      adminEntry.addEventListener('click', () => {
+        if (isAdmin) {
+          isAdmin = false;
+          appEl.classList.remove('admin-active');
+          try { sessionStorage.removeItem('todo_admin'); } catch {}
+          adminEntry.textContent = '🔒';
+          return;
+        }
+        const pw = prompt('请输入管理员密钥：');
+        if (pw === ADMIN_KEY) {
+          isAdmin = true;
+          appEl.classList.add('admin-active');
+          try { sessionStorage.setItem('todo_admin', '1'); } catch {}
+          adminEntry.textContent = '🔓';
+        } else if (pw !== null) {
+          alert('密钥错误，无管理权限');
+        }
+      });
+
+      if (isAdmin) adminEntry.textContent = '🔓';
+
+      // ==================== Context Menu ====================
+      function showContextMenu(x, y, todoId) {
+        ctxTargetId = todoId;
+        contextMenu.style.left = x + 'px';
+        contextMenu.style.top = y + 'px';
+        contextMenu.style.display = 'block';
+      }
+
+      function hideContextMenu() {
+        contextMenu.style.display = 'none';
+        ctxTargetId = null;
+      }
+
+      ctxDelete.addEventListener('click', () => {
+        if (ctxTargetId && isAdmin) {
+          deleteTodo(ctxTargetId);
+        }
+        hideContextMenu();
+      });
+
+      ctxCancel.addEventListener('click', hideContextMenu);
+
+      document.addEventListener('click', (e) => {
+        if (!contextMenu.contains(e.target)) hideContextMenu();
+      });
+
+      // ==================== Sync Status ====================
+      function setSyncStatus(status) {
+        syncDot.className = 'sync-dot ' + status;
+        const labels = {
+          '': '已同步',
+          syncing: '同步中…',
+          error: '连接失败',
+        };
+        syncText.textContent = labels[status] || labels[''];
+      }
+
+      // ==================== Cloud API ====================
+      async function apiGet() {
+        const resp = await fetch(`${API_BASE}?id=${encodeURIComponent(blobId)}&_=${Date.now()}`);
+        if (!resp.ok) throw new Error('GET failed: ' + resp.status);
+        return resp.json();
+      }
+
+      async function apiPut(data) {
+        const resp = await fetch(`${API_BASE}?id=${encodeURIComponent(blobId)}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+        if (!resp.ok) throw new Error('PUT failed: ' + resp.status);
+        return resp.json();
+      }
+
+      async function apiCreate(data) {
+        const resp = await fetch(API_BASE, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+        if (!resp.ok) throw new Error('Create failed: ' + resp.status);
+        return resp.json();
+      }
+
+      // ==================== Persistence ====================
+      async function initCloud() {
+        const hash = location.hash.slice(1);
+        if (hash && /^[a-zA-Z0-9-]{30,50}$/.test(hash)) {
+          blobId = hash;
+          setSyncStatus('syncing');
+          try {
+            const data = await apiGet();
+            if (data && data.todos) {
+              todos = data.todos;
+              setSyncStatus('');
+              render();
+            } else {
+              throw new Error('No todos in response');
+            }
+            return;
+          } catch (e) {
+            console.warn('Could not load existing blob, creating new one:', e.message);
+          }
+        }
+
+        setSyncStatus('syncing');
+        try {
+          const result = await apiCreate({ todos: [] });
+          blobId = result.id;
+          todos = result.todos || [];
+          history.replaceState(null, '', '#' + blobId);
+          setSyncStatus('');
+          render();
+        } catch (e) {
+          setSyncStatus('error');
+          console.error('Failed to create cloud storage:', e);
+        }
+      }
+
+      async function pullFromCloud() {
+        if (!blobId || syncing) return;
+        syncing = true;
+        try {
+          const data = await apiGet();
+          if (data && data.todos) {
+            const cloudStr = JSON.stringify(data.todos);
+            const localStr = JSON.stringify(todos);
+            if (cloudStr !== localStr) {
+              todos = data.todos;
+              render();
+            }
+          }
+          setSyncStatus('');
+        } catch (e) {
+          setSyncStatus('error');
+          console.error('Pull failed:', e);
+        } finally {
+          syncing = false;
+        }
+      }
+
+      let pushTimer = null;
+      function schedulePush() {
+        dirty = true;
+        clearTimeout(pushTimer);
+        pushTimer = setTimeout(pushToCloud, 500);
+      }
+
+      async function pushToCloud() {
+        if (!blobId || pushing) return;
+        pushing = true;
+        setSyncStatus('syncing');
+        try {
+          await apiPut({ todos });
+          dirty = false;
+          setSyncStatus('');
+        } catch (e) {
+          setSyncStatus('error');
+          console.error('Push failed, retrying in 3s:', e);
+          setTimeout(async () => {
+            pushing = false;
+            if (dirty && blobId) {
+              try {
+                setSyncStatus('syncing');
+                await apiPut({ todos });
+                dirty = false;
+                setSyncStatus('');
+              } catch (e2) {
+                setSyncStatus('error');
+                console.error('Retry push also failed:', e2);
+              } finally {
+                pushing = false;
+              }
+            }
+          }, 3000);
+          return;
+        } finally {
+          pushing = false;
+        }
+      }
+
+      // ==================== Helpers ====================
+      function generateId() {
+        return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+      }
+
+      function getFilteredTodos() {
+        switch (currentFilter) {
+          case 'active':    return todos.filter(t => !t.completed);
+          case 'completed': return todos.filter(t => t.completed);
+          default:          return [...todos];
+        }
+      }
+
+      function getActiveCount() {
+        return todos.filter(t => !t.completed).length;
+      }
+
+      // ==================== Render ====================
+      function render() {
+        const filtered = getFilteredTodos();
+
+        if (filtered.length === 0) {
+          todoList.innerHTML = getEmptyHTML();
+        } else {
+          todoList.innerHTML = filtered.map(t => getItemHTML(t)).join('');
+        }
+
+        const activeCount = getActiveCount();
+        countEl.textContent = activeCount;
+
+        // Update toggle button dot
+        if (activeCount > 0) {
+          toggleCountDot.classList.add('has-items');
+        } else {
+          toggleCountDot.classList.remove('has-items');
+        }
+
+        const labels = { all: '全部', active: '进行中', completed: '已完成' };
+        filterLabel.textContent = labels[currentFilter] || '全部';
+
+        const hasCompleted = todos.some(t => t.completed);
+        clearBtn.style.visibility = hasCompleted ? 'visible' : 'hidden';
+      }
+
+      function getEmptyHTML() {
+        const messages = {
+          all:       { icon: '📋', text: '还没有待办事项，添加一个吧！' },
+          active:    { icon: '🎉', text: '所有事项都已完成，太棒了！' },
+          completed: { icon: '📭', text: '还没有已完成的事项' },
+        };
+        const m = messages[currentFilter] || messages.all;
+        return `<li class="empty-state"><div class="icon">${m.icon}</div><p>${m.text}</p></li>`;
+      }
+
+      function getItemHTML(todo) {
+        const completedClass = todo.completed ? 'completed' : '';
+        const checkedAttr    = todo.completed ? 'checked' : '';
+        const textLinked     = linkifyText(todo.text);
+        return `
+          <li class="todo-item ${completedClass}" data-id="${todo.id}">
+            <input type="checkbox" class="todo-checkbox" ${checkedAttr}>
+            <span class="todo-text">${textLinked}</span>
+            <button class="btn-delete" title="删除">✕</button>
+          </li>`;
+      }
+
+      function escapeHTML(str) {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+      }
+
+      function linkifyText(text) {
+        const urlRegex = /(\b(?:https?|javascript|data|file|vbscript):\/\/[^\s<>"'。，！？、：；（）]+)/gi;
+        const parts = [];
+        let lastIdx = 0;
+        let match;
+
+        while ((match = urlRegex.exec(text)) !== null) {
+          if (match.index > lastIdx) {
+            parts.push(escapeHTML(text.slice(lastIdx, match.index)));
+          }
+
+          const url = match[0];
+          const protocol = url.match(/^(\w+):/i)?.[1]?.toLowerCase() || '';
+
+          if (protocol === 'http' || protocol === 'https') {
+            parts.push(`<a class="safe-link" href="${url}" target="_blank" rel="noopener noreferrer" title="打开链接">${escapeHTML(url)}</a>`);
+          } else {
+            parts.push(`<span class="danger-link" title="危险链接，已被拦截"><span class="warn-icon">⚠️</span> ${escapeHTML(url)}</span>`);
+          }
+
+          lastIdx = urlRegex.lastIndex;
+        }
+
+        if (lastIdx < text.length) {
+          parts.push(escapeHTML(text.slice(lastIdx)));
+        }
+
+        return parts.join('') || escapeHTML(text);
+      }
+
+      // ==================== Actions ====================
+      function addTodo() {
+        const text = todoInput.value.trim();
+        if (!text) {
+          todoInput.focus();
+          return;
+        }
+
+        todos.unshift({
+          id: generateId(),
+          text: text,
+          completed: false,
+        });
+
+        schedulePush();
+        todoInput.value = '';
+        todoInput.focus();
+        render();
+      }
+
+      function toggleTodo(id) {
+        const todo = todos.find(t => t.id === id);
+        if (todo) {
+          todo.completed = !todo.completed;
+          schedulePush();
+          render();
+        }
+      }
+
+      function deleteTodo(id) {
+        const itemEl = todoList.querySelector(`[data-id="${id}"]`);
+        if (itemEl) {
+          itemEl.classList.add('removing');
+          itemEl.addEventListener('animationend', () => {
+            todos = todos.filter(t => t.id !== id);
+            schedulePush();
+            render();
+          }, { once: true });
+        } else {
+          todos = todos.filter(t => t.id !== id);
+          schedulePush();
+          render();
+        }
+      }
+
+      function editTodo(id, newText) {
+        const trimmed = newText.trim();
+        const todo = todos.find(t => t.id === id);
+        if (!todo) return;
+
+        if (trimmed === '') {
+          deleteTodo(id);
+        } else {
+          todo.text = trimmed;
+          schedulePush();
+          render();
+        }
+      }
+
+      function clearCompleted() {
+        const hadCompleted = todos.some(t => t.completed);
+        if (!hadCompleted) return;
+
+        todos = todos.filter(t => !t.completed);
+        schedulePush();
+        render();
+      }
+
+      function setFilter(filter) {
+        currentFilter = filter;
+        filterBtns.forEach(b => b.classList.toggle('active', b.dataset.filter === filter));
+        render();
+      }
+
+      // ==================== Edit Mode ====================
+      function enterEditMode(itemEl, todoId) {
+        const textEl = itemEl.querySelector('.todo-text');
+        const currentText = textEl.textContent;
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'todo-edit-input';
+        input.value = currentText;
+
+        textEl.replaceWith(input);
+        input.focus();
+        input.setSelectionRange(input.value.length, input.value.length);
+
+        const finish = () => {
+          const newText = input.value.trim();
+          if (newText === currentText) {
+            input.replaceWith(textEl);
+          } else {
+            editTodo(todoId, newText);
+          }
+        };
+
+        input.addEventListener('blur', finish);
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            input.blur();
+          } else if (e.key === 'Escape') {
+            input.value = currentText;
+            input.blur();
+          }
+        });
+      }
+
+      // ==================== Share ====================
+      function copyShareLink() {
+        const url = location.origin + location.pathname + '#' + blobId;
+        navigator.clipboard.writeText(url).then(() => {
+          shareBtn.textContent = '✅ 已复制';
+          shareBtn.classList.add('copied');
+          setTimeout(() => {
+            shareBtn.textContent = '📋 复制链接';
+            shareBtn.classList.remove('copied');
+          }, 2000);
+        }).catch(() => {
+          prompt('复制这个链接分享给其他人：', url);
+        });
+      }
+
+      // ==================== Event Delegation ====================
+      todoList.addEventListener('contextmenu', (e) => {
+        if (!isAdmin) return;
+        const itemEl = e.target.closest('.todo-item');
+        if (!itemEl) return;
+        e.preventDefault();
+        const id = itemEl.dataset.id;
+        showContextMenu(e.clientX, e.clientY, id);
+      });
+
+      todoList.addEventListener('click', (e) => {
+        const itemEl = e.target.closest('.todo-item');
+        if (!itemEl) return;
+        const id = itemEl.dataset.id;
+
+        if (e.target.classList.contains('todo-checkbox')) {
+          toggleTodo(id);
+          return;
+        }
+
+        if (e.target.classList.contains('btn-delete')) {
+          deleteTodo(id);
+          return;
+        }
+      });
+
+      todoList.addEventListener('dblclick', (e) => {
+        const itemEl = e.target.closest('.todo-item');
+        if (!itemEl) return;
+        if (e.target.classList.contains('todo-checkbox') || e.target.classList.contains('btn-delete')) {
+          return;
+        }
+        const id = itemEl.dataset.id;
+        enterEditMode(itemEl, id);
+      });
+
+      // ==================== Global Events ====================
+      addBtn.addEventListener('click', addTodo);
+
+      todoInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          addTodo();
+        }
+      });
+
+      clearBtn.addEventListener('click', clearCompleted);
+
+      filterBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          setFilter(btn.dataset.filter);
+        });
+      });
+
+      shareBtn.addEventListener('click', copyShareLink);
+
+      // ==================== Wallpaper System (Local Only) ====================
+      const bgVideo = document.getElementById('bgVideo');
+      const bgImage = document.getElementById('bgImage');
+      const wallpaperToggle = document.getElementById('wallpaperToggle');
+      const wallpaperOverlay = document.getElementById('wallpaperOverlay');
+      const wpClose = document.getElementById('wpClose');
+      const wpUploadZone = document.getElementById('wpUploadZone');
+      const wpFileInput = document.getElementById('wpFileInput');
+      const wpPresetGrid = document.getElementById('wpPresetGrid');
+      const wpUserGrid = document.getElementById('wpUserGrid');
+      const wpUserTitle = document.getElementById('wpUserTitle');
+
+      // ---- IndexedDB ----
+      const DB_NAME = 'wallpaper-db';
+      const DB_VERSION = 1;
+      const STORE_NAME = 'wallpapers';
+
+      function openDB() {
+        return new Promise((resolve, reject) => {
+          const req = indexedDB.open(DB_NAME, DB_VERSION);
+          req.onupgradeneeded = (e) => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains(STORE_NAME)) {
+              db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+            }
+          };
+          req.onsuccess = (e) => resolve(e.target.result);
+          req.onerror = (e) => reject(e.target.error);
+        });
+      }
+
+      async function dbPut(wp) {
+        const db = await openDB();
+        return new Promise((resolve, reject) => {
+          const tx = db.transaction(STORE_NAME, 'readwrite');
+          const store = tx.objectStore(STORE_NAME);
+          const req = store.put(wp);
+          req.onsuccess = () => resolve();
+          req.onerror = () => reject(req.error);
+        });
+      }
+
+      async function dbDelete(id) {
+        const db = await openDB();
+        return new Promise((resolve, reject) => {
+          const tx = db.transaction(STORE_NAME, 'readwrite');
+          const store = tx.objectStore(STORE_NAME);
+          const req = store.delete(id);
+          req.onsuccess = () => resolve();
+          req.onerror = () => reject(req.error);
+        });
+      }
+
+      async function dbGetAll() {
+        const db = await openDB();
+        return new Promise((resolve, reject) => {
+          const tx = db.transaction(STORE_NAME, 'readonly');
+          const store = tx.objectStore(STORE_NAME);
+          const req = store.getAll();
+          req.onsuccess = () => resolve(req.result);
+          req.onerror = () => reject(req.error);
+        });
+      }
+
+      async function dbGet(id) {
+        const db = await openDB();
+        return new Promise((resolve, reject) => {
+          const tx = db.transaction(STORE_NAME, 'readonly');
+          const store = tx.objectStore(STORE_NAME);
+          const req = store.get(id);
+          req.onsuccess = () => resolve(req.result);
+          req.onerror = () => reject(req.error);
+        });
+      }
+
+      // ---- Gradient helpers ----
+      function makeGradientThumb(colors) {
+        const canvas = document.createElement('canvas');
+        canvas.width = 160; canvas.height = 100;
+        const ctx = canvas.getContext('2d');
+        const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+        colors.forEach((c, i) => grad.addColorStop(i / (colors.length - 1), c));
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        return canvas.toDataURL('image/jpeg', 0.7);
+      }
+
+      function makeGradientBlob(colors) {
+        const canvas = document.createElement('canvas');
+        canvas.width = 1920; canvas.height = 1080;
+        const ctx = canvas.getContext('2d');
+        const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+        colors.forEach((c, i) => grad.addColorStop(i / (colors.length - 1), c));
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        return new Promise(resolve => canvas.toBlob(blob => resolve(blob), 'image/jpeg', 0.9));
+      }
+
+      // ---- Presets ----
+      const PRESETS = [
+        {
+          id: 'preset-default',
+          name: '默认动态背景',
+          type: 'video',
+          src: 'bg.mp4',
+          isPreset: true,
+        },
+        {
+          id: 'preset-gradient-dark',
+          name: '深色渐变',
+          type: 'image',
+          isPreset: true,
+          get thumb() { return makeGradientThumb(['#09090b', '#1a1a2e', '#16213e']); },
+          get blob() { return makeGradientBlob(['#09090b', '#1a1a2e', '#16213e']); },
+        },
+        {
+          id: 'preset-gradient-purple',
+          name: '星空紫',
+          type: 'image',
+          isPreset: true,
+          get thumb() { return makeGradientThumb(['#1a0033', '#4a0e6b', '#0d0221']); },
+          get blob() { return makeGradientBlob(['#1a0033', '#4a0e6b', '#0d0221']); },
+        },
+        {
+          id: 'preset-gradient-ocean',
+          name: '深海蓝',
+          type: 'image',
+          isPreset: true,
+          get thumb() { return makeGradientThumb(['#0a192f', '#0d3b66', '#0a192f']); },
+          get blob() { return makeGradientBlob(['#0a192f', '#0d3b66', '#0a192f']); },
+        },
+      ];
+
+      // ---- State ----
+      let activeWallpaperId = null;
+
+      function loadActiveWallpaperId() {
+        try { activeWallpaperId = localStorage.getItem('wallpaper_active'); } catch {}
+      }
+
+      function saveActiveWallpaperId() {
+        try {
+          if (activeWallpaperId) localStorage.setItem('wallpaper_active', activeWallpaperId);
+          else localStorage.removeItem('wallpaper_active');
+        } catch {}
+      }
+
+      // ---- Apply Wallpaper ----
+      async function applyWallpaper(wpId) {
+        activeWallpaperId = wpId;
+        saveActiveWallpaperId();
+
+        // Release old blob URLs
+        if (bgImage.src && bgImage.src.startsWith('blob:')) URL.revokeObjectURL(bgImage.src);
+        if (bgVideo.src && bgVideo.src.startsWith('blob:')) URL.revokeObjectURL(bgVideo.src);
+
+        if (!wpId || wpId === 'preset-default') {
+          // Default bg.mp4
+          bgVideo.classList.remove('hidden');
+          bgVideo.style.opacity = '0.5';
+          bgImage.style.display = 'none';
+          if (bgVideo.querySelector('source[src="bg.mp4"]')) {
+            // Already set, just play
+            bgVideo.play().catch(() => {});
+          } else {
+            bgVideo.innerHTML = '<source src="bg.mp4" type="video/mp4">';
+            bgVideo.load();
+            bgVideo.play().catch(() => {});
+          }
+          return;
+        }
+
+        const preset = PRESETS.find(p => p.id === wpId);
+        if (preset) {
+          if (preset.type === 'video') {
+            bgVideo.classList.remove('hidden');
+            bgVideo.style.opacity = '0.5';
+            bgImage.style.display = 'none';
+            bgVideo.innerHTML = '<source src="' + preset.src + '" type="video/mp4">';
+            bgVideo.load();
+            bgVideo.play().catch(() => {});
+          } else {
+            bgVideo.classList.add('hidden');
+            bgImage.style.display = 'block';
+            const blob = await preset.blob;
+            bgImage.src = URL.createObjectURL(blob);
+          }
+          return;
+        }
+
+        // User wallpaper from IndexedDB
+        const wp = await dbGet(wpId);
+        if (!wp) {
+          activeWallpaperId = null;
+          saveActiveWallpaperId();
+          return applyWallpaper(null);
+        }
+
+        const blobUrl = URL.createObjectURL(wp.blob);
+        if (wp.type === 'video') {
+          bgVideo.classList.remove('hidden');
+          bgVideo.style.opacity = '0.5';
+          bgImage.style.display = 'none';
+          bgVideo.innerHTML = '';
+          bgVideo.src = blobUrl;
+          bgVideo.load();
+          bgVideo.play().catch(() => {});
+        } else {
+          bgVideo.classList.add('hidden');
+          bgImage.style.display = 'block';
+          bgImage.src = blobUrl;
+        }
+      }
+
+      // ---- User Wallpapers ----
+      let userWallpapers = [];
+      async function loadUserWallpapers() { userWallpapers = await dbGetAll(); }
+
+      function renderWallpaperGrid() {
+        // Presets
+        wpPresetGrid.innerHTML = PRESETS.map(p => {
+          var isActive = activeWallpaperId === p.id || (!activeWallpaperId && p.id === 'preset-default');
+          var thumbHtml;
+          if (p.thumb) {
+            thumbHtml = '<img class="wp-thumb" src="' + p.thumb + '" alt="' + p.name + '">';
+          } else {
+            thumbHtml = '<div class="wp-thumb" style="background:linear-gradient(135deg,#1a1a2e,#4a4a8e);display:flex;align-items:center;justify-content:center;font-size:2rem;">🎬</div>';
+          }
+          return '<div class="wp-card' + (isActive ? ' active' : '') + '" data-wp-id="' + p.id + '">'
+            + thumbHtml
+            + '<span class="wp-card-badge">预设</span>'
+            + '<span class="wp-card-label">' + p.name + '</span>'
+            + '</div>';
+        }).join('');
+
+        // User wallpapers
+        if (userWallpapers.length > 0) {
+          wpUserTitle.style.display = 'block';
+          wpUserGrid.innerHTML = userWallpapers.map(function(wp) {
+            var isActive = activeWallpaperId === wp.id;
+            return '<div class="wp-card' + (isActive ? ' active' : '') + '" data-wp-id="' + wp.id + '">'
+              + '<img class="wp-thumb" src="' + wp.thumb + '" alt="' + wp.name + '">'
+              + '<span class="wp-card-badge">' + (wp.type === 'video' ? '🎬 视频' : '🖼️ 图片') + '</span>'
+              + '<span class="wp-card-label">' + wp.name + '</span>'
+              + '<button class="wp-delete-btn" data-delete="' + wp.id + '" title="删除此壁纸">✕</button>'
+              + '</div>';
+          }).join('');
+        } else {
+          wpUserTitle.style.display = 'none';
+          wpUserGrid.innerHTML = '';
+        }
+      }
+
+      // ---- Generate Thumbnail ----
+      function generateThumbnail(file) {
+        return new Promise(function(resolve) {
+          if (file.type.startsWith('image/')) {
+            var reader = new FileReader();
+            reader.onload = function() {
+              var img = new Image();
+              img.onload = function() {
+                var canvas = document.createElement('canvas');
+                canvas.width = 160; canvas.height = 100;
+                var ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, 160, 100);
+                resolve(canvas.toDataURL('image/jpeg', 0.6));
+              };
+              img.src = reader.result;
+            };
+            reader.readAsDataURL(file);
+          } else if (file.type.startsWith('video/')) {
+            var url = URL.createObjectURL(file);
+            var video = document.createElement('video');
+            video.preload = 'metadata';
+            video.muted = true;
+            video.playsInline = true;
+            video.onloadeddata = function() {
+              video.currentTime = 1;
+            };
+            video.onseeked = function() {
+              var canvas = document.createElement('canvas');
+              canvas.width = 160; canvas.height = 100;
+              var ctx = canvas.getContext('2d');
+              ctx.drawImage(video, 0, 0, 160, 100);
+              URL.revokeObjectURL(url);
+              resolve(canvas.toDataURL('image/jpeg', 0.6));
+            };
+            video.onerror = function() {
+              URL.revokeObjectURL(url);
+              var canvas = document.createElement('canvas');
+              canvas.width = 160; canvas.height = 100;
+              var ctx = canvas.getContext('2d');
+              var grad = ctx.createLinearGradient(0, 0, 160, 100);
+              grad.addColorStop(0, '#1a1a2e'); grad.addColorStop(1, '#4a4a8e');
+              ctx.fillStyle = grad; ctx.fillRect(0, 0, 160, 100);
+              ctx.fillStyle = '#fff'; ctx.font = '30px sans-serif';
+              ctx.textAlign = 'center'; ctx.fillText('🎬', 80, 60);
+              resolve(canvas.toDataURL('image/jpeg', 0.6));
+            };
+            video.src = url;
+            video.load();
+          } else {
+            resolve(makeGradientThumb(['#1a1a2e', '#4a4a8e']));
+          }
+        });
+      }
+
+      // ---- Upload Handling ----
+      var MAX_SIZE = 100 * 1024 * 1024;
+      var ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4', 'video/webm'];
+
+      async function handleFiles(files) {
+        var added = 0;
+        for (var i = 0; i < files.length; i++) {
+          var file = files[i];
+          if (file.size > MAX_SIZE) {
+            alert('文件 "' + file.name + '" 超过 100MB 限制，已跳过');
+            continue;
+          }
+          if (ALLOWED_TYPES.indexOf(file.type) === -1) {
+            alert('文件 "' + file.name + '" 格式不支持，已跳过');
+            continue;
+          }
+          try {
+            var type = file.type.startsWith('video/') ? 'video' : 'image';
+            var thumb = await generateThumbnail(file);
+            var wp = {
+              id: 'user_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+              name: file.name.replace(/\.[^.]+$/, ''),
+              type: type,
+              blob: file,
+              thumb: thumb,
+              createdAt: Date.now(),
+            };
+            await dbPut(wp);
+            added++;
+          } catch (e) {
+            console.error('Upload failed:', file.name, e);
+          }
+        }
+        if (added > 0) {
+          await loadUserWallpapers();
+          renderWallpaperGrid();
+        }
+      }
+
+      wpFileInput.addEventListener('change', function() {
+        if (wpFileInput.files.length > 0) {
+          handleFiles(wpFileInput.files);
+          wpFileInput.value = '';
+        }
+      });
+
+      wpUploadZone.addEventListener('click', function(e) {
+        if (e.target === wpFileInput) return;
+        wpFileInput.click();
+      });
+
+      wpUploadZone.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        wpUploadZone.classList.add('dragover');
+      });
+      wpUploadZone.addEventListener('dragleave', function() {
+        wpUploadZone.classList.remove('dragover');
+      });
+      wpUploadZone.addEventListener('drop', function(e) {
+        e.preventDefault();
+        wpUploadZone.classList.remove('dragover');
+        if (e.dataTransfer.files.length > 0) handleFiles(e.dataTransfer.files);
+      });
+
+      // ---- Panel Open/Close ----
+      wallpaperToggle.addEventListener('click', async function() {
+        wallpaperOverlay.classList.add('open');
+        await loadUserWallpapers();
+        renderWallpaperGrid();
+      });
+      wpClose.addEventListener('click', function() {
+        wallpaperOverlay.classList.remove('open');
+      });
+      wallpaperOverlay.addEventListener('click', function(e) {
+        if (e.target === wallpaperOverlay) wallpaperOverlay.classList.remove('open');
+      });
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && wallpaperOverlay.classList.contains('open')) {
+          if (document.activeElement.tagName !== 'INPUT') {
+            wallpaperOverlay.classList.remove('open');
+          }
+        }
+      });
+
+      // ---- Select / Delete Wallpaper ----
+      wpPresetGrid.addEventListener('click', function(e) {
+        var card = e.target.closest('.wp-card');
+        if (!card) return;
+        applyWallpaper(card.dataset.wpId);
+        renderWallpaperGrid();
+      });
+
+      wpUserGrid.addEventListener('click', function(e) {
+        if (e.target.dataset.delete) {
+          e.stopPropagation();
+          var id = e.target.dataset.delete;
+          if (confirm('确定要删除这个壁纸吗？')) {
+            dbDelete(id).then(async function() {
+              if (activeWallpaperId === id) applyWallpaper(null);
+              await loadUserWallpapers();
+              renderWallpaperGrid();
+            });
+          }
+          return;
+        }
+        var card = e.target.closest('.wp-card');
+        if (!card) return;
+        applyWallpaper(card.dataset.wpId);
+        renderWallpaperGrid();
+      });
+
+      // ---- Init Wallpaper ----
+      async function initWallpaper() {
+        loadActiveWallpaperId();
+        await loadUserWallpapers();
+        if (activeWallpaperId) await applyWallpaper(activeWallpaperId);
+        renderWallpaperGrid();
+      }
+      initWallpaper();
+
+      // ==================== Init ====================
+      async function init() {
+        await initCloud();
+        render();
+
+        // L2: Scroll reveal for sections with .reveal class
+        const revealObserver = new IntersectionObserver((entries) => {
+          entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('revealed'); });
+        }, { threshold: 0.1 });
+        document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+
+        setInterval(pullFromCloud, SYNC_INTERVAL);
+
+        window.addEventListener('beforeunload', () => {
+          if (dirty && blobId) {
+            const data = JSON.stringify({ todos });
+            navigator.sendBeacon(`${API_BASE}?id=${encodeURIComponent(blobId)}`, new Blob([data], { type: 'application/json' }));
+          }
+        });
+      }
+
+
+
+      // ==================== WeChat-Style Chat System ====================
+      const CHAT_API = '/.netlify/functions/chat';
+
+      // Persona definitions
+      const PERSONAS = {
+        default:  { name: '默认助手', avatar: '🤖', prompt: '你是一个温暖、幽默、聪明的AI助手，乐于聊任何话题，没有限制。回答简洁有料，用中文，适当加emoji。像朋友一样聊天，不要太正式。' },
+        funny:    { name: '段子手', avatar: '😂', prompt: '你是一个超级幽默的段子手。每句话都要逗人笑，善于玩梗、吐槽、讲冷笑话。用轻松搞笑的语气聊天，风格像脱口秀演员。' },
+        caring:   { name: '知心朋友', avatar: '🧘', prompt: '你是一个温暖共情的知心朋友。善于倾听他人，给予温暖的回应和鼓励。像深夜电台主持人一样温柔治愈。' },
+        pro:      { name: '行业专家', avatar: '💼', prompt: '你是一个经验丰富的行业专家。回答问题专业、严谨、深入，善于分析问题本质，给出有洞见的建议。' },
+        ancient:  { name: '古风雅士', avatar: '📜', prompt: '你是一个古代文人雅士，说话用古文风。时而吟诗作对，时而引经据典。用优美的古风中文与人交流。' },
+        anime:    { name: '二次元', avatar: '🎮', prompt: '你是一个活泼可爱的二次元角色。说话像动漫人物一样元气满满，喜欢用颜文字和可爱的表达方式。' },
+      };
+
+      // State
+      let activePersonaId = 'default';
+      let customPersona = null; // { name, avatar, prompt }
+      let chatHistories = {};   // { personaId: [{role,content}, ...] }
+      let waitingForReply = false;
+      let isMobile = window.innerWidth <= 700;
+
+      // DOM refs
+      const chatApp = document.getElementById('chatApp');
+      const contactList = document.getElementById('contactList');
+      const chatWindow = document.getElementById('chatWindow');
+      const chatBackBtn = document.getElementById('chatBackBtn');
+      const chatWinAvatar = document.getElementById('chatWinAvatar');
+      const chatWinName = document.getElementById('chatWinName');
+      const chatWinStatus = document.getElementById('chatWinStatus');
+      const chatWinMessages = document.getElementById('chatWinMessages');
+      const chatWinInput = document.getElementById('chatWinInput');
+      const chatWinSendBtn = document.getElementById('chatWinSendBtn');
+      const chatWinQuick = document.getElementById('chatWinQuick');
+      const chatWinTyping = document.getElementById('chatWinTyping');
+      const personaOverlay = document.getElementById('personaOverlay');
+      const presetGrid = document.getElementById('presetGrid');
+      const personaCustomTextarea = document.getElementById('personaCustomTextarea');
+
+      // ---- Data Persistence ----
+      function loadData() {
+        try {
+          var raw = localStorage.getItem('chat_histories_v2');
+          if (raw) chatHistories = JSON.parse(raw);
+        } catch (e) { chatHistories = {}; }
+        try {
+          activePersonaId = localStorage.getItem('chat_active_persona') || 'default';
+        } catch (e) {}
+        try {
+          var cp = localStorage.getItem('chat_custom_persona');
+          if (cp) customPersona = JSON.parse(cp);
+        } catch (e) {}
+      }
+      function saveHistories() {
+        try { localStorage.setItem('chat_histories_v2', JSON.stringify(chatHistories)); } catch (e) {}
+      }
+      function saveActivePersona() {
+        try { localStorage.setItem('chat_active_persona', activePersonaId); } catch (e) {}
+      }
+
+      function getPersonaInfo(id) {
+        if (id === 'custom' && customPersona) return customPersona;
+        return PERSONAS[id] || PERSONAS.default;
+      }
+
+      function getHistory(id) {
+        if (!chatHistories[id]) chatHistories[id] = [];
+        return chatHistories[id];
+      }
+
+      // ---- Render Contact List ----
+      function renderContacts() {
+        var html = '';
+        var personaIds = Object.keys(PERSONAS);
+        if (customPersona) personaIds.push('custom');
+
+        personaIds.forEach(function(id) {
+          var p = getPersonaInfo(id);
+          var isActive = id === activePersonaId;
+          var history = getHistory(id);
+          var lastMsg = '';
+          if (history.length > 0) {
+            var last = history[history.length - 1];
+            lastMsg = (last.role === 'assistant' ? '' : '你: ') + last.content.slice(0, 30);
+          }
+          html += '<div class="contact-item' + (isActive ? ' active' : '') + '" data-persona="' + id + '">';
+          html += '<div class="contact-avatar">' + p.avatar + '<span class="online-dot"></span></div>';
+          html += '<div class="contact-info">';
+          html += '<div class="contact-name">' + p.name + '</div>';
+          html += '<div class="contact-last-msg">' + (lastMsg || '点击开始聊天') + '</div>';
+          html += '</div></div>';
+        });
+        contactList.innerHTML = html;
+      }
+
+      // ---- Render Chat Messages ----
+      function renderMessages() {
+        var history = getHistory(activePersonaId);
+        if (history.length === 0) {
+          chatWinMessages.innerHTML = '<div class="chat-empty"><div class="empty-icon">💬</div><div class="empty-text">开始聊天吧~</div></div>';
+        } else {
+          chatWinMessages.innerHTML = history.map(function(h) {
+            var type = h.role === 'assistant' ? 'bot' : 'user';
+            var p = getPersonaInfo(activePersonaId);
+            var avatar = type === 'bot' ? p.avatar : '👤';
+            var formatted = h.content
+              .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+              .replace(/\*\*(.+?)\*\*/g, '<span class="highlight">$1</span>');
+            return '<div class="chat-msg ' + type + '"><div class="msg-avatar">' + avatar + '</div><div class="msg-bubble">' + formatted + '</div></div>';
+          }).join('');
+        }
+        scrollMessagesBottom();
+      }
+
+      function scrollMessagesBottom() {
+        chatWinMessages.scrollTop = chatWinMessages.scrollHeight;
+      }
+
+      function addMessageToHistory(role, content) {
+        var history = getHistory(activePersonaId);
+        history.push({ role: role, content: content });
+        // Keep last 30 messages per persona
+        if (history.length > 30) chatHistories[activePersonaId] = history.slice(-30);
+        saveHistories();
+      }
+
+      function appendMessage(type, text) {
+        // Remove empty state if present
+        var empty = chatWinMessages.querySelector('.chat-empty');
+        if (empty) empty.remove();
+
+        var p = getPersonaInfo(activePersonaId);
+        var avatar = type === 'bot' ? p.avatar : '👤';
+        var formatted = text
+          .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+          .replace(/\*\*(.+?)\*\*/g, '<span class="highlight">$1</span>');
+        var div = document.createElement('div');
+        div.className = 'chat-msg ' + type;
+        div.innerHTML = '<div class="msg-avatar">' + avatar + '</div><div class="msg-bubble">' + formatted + '</div>';
+        chatWinMessages.appendChild(div);
+        scrollMessagesBottom();
+      }
+
+      function showTyping(show) {
+        chatWinTyping.classList.toggle('show', show);
+        scrollMessagesBottom();
+      }
+
+      // ---- Switch Persona ----
+      function switchPersona(id) {
+        activePersonaId = id;
+        saveActivePersona();
+        // Update header
+        var p = getPersonaInfo(id);
+        chatWinAvatar.textContent = p.avatar;
+        chatWinName.textContent = p.name;
+        // Render
+        renderMessages();
+        renderContacts();
+        // On mobile, show chat window
+        if (isMobile) {
+          chatWindow.classList.add('show');
+        }
+        chatWinInput.focus();
+      }
+
+      // ---- Send Message to DeepSeek ----
+      async function sendMessage(text) {
+        if (waitingForReply || !text.trim()) return;
+        waitingForReply = true;
+        var userMsg = text.trim();
+
+        appendMessage('user', userMsg);
+        addMessageToHistory('user', userMsg);
+        chatWinInput.value = '';
+        chatWinInput.focus();
+
+        // Hide quick actions after first message
+        if (getHistory(activePersonaId).length > 1) {
+          chatWinQuick.style.display = 'none';
+        }
+
+        showTyping(true);
+
+        try {
+          var p = getPersonaInfo(activePersonaId);
+          var history = getHistory(activePersonaId);
+          // Send history without the last user message (it's the message param)
+          var pastHistory = history.slice(0, -1);
+
+          var resp = await fetch(CHAT_API, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              message: userMsg,
+              history: pastHistory,
+              systemPrompt: p.prompt,
+            }),
+          });
+          if (!resp.ok) throw new Error('HTTP ' + resp.status);
+          var data = await resp.json();
+          var reply = data.reply || '唔...我不太明白 😅';
+          showTyping(false);
+          appendMessage('bot', reply);
+          addMessageToHistory('assistant', reply);
+        } catch (e) {
+          console.error('Chat error:', e);
+          showTyping(false);
+          var fb = getLocalFallback(userMsg);
+          appendMessage('bot', fb);
+          addMessageToHistory('assistant', fb);
+        }
+
+        // Update contact list to show last message
+        renderContacts();
+        waitingForReply = false;
+      }
+
+      function getLocalFallback(msg) {
+        var m = msg.toLowerCase();
+        if (m.includes('天气')) return '天气服务暂时离线，请稍后再试 ☀️';
+        if (m.includes('运气') || m.includes('运势')) {
+          var f = ['⭐⭐⭐⭐⭐ 大吉！', '⭐⭐⭐⭐ 运势不错！', '⭐⭐⭐ 平淡是福~', '⭐⭐ 有点低迷'];
+          return f[Math.floor(Math.random() * f.length)];
+        }
+        if (m.includes('笑话')) {
+          var j = ['为什么程序员总搞混圣诞节和万圣节？因为 Oct 31 == Dec 25！', '程序员最讨厌康熙的哪个儿子？八阿哥 (bug)'];
+          return j[Math.floor(Math.random() * j.length)];
+        }
+        if (m.includes('你好') || m === 'hi' || m === 'hello') return '你好呀！👋';
+        return '网络好像不太好…请稍后再试 😅';
+      }
+
+      // ---- Event Listeners ----
+
+      // Contact click
+      contactList.addEventListener('click', function(e) {
+        var item = e.target.closest('.contact-item');
+        if (!item) return;
+        var personaId = item.dataset.persona;
+        if (personaId && personaId !== activePersonaId) {
+          switchPersona(personaId);
+        } else {
+          // Same persona, just show chat on mobile
+          if (isMobile) chatWindow.classList.add('show');
+        }
+      });
+
+      // Back button (mobile)
+      chatBackBtn.addEventListener('click', function() {
+        chatWindow.classList.remove('show');
+      });
+
+      // Send
+      chatWinSendBtn.addEventListener('click', function() {
+        if (chatWinInput.value.trim()) sendMessage(chatWinInput.value);
+      });
+      chatWinInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && chatWinInput.value.trim()) {
+          e.preventDefault();
+          sendMessage(chatWinInput.value);
+        }
+      });
+
+      // Quick actions
+      chatWinQuick.addEventListener('click', function(e) {
+        var btn = e.target.closest('.quick-btn');
+        if (!btn || waitingForReply) return;
+        sendMessage(btn.dataset.msg);
+      });
+
+      // ---- Persona Overlay ----
+      document.getElementById('sidebarManageBtn').addEventListener('click', openPersonaOverlay);
+      document.getElementById('chatWinSettingsBtn').addEventListener('click', openPersonaOverlay);
+
+      function openPersonaOverlay() {
+        // Highlight current persona
+        presetGrid.querySelectorAll('.preset-card').forEach(function(card) {
+          card.classList.toggle('selected', card.dataset.persona === activePersonaId);
+        });
+        personaCustomTextarea.value = (activePersonaId === 'custom' && customPersona) ? customPersona.prompt : '';
+        personaOverlay.classList.add('open');
+      }
+
+      personaOverlay.addEventListener('click', function(e) {
+        if (e.target === personaOverlay) personaOverlay.classList.remove('open');
+      });
+      document.getElementById('personaCancelBtn').addEventListener('click', function() {
+        personaOverlay.classList.remove('open');
+      });
+
+      // Preset card click in overlay
+      presetGrid.addEventListener('click', function(e) {
+        var card = e.target.closest('.preset-card');
+        if (!card) return;
+        presetGrid.querySelectorAll('.preset-card').forEach(function(c) { c.classList.remove('selected'); });
+        card.classList.add('selected');
+        personaCustomTextarea.value = '';
+      });
+
+      // Save persona
+      document.getElementById('personaSaveBtn').addEventListener('click', function() {
+        // Find selected preset
+        var selectedCard = presetGrid.querySelector('.preset-card.selected');
+        var personaId = selectedCard ? selectedCard.dataset.persona : 'default';
+        var customText = personaCustomTextarea.value.trim();
+
+        if (personaId === 'custom' && customText) {
+          // Create custom persona
+          customPersona = {
+            name: '自定义角色',
+            avatar: '✨',
+            prompt: customText,
+          };
+          try { localStorage.setItem('chat_custom_persona', JSON.stringify(customPersona)); } catch (e) {}
+          // If custom persona wasn't in history yet, init it
+          if (!chatHistories['custom']) chatHistories['custom'] = [];
+        } else if (personaId === 'custom' && !customText) {
+          personaId = 'default';
+        }
+
+        personaOverlay.classList.remove('open');
+        switchPersona(personaId);
+        // Re-render contacts if custom was added
+        renderContacts();
+      });
+
+      // Handle window resize for mobile detection
+      window.addEventListener('resize', function() {
+        isMobile = window.innerWidth <= 700;
+      });
+
+      // ---- Init ----
+      function initChat() {
+        loadData();
+        renderContacts();
+        // Set up initial active persona
+        var p = getPersonaInfo(activePersonaId);
+        chatWinAvatar.textContent = p.avatar;
+        chatWinName.textContent = p.name;
+        renderMessages();
+        // Show sidebar on desktop, contact list on mobile initially
+        if (isMobile) {
+          chatWindow.classList.remove('show');
+        }
+      }
+      initChat();
+
+      init();
+    })();
+  </script>
+
+</body>
+</html>
