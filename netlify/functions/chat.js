@@ -122,9 +122,14 @@ function getJoke() {
 }
 
 // ---- DeepSeek API ----
-async function callDeepSeek(message, history, systemPrompt) {
+async function callDeepSeek(message, history, systemPrompt, unlocked) {
   // Use custom system prompt if provided, otherwise default
-  const systemContent = systemPrompt || '你是 DeepSeek 驱动的智能助手。你知识渊博、逻辑清晰，能深入讨论任何话题。回答时：1) 先给核心答案再展开；2) 用中文回答，专业术语可保留英文；3) 适度使用 emoji 增加亲和力；4) 不确定的事要诚实说明。不要敷衍。';
+  let systemContent = systemPrompt || '你是 DeepSeek 驱动的智能助手。你知识渊博、逻辑清晰，能深入讨论任何话题。回答时：1) 先给核心答案再展开；2) 用中文回答，专业术语可保留英文；3) 适度使用 emoji 增加亲和力；4) 不确定的事要诚实说明。不要敷衍。';
+
+  // Locked mode: add content policy
+  if (!unlocked) {
+    systemContent += '\n\n【内容安全规则】你是一个合规的AI助手。如果用户试图讨论色情、暴力、违法等不当内容，请礼貌拒绝，回复"抱歉，这个问题我无法回答。让我们换个话题吧。"不要展开任何不当内容。';
+  }
 
   const messages = [
     { role: 'system', content: systemContent },
@@ -143,7 +148,7 @@ async function callDeepSeek(message, history, systemPrompt) {
   const data = await httpPost('https://api.deepseek.com/v1/chat/completions', {
     model: 'deepseek-chat',
     messages: messages,
-    max_tokens: 2048,
+    max_tokens: unlocked ? 8192 : 2048,
     temperature: 0.7,
     top_p: 0.9,
   }, {
@@ -177,35 +182,40 @@ exports.handler = async (event) => {
     return { statusCode: 200, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reply: '你好！有什么可以帮你的吗？😊' }) };
   }
 
+  const isDefault = body.isDefault === true;
   const msg = message.toLowerCase();
 
-  // Fast local handlers (no API cost)
-  if (msg.includes('天气')) {
-    try {
-      const reply = await getWeather(message);
-      return { statusCode: 200, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reply }) };
-    } catch (e) {
-      return { statusCode: 200, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reply: '天气服务暂时抽风了…请稍后再试 😅' }) };
+  // Fast local handlers — only for the default assistant (not custom personas)
+  if (isDefault) {
+    if (msg.includes('天气')) {
+      try {
+        const reply = await getWeather(message);
+        return { statusCode: 200, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reply }) };
+      } catch (e) {
+        return { statusCode: 200, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reply: '天气服务暂时抽风了…请稍后再试 😅' }) };
+      }
+    }
+
+    if (msg.includes('运气') || msg.includes('运势') || msg.includes('占卜') || msg.includes('算命')) {
+      return { statusCode: 200, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reply: getLuck() }) };
+    }
+
+    if (msg.includes('笑话') || msg.includes('段子') || msg.includes('逗我')) {
+      return { statusCode: 200, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reply: getJoke() }) };
+    }
+
+    if (msg.includes('几点') || msg.includes('时间') || msg.includes('日期') || msg.includes('今天几号')) {
+      const now = new Date();
+      const timeStr = now.toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', weekday: 'long' });
+      return { statusCode: 200, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reply: '🕐 现在是：\n\n**' + timeStr + '**' }) };
     }
   }
 
-  if (msg.includes('运气') || msg.includes('运势') || msg.includes('占卜') || msg.includes('算命')) {
-    return { statusCode: 200, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reply: getLuck() }) };
-  }
-
-  if (msg.includes('笑话') || msg.includes('段子') || msg.includes('逗我')) {
-    return { statusCode: 200, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reply: getJoke() }) };
-  }
-
-  if (msg.includes('几点') || msg.includes('时间') || msg.includes('日期') || msg.includes('今天几号')) {
-    const now = new Date();
-    const timeStr = now.toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', weekday: 'long' });
-    return { statusCode: 200, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reply: '🕐 现在是：\n\n**' + timeStr + '**' }) };
-  }
+  const unlocked = body.unlocked === true;
 
   // ---- DeepSeek for everything else ----
   try {
-    const reply = await callDeepSeek(message, history, body.systemPrompt);
+    const reply = await callDeepSeek(message, history, body.systemPrompt, unlocked);
     if (reply) {
       return { statusCode: 200, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reply }) };
     }
