@@ -1,41 +1,22 @@
-// Netlify Function — AI Chat: weather/luck/jokes locally + DeepSeek for everything else
-const https = require('https');
-const DEEPSEEK_KEY = process.env.DEEPSEEK_API_KEY;
+// Cloudflare Pages Function — AI Chat: weather/luck/jokes locally + DeepSeek for everything else
 
-function fetchJSON(url) {
-  return new Promise((resolve, reject) => {
-    https.get(url, { headers: { 'User-Agent': 'TodoApp/1.0' } }, (res) => {
-      let data = '';
-      res.on('data', chunk => data += chunk);
-      res.on('end', () => {
-        try { resolve(JSON.parse(data)); }
-        catch (e) { reject(e); }
-      });
-    }).on('error', reject);
-  });
+async function fetchJSON(url) {
+  const resp = await fetch(url, { headers: { 'User-Agent': 'TodoApp/1.0' } });
+  return await resp.json();
 }
 
-function httpPost(url, body, headers) {
-  return new Promise((resolve, reject) => {
-    const urlObj = new URL(url);
-    const options = {
-      hostname: urlObj.hostname,
-      path: urlObj.pathname + urlObj.search,
-      method: 'POST',
-      headers: Object.assign({ 'Content-Type': 'application/json' }, headers),
-    };
-    const req = https.request(options, (res) => {
-      let data = '';
-      res.on('data', chunk => data += chunk);
-      res.on('end', () => {
-        try { resolve(JSON.parse(data)); }
-        catch (e) { resolve({ raw: data }); }
-      });
-    });
-    req.on('error', reject);
-    req.write(JSON.stringify(body));
-    req.end();
+async function httpPost(url, body, headers) {
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers: Object.assign({ 'Content-Type': 'application/json' }, headers),
+    body: JSON.stringify(body),
   });
+  try {
+    return await resp.json();
+  } catch (e) {
+    const text = await resp.text();
+    return { raw: text };
+  }
 }
 
 // ---- Weather (Open-Meteo, free) ----
@@ -122,7 +103,7 @@ function getJoke() {
 }
 
 // ---- DeepSeek API ----
-async function callDeepSeek(message, history, systemPrompt, unlocked) {
+async function callDeepSeek(message, history, systemPrompt, unlocked, DEEPSEEK_KEY) {
   // Use custom system prompt if provided, otherwise default
   let systemContent = systemPrompt || '你是 DeepSeek 驱动的智能助手。你知识渊博、逻辑清晰，能深入讨论任何话题。回答时：1) 先给核心答案再展开；2) 用中文回答，专业术语可保留英文；3) 适度使用 emoji 增加亲和力；4) 不确定的事要诚实说明。不要敷衍。';
 
@@ -168,13 +149,19 @@ async function callDeepSeek(message, history, systemPrompt, unlocked) {
 }
 
 // ---- Main Handler ----
-exports.handler = async (event) => {
-  if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 204, headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Content-Type' } };
+export async function onRequest(context) {
+  const { request, env } = context;
+  const DEEPSEEK_KEY = env.DEEPSEEK_API_KEY;
+
+  if (request.method === 'OPTIONS') {
+    return new Response(null, {
+      status: 204,
+      headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Content-Type' },
+    });
   }
 
   let body = {};
-  try { body = JSON.parse(event.body || '{}'); } catch (e) {}
+  try { const text = await request.text(); if (text) body = JSON.parse(text); } catch (e) {}
 
   const message = (body.message || '').trim();
   const history = body.history || [];
@@ -185,19 +172,29 @@ exports.handler = async (event) => {
     try {
       const summary = await callDeepSeek(
         '请将以下对话记录压缩为一段简洁的摘要（150字以内），保留：1) 对话发生的场景和主题 2) 用户的关键信息和偏好 3) 最近讨论的话题方向。输出纯文本摘要，不要加"摘要："等前缀。',
-        [],  // no history for compression
+        [],
         '你是「' + personaName + '」的对话摘要助手。你的任务是将对话历史压缩为简洁摘要，帮助' + personaName + '在后续对话中记住之前的内容。只输出摘要文本，不要加任何前缀或格式。',
-        true  // unlocked (no content filter for summaries)
+        true,
+        DEEPSEEK_KEY
       );
-      return { statusCode: 200, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ summary: summary || '' }) };
+      return new Response(JSON.stringify({ summary: summary || '' }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
     } catch (e) {
       console.error('Compression failed:', e.message);
-      return { statusCode: 500, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ error: e.message }) };
+      return new Response(JSON.stringify({ error: e.message }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
   }
 
   if (!message) {
-    return { statusCode: 200, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reply: '你好！有什么可以帮你的吗？😊' }) };
+    return new Response(JSON.stringify({ reply: '你好！有什么可以帮你的吗？😊' }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 
   const isDefault = body.isDefault === true;
@@ -208,24 +205,39 @@ exports.handler = async (event) => {
     if (msg.includes('天气')) {
       try {
         const reply = await getWeather(message);
-        return { statusCode: 200, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reply }) };
+        return new Response(JSON.stringify({ reply }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
       } catch (e) {
-        return { statusCode: 200, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reply: '天气服务暂时抽风了…请稍后再试 😅' }) };
+        return new Response(JSON.stringify({ reply: '天气服务暂时抽风了…请稍后再试 😅' }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
       }
     }
 
     if (msg.includes('运气') || msg.includes('运势') || msg.includes('占卜') || msg.includes('算命')) {
-      return { statusCode: 200, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reply: getLuck() }) };
+      return new Response(JSON.stringify({ reply: getLuck() }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     if (msg.includes('笑话') || msg.includes('段子') || msg.includes('逗我')) {
-      return { statusCode: 200, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reply: getJoke() }) };
+      return new Response(JSON.stringify({ reply: getJoke() }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     if (msg.includes('几点') || msg.includes('时间') || msg.includes('日期') || msg.includes('今天几号')) {
       const now = new Date();
       const timeStr = now.toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', weekday: 'long' });
-      return { statusCode: 200, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reply: '🕐 现在是：\n\n**' + timeStr + '**' }) };
+      return new Response(JSON.stringify({ reply: '🕐 现在是：\n\n**' + timeStr + '**' }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
   }
 
@@ -233,9 +245,12 @@ exports.handler = async (event) => {
 
   // ---- DeepSeek for everything else ----
   try {
-    const reply = await callDeepSeek(message, history, body.systemPrompt, unlocked);
+    const reply = await callDeepSeek(message, history, body.systemPrompt, unlocked, DEEPSEEK_KEY);
     if (reply) {
-      return { statusCode: 200, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reply }) };
+      return new Response(JSON.stringify({ reply }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
   } catch (e) {
     console.error('DeepSeek call failed:', e.message);
@@ -248,5 +263,8 @@ exports.handler = async (event) => {
     '哈哈，你接着说~ 👂',
     '大脑有点短路了…再说一遍？😅',
   ];
-  return { statusCode: 200, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reply: fallbacks[Math.floor(Math.random() * fallbacks.length)] }) };
-};
+  return new Response(JSON.stringify({ reply: fallbacks[Math.floor(Math.random() * fallbacks.length)] }), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' },
+  });
+}

@@ -7,2350 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
-  <style>
-    /* ========== Reset & Base ========== */
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    :root {
-      /* Backgrounds */
-      --bg: #09090b;
-      --surface: rgba(255,255,255,0.03);
-      --surface-alt: rgba(255,255,255,0.05);
-      --surface-hover: rgba(255,255,255,0.07);
-
-      /* Borders */
-      --border: rgba(255,255,255,0.06);
-      --border-hover: rgba(255,255,255,0.12);
-
-      /* Text */
-      --text: #f4f4f6;
-      --text-secondary: #a1a1aa;
-      --text-tertiary: #71717a;
-
-      /* Accent */
-      --accent: #6c5ce7;
-      --accent-hover: #7c6ff7;
-      --accent-soft: rgba(108,92,231,0.12);
-      --accent-rgb: 108,92,231;
-
-      /* Semantic */
-      --success: #22c55e;
-      --danger: #ef4444;
-      --warning: #f59e0b;
-
-      /* Radius */
-      --radius-sm: 6px;
-      --radius: 10px;
-      --radius-lg: 14px;
-
-      /* Shadows */
-      --shadow-sm: 0 1px 2px rgba(0,0,0,0.4);
-      --shadow: 0 4px 12px rgba(0,0,0,0.5);
-      --shadow-lg: 0 8px 24px rgba(0,0,0,0.6);
-
-      /* Drawer */
-      --drawer-width: 420px;
-      --transition: 0.2s ease;
-    }
-
-    body {
-      font-family: 'Inter', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-      min-height: 100vh;
-      background: var(--bg);
-      color: var(--text);
-      -webkit-font-smoothing: antialiased;
-      overflow-x: clip;
-    }
-
-    /* ========== Dino Link — Top Left ========== */
-    .dino-link {
-      position: fixed;
-      top: 20px;
-      left: 20px;
-      z-index: 1000;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      text-decoration: none;
-      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-      cursor: pointer;
-    }
-
-    .dino-link:hover {
-      transform: scale(1.1) rotate(-3deg);
-    }
-
-    .dino-link:hover .dino-bubble {
-      opacity: 1;
-      transform: translateX(0);
-    }
-
-    .dino-svg {
-      width: 56px;
-      height: 56px;
-      filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3));
-      transition: filter 0.3s;
-    }
-
-    .dino-link:hover .dino-svg {
-      filter: drop-shadow(0 6px 18px rgba(255, 200, 100, 0.5));
-    }
-
-    .dino-bubble {
-      background: #fff;
-      color: #2d3436;
-      padding: 6px 14px;
-      border-radius: 14px;
-      font-size: 0.8rem;
-      font-weight: 600;
-      white-space: nowrap;
-      opacity: 0;
-      transform: translateX(-10px);
-      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-      box-shadow: 0 2px 10px rgba(0,0,0,0.15);
-      position: relative;
-    }
-
-    .dino-bubble::after {
-      content: '';
-      position: absolute;
-      left: -6px;
-      top: 50%;
-      transform: translateY(-50%);
-      border: 6px solid transparent;
-      border-right-color: #fff;
-    }
-
-    /* Dino walk animation */
-    @keyframes dinoBounce {
-      0%, 100% { transform: translateY(0); }
-      30% { transform: translateY(-6px); }
-      60% { transform: translateY(-2px); }
-    }
-
-    .dino-link {
-      animation: dinoBounce 2s ease-in-out infinite;
-    }
-    .dino-link:hover {
-      animation: none;
-    }
-
-    /* ========== Main Content Area ========== */
-    .main-content {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      padding: 40px;
-    }
-
-    /* ========== Music Player (inside right drawer) ========== */
-    .music-drawer {
-      position: fixed;
-      top: 0;
-      right: 0;
-      width: var(--drawer-width);
-      max-width: 90vw;
-      height: 100vh;
-      background: rgba(15,15,18,0.96);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      z-index: 2100;
-      transform: translateX(100%);
-      transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-      display: flex;
-      flex-direction: column;
-      box-shadow: var(--shadow-lg);
-      border-left: 1px solid var(--border);
-      overflow-y: auto;
-    }
-    .music-drawer.open { transform: translateX(0); }
-
-    .music-drawer-inner {
-      flex: 1;
-      overflow-y: auto;
-      padding: 28px 24px 20px;
-    }
-
-    .music-close {
-      position: absolute;
-      top: 14px;
-      right: 14px;
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      border: 1px solid var(--border);
-      background: var(--surface);
-      cursor: pointer;
-      font-size: 1rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: var(--transition);
-      z-index: 10;
-      color: var(--text-secondary);
-    }
-    .music-close:hover {
-      background: rgba(239,68,68,0.15);
-      color: var(--danger);
-      border-color: var(--danger);
-    }
-
-    /* Right edge music toggle */
-    .music-toggle {
-      position: fixed;
-      right: 0;
-      top: 50%;
-      transform: translateY(-50%);
-      z-index: 1100;
-      width: 44px;
-      height: 80px;
-      background: var(--accent);
-      border: none;
-      border-radius: 14px 0 0 14px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 0 20px var(--accent-soft);
-      transition: all 0.25s ease;
-      color: #fff;
-      font-size: 1.1rem;
-      writing-mode: vertical-lr;
-    }
-    .music-toggle:hover {
-      background: var(--accent-hover);
-      box-shadow: 0 0 30px rgba(var(--accent-rgb), 0.5);
-    }
-
-    .player-header {
-      text-align: center;
-      margin-bottom: 24px;
-    }
-
-    .player-header .player-title {
-      font-size: 1.3rem;
-      font-weight: 700;
-      color: rgba(255,255,255,0.9);
-      letter-spacing: -0.3px;
-    }
-
-    .player-header .now-playing {
-      font-size: 0.82rem;
-      color: rgba(255,255,255,0.45);
-      margin-top: 4px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    /* === Category Tabs === */
-    .music-tabs {
-      display: flex;
-      gap: 6px;
-      margin-bottom: 24px;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-
-    .music-tab {
-      padding: 8px 18px;
-      border-radius: 20px;
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      background: transparent;
-      color: rgba(255, 255, 255, 0.55);
-      font-size: 0.82rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.25s ease;
-      white-space: nowrap;
-      font-family: inherit;
-    }
-
-    .music-tab:hover {
-      color: rgba(255, 255, 255, 0.85);
-      border-color: rgba(255, 255, 255, 0.35);
-      background: rgba(255, 255, 255, 0.05);
-    }
-
-    .music-tab.active {
-      background: var(--accent);
-      border-color: var(--accent);
-      color: #fff;
-      box-shadow: 0 4px 16px rgba(var(--accent-rgb), 0.4);
-    }
-
-    /* === Visualizer === */
-    /* ===== Center Visualizer ===== */
-    .center-visualizer { display: none; }
-
-
-
-    /* ========== Chat App (Main Center, WeChat Style) ========== */
-    .chat-app {
-      position: relative;
-      width: var(--chat-w, 780px);
-      max-width: 94vw;
-      height: var(--chat-h, 600px);
-      max-height: calc(100vh - 120px);
-      min-width: 380px;
-      min-height: 400px;
-      margin: auto;
-      cursor: grab;
-      background: rgba(18,18,22,0.97);
-      backdrop-filter: blur(24px);
-      -webkit-backdrop-filter: blur(24px);
-      border: 1px solid rgba(255,255,255,0.06);
-      border-radius: 16px;
-      display: flex;
-      overflow: hidden;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.03) inset;
-      z-index: 100;
-      animation: chatAppIn 0.5s ease;
-      transition: none; /* resize is instant */
-    }
-    @keyframes chatAppIn {
-      from { opacity: 0; transform: translateY(16px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* Resize handle — bottom-right corner */
-    .chat-resize-handle {
-      position: absolute;
-      bottom: 0;
-      right: 0;
-      width: 24px;
-      height: 24px;
-      cursor: nwse-resize;
-      z-index: 20;
-      background: linear-gradient(135deg, transparent 60%, rgba(255,255,255,0.15) 60%);
-      border-radius: 0 0 15px 0;
-      transition: opacity 0.2s;
-    }
-    .chat-resize-handle:hover {
-      background: linear-gradient(135deg, transparent 50%, rgba(var(--accent-rgb), 0.4) 50%);
-    }
-
-    /* Reset size button — top-right of chat window header */
-    .chat-reset-size-btn {
-      width: 30px; height: 30px;
-      border-radius: 50%;
-      border: 1px solid rgba(255,255,255,0.08);
-      background: transparent;
-      color: rgba(255,255,255,0.4);
-      cursor: pointer;
-      font-size: 0.85rem;
-      display: flex; align-items: center; justify-content: center;
-      transition: all 0.2s;
-      flex-shrink: 0;
-    }
-    .chat-reset-size-btn:hover {
-      background: rgba(255,255,255,0.08);
-      color: #fff;
-      border-color: rgba(255,255,255,0.2);
-    }
-
-    /* Unlock button */
-    .chat-unlock-btn {
-      width: 30px; height: 30px;
-      border-radius: 50%;
-      border: 1px solid rgba(255,255,255,0.08);
-      background: transparent;
-      color: rgba(255,255,255,0.4);
-      cursor: pointer;
-      font-size: 0.85rem;
-      display: flex; align-items: center; justify-content: center;
-      transition: all 0.2s;
-      flex-shrink: 0;
-    }
-    .chat-unlock-btn:hover {
-      background: rgba(255,255,255,0.08);
-      color: #fff;
-      border-color: rgba(255,255,255,0.2);
-    }
-    .chat-unlock-btn.unlocked {
-      background: rgba(34,197,94,0.15);
-      color: var(--success);
-      border-color: rgba(34,197,94,0.3);
-      box-shadow: 0 0 8px rgba(34,197,94,0.2);
-    }
-
-    /* ---- Sidebar (Contact List) ---- */
-    .chat-sidebar {
-      width: 260px;
-      flex-shrink: 0;
-      border-right: 1px solid rgba(255,255,255,0.06);
-      display: flex;
-      flex-direction: column;
-      background: rgba(255,255,255,0.015);
-    }
-
-    .sidebar-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 16px 16px 12px;
-      flex-shrink: 0;
-    }
-    .sidebar-title {
-      font-size: 0.95rem;
-      font-weight: 700;
-      color: rgba(255,255,255,0.85);
-      letter-spacing: -0.3px;
-    }
-    .sidebar-manage-btn {
-      width: 30px; height: 30px;
-      border-radius: 50%;
-      border: 1px solid rgba(255,255,255,0.1);
-      background: transparent;
-      color: rgba(255,255,255,0.5);
-      cursor: pointer;
-      font-size: 1rem;
-      display: flex; align-items: center; justify-content: center;
-      transition: all 0.2s;
-    }
-    .sidebar-manage-btn:hover {
-      background: rgba(255,255,255,0.08);
-      color: #fff;
-    }
-
-    .contact-list {
-      flex: 1;
-      overflow-y: auto;
-      padding: 4px 8px 8px;
-    }
-    .contact-list::-webkit-scrollbar { width: 3px; }
-    .contact-list::-webkit-scrollbar-thumb {
-      background: rgba(255,255,255,0.06); border-radius: 2px;
-    }
-
-    .contact-item {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 10px 12px;
-      border-radius: 10px;
-      cursor: pointer;
-      transition: all 0.2s;
-      margin-bottom: 2px;
-    }
-    .contact-item:hover {
-      background: rgba(255,255,255,0.05);
-    }
-    .contact-item.active {
-      background: rgba(var(--accent-rgb), 0.15);
-      border: 1px solid rgba(var(--accent-rgb), 0.2);
-    }
-    .contact-item.unread::after {
-      content: '';
-      width: 8px; height: 8px;
-      border-radius: 50%;
-      background: var(--accent);
-      flex-shrink: 0;
-      margin-left: auto;
-    }
-
-    .contact-avatar {
-      width: 42px; height: 42px;
-      border-radius: 50%;
-      flex-shrink: 0;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 1.2rem;
-      background: rgba(255,255,255,0.06);
-      position: relative;
-    }
-    .contact-avatar .online-dot {
-      position: absolute;
-      bottom: 2px; right: 2px;
-      width: 10px; height: 10px;
-      border-radius: 50%;
-      background: var(--success);
-      border: 2px solid rgba(18,18,22,1);
-    }
-
-    .contact-info {
-      flex: 1;
-      min-width: 0;
-    }
-    .contact-name {
-      font-size: 0.84rem;
-      font-weight: 600;
-      color: rgba(255,255,255,0.85);
-      margin-bottom: 2px;
-    }
-    .contact-last-msg {
-      font-size: 0.7rem;
-      color: rgba(255,255,255,0.3);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    /* ---- Chat Window ---- */
-    .chat-window {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      min-width: 0;
-      background: rgba(0,0,0,0.15);
-    }
-
-    .chat-win-header {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 12px 16px;
-      border-bottom: 1px solid rgba(255,255,255,0.06);
-      flex-shrink: 0;
-      background: rgba(255,255,255,0.02);
-    }
-    .chat-back-btn {
-      display: none;
-      width: 30px; height: 30px;
-      border-radius: 50%;
-      border: none;
-      background: transparent;
-      color: rgba(255,255,255,0.5);
-      cursor: pointer;
-      font-size: 1.1rem;
-      transition: all 0.2s;
-    }
-    .chat-back-btn:hover { color: #fff; }
-    .chat-win-avatar {
-      width: 38px; height: 38px;
-      border-radius: 50%;
-      background: rgba(255,255,255,0.08);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 1.1rem;
-      flex-shrink: 0;
-    }
-    .chat-win-info { flex: 1; min-width: 0; }
-    .chat-win-name {
-      font-size: 0.88rem;
-      font-weight: 600;
-      color: rgba(255,255,255,0.9);
-    }
-    .chat-win-status {
-      font-size: 0.68rem;
-      color: var(--success);
-    }
-    .chat-win-settings-btn {
-      width: 30px; height: 30px;
-      border-radius: 50%;
-      border: 1px solid rgba(255,255,255,0.08);
-      background: transparent;
-      color: rgba(255,255,255,0.4);
-      cursor: pointer;
-      font-size: 0.85rem;
-      display: flex; align-items: center; justify-content: center;
-      transition: all 0.2s;
-    }
-    .chat-win-settings-btn:hover {
-      background: rgba(255,255,255,0.08);
-      color: #fff;
-    }
-
-    /* Messages */
-    .chat-win-messages {
-      flex: 1;
-      overflow-y: auto;
-      padding: 16px 18px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      scroll-behavior: smooth;
-    }
-    .chat-win-messages::-webkit-scrollbar { width: 4px; }
-    .chat-win-messages::-webkit-scrollbar-thumb {
-      background: rgba(255,255,255,0.06); border-radius: 2px;
-    }
-
-    .chat-msg {
-      display: flex;
-      gap: 8px;
-      max-width: 82%;
-      animation: msgSlideIn 0.25s ease;
-    }
-    @keyframes msgSlideIn {
-      from { opacity: 0; transform: translateY(6px) scale(0.98); }
-      to { opacity: 1; transform: translateY(0) scale(1); }
-    }
-    .chat-msg.bot { align-self: flex-start; }
-    .chat-msg.user {
-      align-self: flex-end;
-      flex-direction: row-reverse;
-    }
-
-    .chat-msg .msg-avatar {
-      width: 32px; height: 32px;
-      border-radius: 50%;
-      flex-shrink: 0;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 0.8rem;
-      margin-top: 2px;
-    }
-    .chat-msg.bot .msg-avatar { background: rgba(255,255,255,0.08); }
-    .chat-msg.user .msg-avatar { background: rgba(var(--accent-rgb), 0.2); }
-
-    .chat-msg .msg-bubble {
-      padding: 10px 14px;
-      border-radius: 14px;
-      font-size: 0.85rem;
-      line-height: 1.6;
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
-    .chat-msg.bot .msg-bubble {
-      background: rgba(255,255,255,0.05);
-      color: rgba(255,255,255,0.88);
-      border-top-left-radius: 4px;
-    }
-    .chat-msg.user .msg-bubble {
-      background: rgba(var(--accent-rgb), 0.25);
-      color: #fff;
-      border-top-right-radius: 4px;
-    }
-
-    .msg-bubble .highlight {
-      color: #fbbf24;
-      font-weight: 600;
-    }
-
-    /* Typing */
-    .chat-win-typing {
-      display: none;
-      align-self: flex-start;
-      margin-left: 48px;
-      padding: 8px 14px;
-      background: rgba(255,255,255,0.04);
-      border-radius: 14px;
-      border-top-left-radius: 4px;
-      gap: 4px;
-      margin-bottom: 4px;
-    }
-    .chat-win-typing.show { display: flex; }
-    .chat-win-typing span {
-      width: 5px; height: 5px;
-      border-radius: 50%;
-      background: rgba(255,255,255,0.25);
-      animation: tyBounce 1.2s infinite;
-    }
-    .chat-win-typing span:nth-child(2) { animation-delay: 0.2s; }
-    .chat-win-typing span:nth-child(3) { animation-delay: 0.4s; }
-    @keyframes tyBounce {
-      0%, 60%, 100% { transform: translateY(0); }
-      30% { transform: translateY(-6px); }
-    }
-
-    /* Quick actions */
-    .chat-win-quick {
-      display: flex;
-      gap: 6px;
-      padding: 8px 16px 4px;
-      flex-shrink: 0;
-      flex-wrap: wrap;
-    }
-    .quick-btn {
-      padding: 5px 12px;
-      border-radius: 14px;
-      border: 1px solid rgba(255,255,255,0.08);
-      background: rgba(255,255,255,0.03);
-      color: rgba(255,255,255,0.5);
-      font-size: 0.7rem;
-      cursor: pointer;
-      transition: all 0.2s;
-      font-family: inherit;
-      white-space: nowrap;
-    }
-    .quick-btn:hover {
-      background: rgba(var(--accent-rgb), 0.12);
-      border-color: rgba(var(--accent-rgb), 0.25);
-      color: #fff;
-    }
-
-    /* Input area */
-    .chat-win-input-area {
-      display: flex;
-      gap: 8px;
-      padding: 10px 14px 14px;
-      border-top: 1px solid rgba(255,255,255,0.05);
-      flex-shrink: 0;
-      background: rgba(255,255,255,0.015);
-    }
-    .chat-win-input-area input {
-      flex: 1;
-      padding: 10px 16px;
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 20px;
-      background: rgba(255,255,255,0.04);
-      color: #fff;
-      font-size: 0.85rem;
-      outline: none;
-      font-family: inherit;
-      transition: all 0.2s;
-    }
-    .chat-win-input-area input::placeholder {
-      color: rgba(255,255,255,0.18);
-    }
-    .chat-win-input-area input:focus {
-      border-color: rgba(var(--accent-rgb), 0.35);
-      background: rgba(255,255,255,0.06);
-      box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.08);
-    }
-    .chat-win-send-btn {
-      width: 40px; height: 40px;
-      border-radius: 50%;
-      border: none;
-      background: var(--accent);
-      color: #fff;
-      font-size: 1.1rem;
-      cursor: pointer;
-      flex-shrink: 0;
-      transition: all 0.2s;
-      display: flex; align-items: center; justify-content: center;
-    }
-    .chat-win-send-btn:hover {
-      background: var(--accent-hover);
-      transform: scale(1.06);
-    }
-    .chat-win-send-btn:active { transform: scale(0.94); }
-
-    /* ---- Persona Overlay ---- */
-    .persona-overlay {
-      position: fixed;
-      inset: 0;
-      z-index: 3500;
-      background: rgba(0,0,0,0.8);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-      opacity: 0;
-      visibility: hidden;
-      transition: all 0.3s ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-    }
-    .persona-overlay.open {
-      opacity: 1;
-      visibility: visible;
-    }
-
-    .persona-dialog {
-      background: rgba(22,22,28,0.99);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 16px;
-      width: 100%;
-      max-width: 500px;
-      max-height: 80vh;
-      overflow-y: auto;
-      padding: 24px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.7);
-      animation: dialogIn 0.3s ease;
-    }
-    @keyframes dialogIn {
-      from { opacity: 0; transform: translateY(16px) scale(0.96); }
-      to { opacity: 1; transform: translateY(0) scale(1); }
-    }
-    .persona-dialog h3 {
-      font-size: 1.1rem;
-      font-weight: 700;
-      margin-bottom: 4px;
-      color: rgba(255,255,255,0.9);
-    }
-    .persona-dialog .dialog-sub {
-      font-size: 0.75rem;
-      color: rgba(255,255,255,0.35);
-      margin-bottom: 18px;
-    }
-    .persona-dialog .preset-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      margin-bottom: 16px;
-    }
-    .persona-dialog .preset-card {
-      padding: 12px;
-      border-radius: 10px;
-      border: 1px solid rgba(255,255,255,0.08);
-      background: rgba(255,255,255,0.03);
-      cursor: pointer;
-      transition: all 0.2s;
-      text-align: center;
-    }
-    .persona-dialog .preset-card:hover {
-      background: rgba(255,255,255,0.06);
-      border-color: rgba(255,255,255,0.15);
-    }
-    .persona-dialog .preset-card.selected {
-      border-color: var(--accent);
-      background: rgba(var(--accent-rgb), 0.12);
-      box-shadow: 0 0 12px rgba(var(--accent-rgb), 0.2);
-    }
-    .preset-card .preset-avatar {
-      font-size: 1.4rem; margin-bottom: 4px;
-    }
-    .preset-card .preset-name {
-      font-size: 0.8rem; color: rgba(255,255,255,0.8); font-weight: 600;
-    }
-    .preset-card .preset-desc {
-      font-size: 0.66rem; color: rgba(255,255,255,0.35); margin-top: 2px;
-    }
-
-    .persona-dialog .custom-input-area {
-      margin-top: 8px;
-    }
-    .persona-dialog .custom-input-area label {
-      font-size: 0.75rem;
-      color: rgba(255,255,255,0.4);
-      display: block;
-      margin-bottom: 6px;
-    }
-    .persona-dialog .custom-input-area textarea {
-      width: 100%;
-      padding: 10px 12px;
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 10px;
-      background: rgba(255,255,255,0.04);
-      color: #fff;
-      font-size: 0.8rem;
-      font-family: inherit;
-      resize: vertical;
-      min-height: 60px;
-      outline: none;
-      transition: all 0.2s;
-    }
-    .persona-dialog .custom-input-area textarea:focus {
-      border-color: rgba(var(--accent-rgb), 0.35);
-      background: rgba(255,255,255,0.06);
-    }
-    .persona-dialog .dialog-actions {
-      display: flex;
-      gap: 8px;
-      justify-content: flex-end;
-      margin-top: 16px;
-    }
-    .persona-dialog .dialog-btn {
-      padding: 8px 18px;
-      border-radius: 8px;
-      border: 1px solid rgba(255,255,255,0.1);
-      background: transparent;
-      color: rgba(255,255,255,0.6);
-      font-size: 0.8rem;
-      cursor: pointer;
-      font-family: inherit;
-      transition: all 0.2s;
-    }
-    .persona-dialog .dialog-btn:hover { background: rgba(255,255,255,0.06); color: #fff; }
-    .persona-dialog .dialog-btn.primary {
-      background: var(--accent);
-      border-color: var(--accent);
-      color: #fff;
-    }
-    .persona-dialog .dialog-btn.primary:hover { background: var(--accent-hover); }
-    .persona-dialog .dialog-btn.danger-btn {
-      color: var(--danger);
-      border-color: transparent;
-    }
-    .persona-dialog .dialog-btn.danger-btn:hover {
-      background: rgba(239,68,68,0.15);
-      border-color: rgba(239,68,68,0.3);
-    }
-
-    /* Avatar picker */
-    .avatar-picker-wrap {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      margin-bottom: 16px;
-    }
-    .avatar-preview {
-      width: 56px; height: 56px;
-      border-radius: 50%;
-      background: #fff;
-      flex-shrink: 0;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 1.6rem;
-      border: 2px solid rgba(255,255,255,0.15);
-      transition: all 0.2s;
-    }
-    .avatar-input-row {
-      flex: 1;
-      min-width: 0;
-    }
-    .avatar-input-row label {
-      font-size: 0.75rem;
-      color: rgba(255,255,255,0.4);
-      display: block;
-      margin-bottom: 6px;
-    }
-    .avatar-emoji-input {
-      width: 100%;
-      padding: 8px 12px;
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 8px;
-      background: rgba(255,255,255,0.04);
-      color: #fff;
-      font-size: 1.2rem;
-      text-align: center;
-      outline: none;
-      font-family: inherit;
-      transition: all 0.2s;
-    }
-    .avatar-emoji-input:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px var(--accent-soft);
-    }
-    .avatar-presets {
-      display: flex;
-      gap: 8px;
-      margin-top: 8px;
-      flex-wrap: wrap;
-    }
-    .avatar-preset-btn {
-      width: 32px; height: 32px;
-      border-radius: 50%;
-      border: 1px solid rgba(255,255,255,0.1);
-      background: rgba(255,255,255,0.04);
-      cursor: pointer;
-      font-size: 1rem;
-      display: flex; align-items: center; justify-content: center;
-      transition: all 0.15s;
-    }
-    .avatar-preset-btn:hover {
-      background: rgba(255,255,255,0.1);
-      border-color: var(--accent);
-      transform: scale(1.1);
-    }
-
-    .persona-name-input {
-      width: 100%;
-      padding: 10px 12px;
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 8px;
-      background: rgba(255,255,255,0.04);
-      color: #fff;
-      font-size: 0.9rem;
-      font-family: inherit;
-      outline: none;
-      transition: all 0.2s;
-    }
-    .persona-name-input:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px var(--accent-soft);
-    }
-
-    /* Add persona button in contact list */
-    .contact-add-btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      padding: 10px 12px;
-      margin: 4px 8px 8px;
-      border-radius: 10px;
-      border: 1px dashed rgba(255,255,255,0.12);
-      background: transparent;
-      color: rgba(255,255,255,0.35);
-      cursor: pointer;
-      font-size: 0.82rem;
-      font-family: inherit;
-      transition: all 0.2s;
-      width: calc(100% - 16px);
-    }
-    .contact-add-btn:hover {
-      background: rgba(255,255,255,0.04);
-      color: rgba(255,255,255,0.7);
-      border-color: rgba(255,255,255,0.25);
-    }
-
-    /* Long press to edit on contact items */
-    .contact-item .contact-edit-hint {
-      display: none;
-      font-size: 0.6rem;
-      color: rgba(255,255,255,0.3);
-    }
-
-    /* Empty chat state */
-    .chat-empty {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100%;
-      color: rgba(255,255,255,0.2);
-      gap: 8px;
-      user-select: none;
-    }
-    .chat-empty .empty-icon { font-size: 3rem; opacity: 0.5; }
-    .chat-empty .empty-text { font-size: 0.85rem; }
-
-    /* ===== Responsive ===== */
-    @media (max-width: 700px) {
-      .chat-app {
-        width: 100vw;
-        max-width: 100vw;
-        height: calc(100vh - 60px);
-        max-height: calc(100vh - 60px);
-        min-width: auto;
-        min-height: auto;
-        border-radius: 0;
-        border: none;
-      }
-      .chat-resize-handle { display: none; }
-      .chat-sidebar {
-        width: 100%;
-        border-right: none;
-      }
-      .chat-window {
-        position: absolute;
-        inset: 0;
-        transform: translateX(100%);
-        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        z-index: 10;
-      }
-      .chat-window.show { transform: translateX(0); }
-      .chat-back-btn { display: flex; }
-    }
-
-    /* Hide old chat components */
-    .chat-toggle, #chatPanel, .chat-panel { display: none !important; }
-
-    /* === Player Controls === */
-    .player-controls {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-    }
-
-    .btn-play {
-      width: 52px;
-      height: 52px;
-      border-radius: 50%;
-      border: none;
-      background: var(--accent);
-      color: #fff;
-      font-size: 1.4rem;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.25s ease;
-      flex-shrink: 0;
-      box-shadow: 0 6px 20px rgba(var(--accent-rgb), 0.45);
-    }
-
-    .btn-play:hover {
-      background: var(--accent-hover);
-      transform: scale(1.06);
-      box-shadow: 0 8px 28px rgba(var(--accent-rgb), 0.6);
-    }
-
-    .btn-play:active {
-      transform: scale(0.95);
-    }
-
-    .btn-play.playing {
-      background: rgba(255, 255, 255, 0.12);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-    }
-
-    /* Volume Section */
-    .volume-section {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .volume-icon {
-      font-size: 1.1rem;
-      cursor: pointer;
-      user-select: none;
-      opacity: 0.7;
-      transition: opacity 0.2s;
-      flex-shrink: 0;
-    }
-
-    .volume-icon:hover {
-      opacity: 1;
-    }
-
-    .volume-slider {
-      flex: 1;
-      -webkit-appearance: none;
-      appearance: none;
-      height: 4px;
-      border-radius: 2px;
-      background: rgba(255, 255, 255, 0.15);
-      outline: none;
-      cursor: pointer;
-    }
-
-    .volume-slider::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 16px;
-      height: 16px;
-      border-radius: 50%;
-      background: #fff;
-      cursor: pointer;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-      transition: transform 0.15s;
-    }
-
-    .volume-slider::-webkit-slider-thumb:hover {
-      transform: scale(1.2);
-    }
-
-    /* Bilibili iframe container */
-    .bili-container {
-      width: 100%;
-      border-radius: 12px;
-      overflow: hidden;
-      background: rgba(0, 0, 0, 0.4);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      position: relative;
-      transition: all 0.35s ease;
-    }
-
-    /* Full mode: show video */
-    .bili-container.video-on {
-      aspect-ratio: 16 / 9;
-      margin-bottom: 16px;
-    }
-
-    /* Mini mode: audio only, slim bar */
-    .bili-container.video-off {
-      aspect-ratio: auto;
-      height: 56px;
-      margin-bottom: 16px;
-      border-radius: 28px;
-      display: flex;
-      align-items: center;
-      padding: 0 12px;
-      gap: 10px;
-    }
-
-    .bili-container iframe {
-      width: 100%;
-      height: 100%;
-      border: none;
-      position: absolute;
-      top: 0;
-      left: 0;
-    }
-
-    .bili-container.video-off iframe {
-      position: absolute;
-      opacity: 0;
-      pointer-events: none;
-      width: 1px;
-      height: 1px;
-      top: -9999px;
-      left: -9999px;
-    }
-
-    /* Audio-only mini bar */
-    .audio-mini-bar {
-      display: none;
-      align-items: center;
-      gap: 10px;
-      flex: 1;
-      z-index: 1;
-    }
-
-    .bili-container.video-off .audio-mini-bar {
-      display: flex;
-    }
-
-    .bili-container.video-off .bili-loading {
-      display: none !important;
-    }
-
-    .audio-mini-cover {
-      width: 34px;
-      height: 34px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, var(--accent), var(--accent-hover));
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.9rem;
-      flex-shrink: 0;
-      animation: miniPulse 3s ease-in-out infinite;
-    }
-
-    @keyframes miniPulse {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(var(--accent-rgb), 0.4); }
-      50% { box-shadow: 0 0 0 8px rgba(var(--accent-rgb), 0); }
-    }
-
-    .audio-mini-info {
-      flex: 1;
-      min-width: 0;
-    }
-
-    .audio-mini-title {
-      font-size: 0.78rem;
-      color: rgba(255,255,255,0.8);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      font-weight: 500;
-    }
-
-    .audio-mini-sub {
-      font-size: 0.68rem;
-      color: rgba(255,255,255,0.35);
-    }
-
-    /* Video toggle button */
-    .btn-video-toggle {
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      color: rgba(255,255,255,0.5);
-      padding: 5px 10px;
-      border-radius: 6px;
-      font-size: 0.7rem;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      font-family: inherit;
-      flex-shrink: 0;
-      z-index: 5;
-    }
-
-    .btn-video-toggle:hover {
-      background: rgba(255, 255, 255, 0.14);
-      color: rgba(255,255,255,0.8);
-    }
-
-    /* Floating close button when video is ON */
-    .btn-video-toggle.floating-close {
-      position: absolute;
-      top: 8px;
-      right: 8px;
-      z-index: 20;
-      background: rgba(0, 0, 0, 0.7);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      color: #fff;
-      padding: 6px 12px;
-      border-radius: 8px;
-      font-size: 0.78rem;
-      font-weight: 600;
-      backdrop-filter: blur(4px);
-      -webkit-backdrop-filter: blur(4px);
-    }
-    .btn-video-toggle.floating-close:hover {
-      background: rgba(239, 68, 68, 0.8);
-      border-color: rgba(239, 68, 68, 0.5);
-    }
-
-    /* Loading placeholder */
-    .bili-loading {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: rgba(255,255,255,0.4);
-      font-size: 0.85rem;
-      pointer-events: none;
-    }
-
-    /* Gradient animation for active bar glow */
-    @keyframes glow {
-      0%, 100% { box-shadow: 0 0 8px rgba(var(--accent-rgb), 0.4); }
-      50% { box-shadow: 0 0 18px rgba(var(--accent-rgb), 0.8); }
-    }
-
-    .btn-play.playing {
-      animation: glow 2s ease-in-out infinite;
-    }
-
-    /* ========== Mode Toggle ========== */
-    .mode-toggle-bar {
-      display: flex;
-      gap: 4px;
-      background: rgba(255, 255, 255, 0.06);
-      border-radius: 10px;
-      padding: 3px;
-      margin-top: 8px;
-      margin-bottom: 20px;
-    }
-
-    .mode-toggle-btn {
-      flex: 1;
-      padding: 8px 12px;
-      border: none;
-      background: transparent;
-      color: rgba(255, 255, 255, 0.45);
-      border-radius: 8px;
-      font-size: 0.8rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      font-family: inherit;
-    }
-
-    .mode-toggle-btn.active {
-      background: var(--accent);
-      color: #fff;
-      box-shadow: 0 2px 8px rgba(var(--accent-rgb), 0.35);
-    }
-
-    .mode-toggle-btn:hover:not(.active) {
-      color: rgba(255,255,255,0.75);
-      background: rgba(255,255,255,0.04);
-    }
-
-    /* ========== Search Section ========== */
-    .search-section {
-      display: none;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .search-section.visible {
-      display: flex;
-    }
-
-    .channel-section {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .channel-section.hidden {
-      display: none;
-    }
-
-    .search-input-wrap {
-      display: flex;
-      gap: 8px;
-    }
-
-    .search-input-wrap input {
-      flex: 1;
-      padding: 10px 14px;
-      border: 1px solid rgba(255, 255, 255, 0.18);
-      border-radius: 10px;
-      font-size: 0.88rem;
-      outline: none;
-      background: rgba(255, 255, 255, 0.07);
-      color: rgba(255, 255, 255, 0.9);
-      transition: all 0.25s ease;
-      font-family: inherit;
-    }
-
-    .search-input-wrap input::placeholder {
-      color: rgba(255, 255, 255, 0.3);
-    }
-
-    .search-input-wrap input:focus {
-      border-color: var(--accent);
-      background: rgba(255, 255, 255, 0.1);
-      box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.15);
-    }
-
-    .btn-search {
-      padding: 10px 18px;
-      border: none;
-      border-radius: 10px;
-      background: var(--accent);
-      color: #fff;
-      font-size: 0.85rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      font-family: inherit;
-    }
-
-    .btn-search:hover {
-      background: var(--accent-hover);
-    }
-
-    .btn-search:active {
-      transform: scale(0.96);
-    }
-
-    /* ========== Search Results ========== */
-    .search-results {
-      list-style: none;
-      max-height: 320px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .search-results::-webkit-scrollbar {
-      width: 4px;
-    }
-
-    .search-results::-webkit-scrollbar-thumb {
-      background: rgba(255,255,255,0.15);
-      border-radius: 2px;
-    }
-
-    .song-item {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 10px 12px;
-      border-radius: 10px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      border: 1px solid transparent;
-    }
-
-    .song-item:hover {
-      background: rgba(255, 255, 255, 0.06);
-      border-color: rgba(255, 255, 255, 0.1);
-    }
-
-    .song-item.playing {
-      background: rgba(var(--accent-rgb), 0.15);
-      border-color: rgba(var(--accent-rgb), 0.3);
-    }
-
-    .song-cover {
-      width: 40px;
-      height: 40px;
-      border-radius: 6px;
-      object-fit: cover;
-      flex-shrink: 0;
-      background: rgba(255,255,255,0.05);
-    }
-
-    .song-info {
-      flex: 1;
-      min-width: 0;
-    }
-
-    .song-name {
-      font-size: 0.85rem;
-      color: rgba(255,255,255,0.88);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      font-weight: 500;
-    }
-
-    .song-artist {
-      font-size: 0.75rem;
-      color: rgba(255,255,255,0.4);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      margin-top: 2px;
-    }
-
-    .song-duration {
-      font-size: 0.72rem;
-      color: rgba(255,255,255,0.3);
-      flex-shrink: 0;
-    }
-
-    .search-status {
-      text-align: center;
-      padding: 24px;
-      color: rgba(255,255,255,0.35);
-      font-size: 0.82rem;
-    }
-
-    /* ===== Search Audio Player ===== */
-    .search-player {
-      display: none;
-      background: rgba(255,255,255,0.06);
-      backdrop-filter: blur(10px);
-      border-radius: 12px;
-      padding: 14px 16px;
-      margin-top: 12px;
-      border: 1px solid rgba(255,255,255,0.08);
-    }
-    .search-player.show { display: flex; align-items: center; gap: 12px; }
-
-    .sp-cover {
-      width: 48px; height: 48px; border-radius: 8px;
-      background: linear-gradient(135deg, var(--accent), var(--accent-hover));
-      display: flex; align-items: center; justify-content: center;
-      font-size: 1.3rem; flex-shrink: 0;
-    }
-    .sp-cover.playing { animation: spPulse 1.5s ease-in-out infinite; }
-    @keyframes spPulse {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(108,92,231,0.4); }
-      50% { box-shadow: 0 0 0 12px rgba(108,92,231,0); }
-    }
-
-    .sp-center { flex: 1; min-width: 0; }
-    .sp-name {
-      font-size: 0.9rem; font-weight: 600; color: #fff;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-      margin-bottom: 2px;
-    }
-    .sp-artist {
-      font-size: 0.75rem; color: rgba(255,255,255,0.45);
-      margin-bottom: 8px;
-    }
-    .sp-progress-wrap {
-      display: flex; align-items: center; gap: 8px;
-    }
-    .sp-time {
-      font-size: 0.65rem; color: rgba(255,255,255,0.35);
-      font-variant-numeric: tabular-nums; min-width: 32px;
-    }
-    .sp-progress {
-      flex: 1; height: 4px; -webkit-appearance: none; appearance: none;
-      background: rgba(255,255,255,0.12); border-radius: 2px; outline: none;
-      cursor: pointer;
-    }
-    .sp-progress::-webkit-slider-thumb {
-      -webkit-appearance: none; width: 12px; height: 12px;
-      border-radius: 50%; background: #fff; cursor: pointer;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.3);
-    }
-    .sp-play {
-      width: 36px; height: 36px; border-radius: 50%;
-      border: none; background: rgba(255,255,255,0.12);
-      color: #fff; font-size: 1rem; cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      transition: all 0.2s; flex-shrink: 0;
-    }
-    .sp-play:hover { background: rgba(255,255,255,0.2); }
-    .sp-play.playing { background: var(--accent); }
-
-    /* Hidden audio element */
-    #audioPlayer { display: none; }
-
-    /* ========== Todo Toggle Button (Left Edge) ========== */
-    .todo-toggle {
-      position: fixed;
-      left: 0;
-      top: 50%;
-      transform: translateY(-50%);
-      z-index: 1100;
-      width: 44px;
-      height: 80px;
-      background: var(--accent);
-      border: none;
-      border-radius: 0 14px 14px 0;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 0 20px var(--accent-soft);
-      transition: all 0.25s ease;
-      color: #fff;
-      font-size: 1.1rem;
-      writing-mode: vertical-lr;
-      letter-spacing: 2px;
-    }
-
-    .todo-toggle:hover {
-      width: 52px;
-      background: var(--accent-hover);
-      box-shadow: 4px 0 30px rgba(var(--accent-rgb), 0.6);
-    }
-
-    .todo-toggle .toggle-text {
-      font-weight: 700;
-      font-size: 0.85rem;
-    }
-
-    .todo-toggle .todo-count-dot {
-      position: absolute;
-      top: 8px;
-      right: 8px;
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--success);
-      display: none;
-    }
-
-    .todo-toggle .todo-count-dot.has-items {
-      display: block;
-    }
-
-    /* ========== Overlay / Backdrop ========== */
-    .drawer-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.5);
-      z-index: 2000;
-      opacity: 0;
-      visibility: hidden;
-      transition: opacity 0.35s ease, visibility 0.35s ease;
-      backdrop-filter: blur(2px);
-      -webkit-backdrop-filter: blur(2px);
-    }
-
-    .drawer-overlay.open {
-      opacity: 1;
-      visibility: visible;
-    }
-
-    /* ========== Todo Drawer Panel ========== */
-    .todo-drawer {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: var(--drawer-width);
-      max-width: 90vw;
-      height: 100vh;
-      background: rgba(15,15,18,0.96);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      z-index: 2100;
-      transform: translateX(-100%);
-      transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-      display: flex;
-      flex-direction: column;
-      box-shadow: var(--shadow-lg);
-      border-right: 1px solid var(--border);
-      overflow: hidden;
-    }
-
-    .todo-drawer.open {
-      transform: translateX(0);
-    }
-
-    /* Drawer inner scrollable area */
-    .drawer-inner {
-      flex: 1;
-      overflow-y: auto;
-      padding: 28px 24px 20px;
-      display: flex;
-      flex-direction: column;
-    }
-
-    /* Drawer close button */
-    .drawer-close {
-      position: absolute;
-      top: 14px;
-      right: 14px;
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      border: 1px solid var(--border);
-      background: var(--surface);
-      cursor: pointer;
-      font-size: 1rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: var(--transition);
-      z-index: 10;
-      color: var(--text-secondary);
-    }
-
-    .drawer-close:hover {
-      background: rgba(239,68,68,0.15);
-      color: var(--danger);
-      border-color: var(--danger);
-    }
-
-    /* ========== Header ========== */
-    .header {
-      text-align: center;
-      margin-bottom: 24px;
-    }
-
-    .header h1 {
-      font-size: 1.6rem;
-      font-weight: 600;
-      color: var(--text);
-      letter-spacing: -0.02em;
-    }
-
-    .header .subtitle {
-      font-size: 0.8rem;
-      color: var(--text-tertiary);
-      margin-top: 2px;
-    }
-
-    /* ========== Share Bar ========== */
-    .share-bar {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 16px;
-      padding: 8px 12px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      font-size: 0.76rem;
-    }
-
-    .share-bar .sync-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      flex-shrink: 0;
-      background: var(--success);
-      animation: pulse 2s infinite;
-    }
-
-    .share-bar .sync-dot.syncing { background: var(--warning); }
-    .share-bar .sync-dot.error { background: var(--danger); animation: none; }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.4; }
-    }
-
-    .share-bar .sync-text {
-      flex: 1;
-      color: var(--text-secondary);
-    }
-
-    .btn-share {
-      background: var(--accent);
-      color: #fff;
-      border: none;
-      padding: 5px 10px;
-      border-radius: 4px;
-      font-size: 0.72rem;
-      cursor: pointer;
-      white-space: nowrap;
-    }
-    .btn-share:hover { background: var(--accent-hover); }
-    .btn-share.copied { background: var(--success); }
-
-    /* ========== Input Section ========== */
-    .input-section {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 16px;
-    }
-
-    .input-section input {
-      flex: 1;
-      padding: 10px 14px;
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      font-size: 0.9rem;
-      outline: none;
-      transition: var(--transition);
-      background: rgba(255,255,255,0.04);
-      color: var(--text);
-      font-family: inherit;
-    }
-
-    .input-section input:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px var(--accent-soft);
-      background: rgba(255,255,255,0.06);
-    }
-
-    .input-section input::placeholder {
-      color: var(--text-tertiary);
-    }
-
-    .btn {
-      padding: 9px 16px;
-      border: none;
-      border-radius: var(--radius-sm);
-      font-size: 0.84rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: var(--transition);
-      white-space: nowrap;
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .btn:active { transform: scale(0.97); }
-
-    .btn-primary {
-      background: var(--accent);
-      color: #fff;
-    }
-    .btn-primary:hover { background: var(--accent-hover); box-shadow: 0 0 0 4px var(--accent-soft); }
-    .btn-primary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-
-    .btn-danger {
-      background: transparent;
-      color: var(--danger);
-      padding: 6px 10px;
-      font-size: 0.78rem;
-      border-radius: var(--radius-sm);
-    }
-    .btn-danger:hover { background: rgba(239,68,68,0.1); }
-
-    .btn-clear {
-      background: transparent;
-      color: var(--text-tertiary);
-      font-size: 0.76rem;
-      padding: 4px 8px;
-      font-weight: 500;
-      border-radius: var(--radius-sm);
-    }
-    .btn-clear:hover { color: var(--text-secondary); }
-
-    /* ========== Filter Section ========== */
-    .filter-section {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 14px;
-      flex-wrap: wrap;
-      gap: 6px;
-    }
-
-    .filters {
-      display: flex;
-      gap: 2px;
-      background: var(--surface);
-      border-radius: var(--radius-sm);
-      padding: 3px;
-      border: 1px solid var(--border);
-    }
-
-    .filter-btn {
-      padding: 6px 14px;
-      border: none;
-      background: transparent;
-      border-radius: 4px;
-      font-size: 0.8rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: var(--transition);
-      color: var(--text-secondary);
-    }
-
-    .filter-btn.active {
-      background: var(--surface-hover);
-      color: var(--text);
-      box-shadow: 0 1px 2px rgba(0,0,0,0.3);
-    }
-
-    .filter-btn:hover:not(.active) { color: var(--text); }
-
-    /* ========== Todo List ========== */
-    .todo-list {
-      list-style: none;
-      min-height: 40px;
-      flex: 1;
-    }
-
-    .todo-item {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 10px 12px;
-      border-radius: var(--radius-sm);
-      transition: var(--transition);
-      animation: slideIn 0.3s ease;
-      border: 1px solid transparent;
-    }
-
-    .todo-item:hover {
-      background: var(--surface-hover);
-      border-color: var(--border);
-    }
-
-    @keyframes slideIn {
-      from { opacity: 0; transform: translateX(-12px); }
-      to   { opacity: 1; transform: translateX(0); }
-    }
-
-    @keyframes slideOut {
-      from { opacity: 1; transform: translateX(0); max-height: 60px; }
-      to   { opacity: 0; transform: translateX(40px); max-height: 0; padding: 0; margin: 0; }
-    }
-
-    .todo-item.removing {
-      animation: slideOut 0.3s ease forwards;
-    }
-
-    /* Custom checkbox */
-    .todo-checkbox {
-      appearance: none;
-      -webkit-appearance: none;
-      width: 20px;
-      height: 20px;
-      border: 1.5px solid rgba(255,255,255,0.15);
-      border-radius: 50%;
-      cursor: pointer;
-      flex-shrink: 0;
-      transition: var(--transition);
-      position: relative;
-      background: transparent;
-    }
-
-    .todo-checkbox:hover { border-color: var(--accent); }
-
-    .todo-checkbox:checked {
-      background: var(--success);
-      border-color: var(--success);
-    }
-
-    .todo-checkbox:checked::after {
-      content: '';
-      position: absolute;
-      top: 2px;
-      left: 5px;
-      width: 5px;
-      height: 9px;
-      border: solid #fff;
-      border-width: 0 2px 2px 0;
-      transform: rotate(45deg);
-    }
-
-    .todo-text {
-      flex: 1;
-      font-size: 0.88rem;
-      word-break: break-word;
-      cursor: default;
-      transition: var(--transition);
-      color: var(--text);
-    }
-
-    .todo-item.completed .todo-text {
-      text-decoration: line-through;
-      color: var(--text-tertiary);
-    }
-
-    /* ========== Link Detection ========== */
-    .todo-text a.safe-link {
-      color: var(--accent);
-      text-decoration: underline;
-      text-underline-offset: 2px;
-    }
-    .todo-text a.safe-link:hover { color: var(--accent-hover); }
-
-    .danger-link {
-      color: var(--danger);
-      text-decoration: line-through;
-      cursor: not-allowed;
-      opacity: 0.7;
-    }
-    .danger-link .warn-icon { font-size: 0.85em; }
-
-    /* Edit mode */
-    .todo-edit-input {
-      flex: 1;
-      font-size: 0.88rem;
-      padding: 5px 8px;
-      border: 1px solid var(--accent);
-      border-radius: var(--radius-sm);
-      outline: none;
-      background: rgba(255,255,255,0.06);
-      color: var(--text);
-      font-family: inherit;
-    }
-
-    .btn-delete {
-      background: none;
-      border: none;
-      cursor: pointer;
-      color: var(--text-tertiary);
-      font-size: 1rem;
-      padding: 3px 5px;
-      border-radius: var(--radius-sm);
-      transition: var(--transition);
-      flex-shrink: 0;
-      line-height: 1;
-      opacity: 0;
-    }
-
-    .todo-item:hover .btn-delete { opacity: 1; }
-
-    .btn-delete:hover {
-      color: var(--danger);
-      background: rgba(239,68,68,0.1);
-    }
-
-    /* ========== Footer ========== */
-    .footer {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-top: 16px;
-      padding-top: 12px;
-      border-top: 1px solid var(--border);
-      font-size: 0.8rem;
-      color: var(--text-tertiary);
-    }
-
-    .footer .count strong {
-      color: var(--accent);
-      font-weight: 600;
-    }
-
-    /* ========== Empty State ========== */
-    .empty-state {
-      text-align: center;
-      padding: 28px 12px;
-      color: var(--text-tertiary);
-    }
-
-    .empty-state .icon {
-      font-size: 2.5rem;
-      margin-bottom: 10px;
-      opacity: 0.5;
-    }
-
-    .empty-state p {
-      font-size: 0.85rem;
-    }
-
-    /* ========== Admin ========== */
-    .admin-badge {
-      display: none;
-      font-size: 0.65rem;
-      background: var(--danger);
-      color: #fff;
-      padding: 2px 8px;
-      border-radius: 10px;
-      margin-left: 6px;
-      vertical-align: middle;
-    }
-    .admin-active .admin-badge { display: inline; }
-
-    .admin-entry {
-      background: none;
-      border: none;
-      font-size: 1rem;
-      cursor: pointer;
-      opacity: 0.3;
-      transition: var(--transition);
-      position: absolute;
-      top: 10px;
-      right: 44px;
-    }
-    .admin-entry:hover { opacity: 0.8; }
-
-    /* Context Menu */
-    .context-menu {
-      position: fixed;
-      background: #1a1a1e;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow-lg);
-      padding: 6px 0;
-      z-index: 9999;
-      min-width: 160px;
-      animation: ctxFadeIn 0.15s ease;
-      display: none;
-    }
-    @keyframes ctxFadeIn {
-      from { opacity: 0; transform: scale(0.94); }
-      to { opacity: 1; transform: scale(1); }
-    }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: scale(0.92); }
-      to { opacity: 1; transform: scale(1); }
-    }
-    .context-menu .menu-item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 10px 16px;
-      cursor: pointer;
-      font-size: 0.88rem;
-      border: none;
-      background: none;
-      width: 100%;
-      text-align: left;
-      color: var(--text);
-      transition: 0.12s;
-    }
-    .context-menu .menu-item:hover { background: var(--surface-hover); }
-    .context-menu .menu-item.danger { color: var(--danger); }
-    .context-menu .menu-item.danger:hover { background: rgba(239,68,68,0.1); }
-    .context-menu .menu-divider {
-      height: 1px;
-      background: var(--border);
-      margin: 4px 0;
-    }
-
-    /* ===== Scrollbar ===== */
-    ::-webkit-scrollbar { width: 5px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
-    ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.14); }
-    .drawer-inner { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.08) transparent; }
-
-    /* ===== L2 Animations ===== */
-    @keyframes fadeInUp {
-      from { opacity: 0; transform: translateY(16px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    .music-player {
-      animation: fadeInUp 0.5s ease;
-    }
-
-    .reveal {
-      opacity: 0;
-      transform: translateY(12px);
-      transition: opacity 0.5s ease, transform 0.5s ease;
-    }
-    .reveal.revealed { opacity: 1; transform: translateY(0); }
-
-    @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after {
-        animation-duration: 0.01ms !important;
-        transition-duration: 0.01ms !important;
-      }
-    }
-
-    /* ===== Responsive ===== */
-    @media (max-width: 600px) {
-      .todo-drawer, .music-drawer {
-        width: 100%;
-        max-width: 100vw;
-        border-radius: 0;
-        border-right: none;
-        border-left: none;
-      }
-      .music-player { padding: 16px; }
-      .input-section { flex-direction: column; }
-      .btn-primary { justify-content: center; }
-      .filter-section { flex-direction: column; align-items: stretch; }
-      .filters { justify-content: center; }
-    }
-
-    /* ========== Wallpaper Toggle (Top Right) ========== */
-    .wallpaper-toggle {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      z-index: 1000;
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      border: 1px solid rgba(255,255,255,0.12);
-      background: rgba(255,255,255,0.06);
-      cursor: pointer;
-      font-size: 1.1rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.25s ease;
-      color: #fff;
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-    }
-    .wallpaper-toggle:hover {
-      background: rgba(255,255,255,0.14);
-      transform: scale(1.1);
-      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
-    }
-
-    /* ========== Wallpaper Overlay ========== */
-    .wallpaper-overlay {
-      position: fixed;
-      inset: 0;
-      z-index: 3000;
-      background: rgba(0,0,0,0.85);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      opacity: 0;
-      visibility: hidden;
-      transition: opacity 0.35s ease, visibility 0.35s ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 40px;
-    }
-    .wallpaper-overlay.open {
-      opacity: 1;
-      visibility: visible;
-    }
-
-    .wallpaper-panel {
-      background: rgba(20,20,24,0.98);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 16px;
-      width: 100%;
-      max-width: 720px;
-      max-height: 80vh;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      box-shadow: 0 16px 48px rgba(0,0,0,0.6);
-      animation: panelIn 0.3s ease;
-    }
-    @keyframes panelIn {
-      from { opacity: 0; transform: translateY(20px) scale(0.96); }
-      to { opacity: 1; transform: translateY(0) scale(1); }
-    }
-
-    .wp-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 20px 24px 0;
-    }
-    .wp-header h2 {
-      font-size: 1.25rem;
-      font-weight: 600;
-      color: var(--text);
-    }
-    .wp-close {
-      width: 32px; height: 32px;
-      border-radius: 50%;
-      border: 1px solid var(--border);
-      background: var(--surface);
-      cursor: pointer;
-      font-size: 0.9rem;
-      display: flex; align-items: center; justify-content: center;
-      color: var(--text-secondary);
-      transition: var(--transition);
-    }
-    .wp-close:hover {
-      background: rgba(239,68,68,0.15);
-      color: var(--danger);
-      border-color: var(--danger);
-    }
-
-    .wp-body {
-      padding: 20px 24px 24px;
-      overflow-y: auto;
-      flex: 1;
-    }
-
-    /* Upload Zone */
-    .wp-upload-zone {
-      border: 2px dashed rgba(255,255,255,0.12);
-      border-radius: 12px;
-      padding: 24px;
-      text-align: center;
-      cursor: pointer;
-      transition: all 0.25s ease;
-      margin-bottom: 20px;
-    }
-    .wp-upload-zone:hover,
-    .wp-upload-zone.dragover {
-      border-color: var(--accent);
-      background: rgba(var(--accent-rgb), 0.06);
-    }
-    .wp-upload-zone .upload-icon {
-      font-size: 2rem;
-      margin-bottom: 6px;
-    }
-    .wp-upload-zone .upload-text {
-      color: rgba(255,255,255,0.5);
-      font-size: 0.82rem;
-    }
-    .wp-upload-zone .upload-hint {
-      color: rgba(255,255,255,0.25);
-      font-size: 0.7rem;
-      margin-top: 4px;
-    }
-
-    /* Wallpaper Grid */
-    .wp-section-title {
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: rgba(255,255,255,0.4);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 10px;
-    }
-    .wp-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-      gap: 12px;
-      margin-bottom: 20px;
-    }
-    .wp-card {
-      position: relative;
-      border-radius: 10px;
-      overflow: hidden;
-      aspect-ratio: 16/10;
-      cursor: pointer;
-      border: 2px solid transparent;
-      transition: all 0.2s ease;
-      background: rgba(255,255,255,0.04);
-    }
-    .wp-card:hover {
-      border-color: rgba(255,255,255,0.2);
-      transform: translateY(-2px);
-    }
-    .wp-card.active {
-      border-color: var(--accent);
-      box-shadow: 0 0 16px rgba(var(--accent-rgb), 0.4);
-    }
-    .wp-card.active::after {
-      content: '✓';
-      position: absolute;
-      top: 8px;
-      right: 8px;
-      width: 22px; height: 22px;
-      border-radius: 50%;
-      background: var(--accent);
-      color: #fff;
-      font-size: 0.7rem;
-      display: flex; align-items: center; justify-content: center;
-      font-weight: 700;
-    }
-    .wp-card .wp-thumb {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
-    .wp-card .wp-card-label {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      padding: 6px 8px;
-      background: linear-gradient(transparent, rgba(0,0,0,0.7));
-      font-size: 0.72rem;
-      color: #fff;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .wp-card .wp-card-badge {
-      position: absolute;
-      top: 6px;
-      left: 6px;
-      font-size: 0.6rem;
-      padding: 2px 6px;
-      border-radius: 4px;
-      background: rgba(0,0,0,0.5);
-      color: rgba(255,255,255,0.7);
-    }
-    .wp-card .wp-delete-btn {
-      position: absolute;
-      top: 6px;
-      right: 6px;
-      width: 24px; height: 24px;
-      border-radius: 50%;
-      border: none;
-      background: rgba(0,0,0,0.5);
-      color: #fff;
-      font-size: 0.7rem;
-      cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      opacity: 0;
-      transition: opacity 0.2s;
-    }
-    .wp-card:hover .wp-delete-btn {
-      opacity: 1;
-    }
-    .wp-card .wp-delete-btn:hover {
-      background: var(--danger);
-    }
-
-    /* Background Image (for static wallpapers) */
-    #bgImage {
-      position: fixed;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      z-index: 0;
-      display: none;
-    }
-    #bgVideo.hidden { display: none; }
-  </style>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
@@ -2436,6 +93,7 @@
         <button class="chat-win-settings-btn" id="chatWinSettingsBtn" title="角色设定">⚙️</button>
         <button class="chat-reset-size-btn" id="chatResetSizeBtn" title="恢复窗口默认大小">🪟</button>
         <button class="chat-unlock-btn" id="chatUnlockBtn" title="解锁完整版AI">🔒</button>
+        <button class="chat-export-btn" id="chatExportBtn" title="打包导出聊天记忆">📦</button>
       </div>
       <div class="chat-win-messages" id="chatWinMessages">
         <div class="chat-empty"><div class="empty-icon">💬</div><div class="empty-text">选一个角色开始聊天</div></div>
@@ -2542,6 +200,19 @@
             </div>
           </div>
           <button class="sp-play" id="spPlay" title="播放">▶</button>
+        </div>
+      </div>
+      <!-- ====== Playlist Section ====== -->
+      <div class="playlist-section" id="playlistSection">
+        <div class="playlist-header">
+          <span class="playlist-title">📋 播放列表</span>
+          <div class="playlist-controls">
+            <button class="playlist-mode-btn" id="playlistModeBtn">🔁 顺序播放</button>
+            <button class="playlist-clear-btn" id="playlistClearBtn">🗑️ 清空</button>
+          </div>
+        </div>
+        <div id="playlistContent">
+          <div class="playlist-status">💡 搜索歌曲后点击「+」添加到播放列表</div>
         </div>
       </div>
     </div>
@@ -2661,7 +332,10 @@
   <div class="persona-overlay" id="personaOverlay">
     <div class="persona-dialog">
       <h3 id="personaDialogTitle">✨ 新建 AI 角色</h3>
-      <p class="dialog-sub">设定角色的名字、头像和聊天风格</p>
+      <p class="dialog-sub">设定角色的名字、头像和聊天风格
+        <button class="import-chat-btn" id="importChatBtn" title="导入之前导出的聊天记忆包 (.dayroom.json)">📥 导入角色包</button>
+      </p>
+      <input type="file" id="importChatFile" accept=".json" style="display:none;">
 
       <!-- Avatar picker -->
       <div class="avatar-picker-wrap">
@@ -2685,8 +359,7 @@
       <div class="custom-input-area">
         <label>人设描述（决定 AI 怎么说话）</label>
         <textarea id="personaCustomTextarea"
-                  placeholder="描述这个 AI 角色的性格和对话方式，例如：「你是鲁迅，用犀利幽默的文风说话，喜欢引经据典」"
-                  maxlength="500"></textarea>
+                  placeholder="描述这个 AI 角色的性格和对话方式，例如：「你是鲁迅，用犀利幽默的文风说话，喜欢引经据典」"></textarea>
       </div>
 
       <div class="dialog-actions">
@@ -2772,12 +445,159 @@
         });
       });
 
+
+      // ==================== Playlist System ====================
+      const LS_KEY_PLAYLIST = "dayroom_playlist";
+      const LS_KEY_PLAYMODE = "dayroom_playmode";
+      let playlist = [];
+      let playMode = "sequential";
+
+      function loadPlaylist() {
+        try { var saved = localStorage.getItem(LS_KEY_PLAYLIST); if (saved) playlist = JSON.parse(saved); } catch(e) {}
+        try { saved = localStorage.getItem(LS_KEY_PLAYMODE); if (saved) playMode = saved; } catch(e) {}
+      }
+
+      function savePlaylist() {
+        try { localStorage.setItem(LS_KEY_PLAYLIST, JSON.stringify(playlist)); } catch(e) {}
+        renderPlaylist();
+      }
+
+      function isInPlaylist(rid) {
+        return playlist.some(function(s){ return String(s.rid) === String(rid); });
+      }
+
+      function addToPlaylist(song) {
+        if (isInPlaylist(song.rid)) return;
+        playlist.push({ rid: String(song.rid), name: song.name, artist: song.artist });
+        savePlaylist();
+      }
+
+      function removeFromPlaylist(rid) {
+        playlist = playlist.filter(function(s){ return String(s.rid) !== String(rid); });
+        savePlaylist();
+      }
+
+      function clearPlaylist() {
+        playlist = [];
+        savePlaylist();
+      }
+
+      function renderPlaylist() {
+        var c = document.getElementById("playlistContent");
+        if (!c) return;
+        if (playlist.length === 0) {
+          c.innerHTML = '<div class="playlist-status">💡 搜索歌曲后点击「+」添加到播放列表</div>';
+          return;
+        }
+        var h = '<ul class="playlist-items">';
+        for (var pi = 0; pi < playlist.length; pi++) {
+          var song = playlist[pi];
+          var isCurrent = String(song.rid) === String(currentSongId);
+          h += '<li class="playlist-item' + (isCurrent ? ' playing' : '') + '"';
+          h += ' data-rid="' + hEscape(song.rid) + '"';
+          h += ' data-name="' + hEscape(song.name) + '"';
+          h += ' data-artist="' + hEscape(song.artist) + '">';
+          h += '<span class="playlist-idx">' + (pi + 1) + '</span>';
+          h += '<div class="playlist-info">';
+          h += '<div class="playlist-name">' + hEscape(song.name) + '</div>';
+          h += '<div class="playlist-artist">' + hEscape(song.artist) + '</div>';
+          h += '</div>';
+          h += '<button class="playlist-play-btn" title="播放">▶</button>';
+          h += '<button class="playlist-remove-btn" title="移除">✕</button>';
+          h += '</li>';
+        }
+        h += '</ul>';
+        c.innerHTML = h;
+      }
+
+      function playSongFromPlaylist(song) {
+        currentSongId = String(song.rid);
+        document.getElementById("nowPlaying").textContent = song.name + " — " + song.artist;
+        spName.textContent = song.name;
+        spArtist.textContent = song.artist;
+        spCover.textContent = "🎵";
+        spPlayer.classList.add("show");
+        spProgress.value = 0;
+        spCur.textContent = "0:00";
+        spDur.textContent = "—";
+        spSetPlaying(false);
+        searchResults.querySelectorAll(".song-item").forEach(function(el){ el.classList.remove("playing"); });
+        var match = searchResults.querySelector('.song-item[data-rid="' + song.rid + '"]');
+        if (match) match.classList.add("playing");
+        renderPlaylist();
+        fetch(MUSIC_PROXY + "?action=url&rid=" + song.rid)
+          .then(function(r){ return r.json(); })
+          .then(function(data){
+            if (!data.url) throw new Error("No URL");
+            audioPlayer.src = data.url;
+            audioPlayer.play().catch(function(e){
+              console.warn("自动播放被拦截:", e.message);
+              spArtist.textContent = "👆 请点击右侧播放按钮";
+            });
+          }).catch(function(err){
+            console.error("获取播放链接失败:", err.message);
+            spArtist.textContent = "播放失败，请重试";
+          });
+      }
+
+      function playNextInPlaylist() {
+        if (playlist.length === 0) return;
+        var currentIdx = -1;
+        for (var pi = 0; pi < playlist.length; pi++) {
+          if (String(playlist[pi].rid) === String(currentSongId)) { currentIdx = pi; break; }
+        }
+        var nextIdx = 0;
+        if (playMode === "sequential") {
+          nextIdx = (currentIdx + 1) % playlist.length;
+          if (currentIdx < 0) nextIdx = 0;
+        } else {
+          nextIdx = Math.floor(Math.random() * playlist.length);
+        }
+        var nextSong = playlist[nextIdx];
+        if (nextSong) playSongFromPlaylist(nextSong);
+      }
+
+      // Init playlist
+      loadPlaylist();
+
+      // Playlist event delegation
+      document.addEventListener("click", function(e) {
+        var item = e.target.closest(".playlist-item");
+        if (!item) return;
+        var rid = item.dataset.rid;
+        var name = item.dataset.name;
+        var artist = item.dataset.artist;
+        if (e.target.closest(".playlist-remove-btn")) { removeFromPlaylist(rid); return; }
+        if (e.target.closest(".playlist-play-btn") || e.target === item) {
+          playSongFromPlaylist({ rid: rid, name: name, artist: artist });
+        }
+      });
+
+      // Playlist mode toggle
+      var playlistModeBtn = document.getElementById("playlistModeBtn");
+      playlistModeBtn.addEventListener("click", function() {
+        if (playMode === "sequential") {
+          playMode = "shuffle";
+          playlistModeBtn.textContent = "🔀 随机播放";
+        } else {
+          playMode = "sequential";
+          playlistModeBtn.textContent = "🔁 顺序播放";
+        }
+        try { localStorage.setItem(LS_KEY_PLAYMODE, playMode); } catch(e) {}
+      });
+
+      // Clear playlist
+      document.getElementById("playlistClearBtn").addEventListener("click", function() {
+        if (playlist.length === 0) return;
+        if (confirm("确定清空播放列表吗？")) { clearPlaylist(); }
+      });
+
       // ==================== Music Search ====================
       const METING_API = 'https://meting.elysium-stack.cn/api';
       const METING_API_BACKUP = 'https://api.uomg.com/api/netease.search';
 
       // Music search via Netlify Function → higequ.com
-      const MUSIC_PROXY = '/.netlify/functions/music';
+      const MUSIC_PROXY = '/music';
 
       async function searchSongs(keyword) {
         try {
@@ -2867,6 +687,9 @@
               const artist = hEscape(song.artist || song.author || '未知歌手');
               const rid = song.rid || song.id || '';
               const isActive = (rid && String(rid) === String(currentSongId)) ? ' playing' : '';
+              const inList = isInPlaylist(rid);
+              const btnClass = inList ? 'btn-add-playlist added' : 'btn-add-playlist';
+              const btnText = inList ? '✓' : '+';
 
               return `
                 <li class="song-item${isActive}"
@@ -2878,6 +701,7 @@
                     <div class="song-name">${name}</div>
                     <div class="song-artist">${artist}</div>
                   </div>
+                  <button class="${btnClass}" title="添加到播放列表">${btnText}</button>
                 </li>`;
             }).join('')}
           </ul>`;
@@ -2984,12 +808,23 @@
 
       audioPlayer.addEventListener('play', () => spSetPlaying(true));
       audioPlayer.addEventListener('pause', () => spSetPlaying(false));
-      audioPlayer.addEventListener('ended', () => { spSetPlaying(false); spProgress.value = 0; spCur.textContent = '0:00'; });
+      audioPlayer.addEventListener('ended', () => { spSetPlaying(false); spProgress.value = 0; spCur.textContent = '0:00'; playNextInPlaylist(); });
 
       // Click on search result → fetch audio URL via Netlify, play in custom player
       searchResults.addEventListener('click', async (e) => {
         const songItem = e.target.closest('.song-item');
         if (!songItem) return;
+
+        // + button: add to playlist
+        if (e.target.closest('.btn-add-playlist')) {
+          var _rid = songItem.dataset.rid;
+          var _name = songItem.dataset.name;
+          var _artist = songItem.dataset.artist;
+          addToPlaylist({ rid: _rid, name: _name, artist: _artist });
+          e.target.closest('.btn-add-playlist').classList.add('added');
+          e.target.closest('.btn-add-playlist').textContent = '✓';
+          return;
+        }
 
         const rid = songItem.dataset.rid;
         const songName = songItem.dataset.name;
@@ -3370,7 +1205,7 @@
       setVolume(40);
 
       // ==================== Config ====================
-      const API_BASE = '/.netlify/functions/api';
+      const API_BASE = '/api';
       const SYNC_INTERVAL = 3000;
 
       // ==================== State ====================
@@ -4382,7 +2217,7 @@
 
 
       // ==================== WeChat-Style Chat System ====================
-      const CHAT_API = '/.netlify/functions/chat';
+      const CHAT_API = '/chat';
 
       // Default persona (unchangeable)
       const DEFAULT_PERSONA = {
@@ -4540,7 +2375,8 @@
       function addMessageToHistory(role, content) {
         var history = getHistory(activePersonaId);
         history.push({ role: role, content: content });
-        if (history.length > 30) chatHistories[activePersonaId] = history.slice(-30);
+        var limit = chatUnlocked ? 300 : 100;
+        if (history.length > limit) chatHistories[activePersonaId] = history.slice(-limit);
         saveHistories();
       }
 
@@ -4616,6 +2452,129 @@
         }
       });
 
+      // ---- Export Chat Package ----
+      document.getElementById('chatExportBtn').addEventListener('click', async function() {
+        var p = getPersonaInfo(activePersonaId);
+        var history = getHistory(activePersonaId);
+        if (history.length === 0 && activePersonaId === 'default') {
+          alert('当前没有聊天记录，聊几句再导出吧~');
+          return;
+        }
+
+        // Show loading state
+        var exportBtn = document.getElementById('chatExportBtn');
+        var origText = exportBtn.textContent;
+        exportBtn.textContent = '⏳';
+        exportBtn.disabled = true;
+
+        // Generate summary of the conversation
+        var summary = '';
+        try {
+          var transcript = history.map(function(h) {
+            return (h.role === 'user' ? '用户' : p.name) + ': ' + h.content;
+          }).join('\n\n');
+
+          var resp = await fetch(CHAT_API, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'compress',
+              transcript: transcript,
+              personaName: p.name,
+            }),
+          });
+          if (resp.ok) {
+            var data = await resp.json();
+            summary = (data.summary || '').trim();
+          }
+        } catch (e) {
+          console.warn('生成摘要失败，将导出不含摘要的包:', e.message);
+        }
+
+        // Build export package (summary only, no raw messages)
+        var pkg = {
+          type: 'dayroom-chat-backup',
+          version: 2,
+          exportedAt: new Date().toISOString(),
+          persona: {
+            name: p.name,
+            avatar: p.avatar,
+            prompt: p.prompt,
+          },
+          summary: summary,
+          messageCount: history.length,
+        };
+
+        // Trigger download
+        var blob = new Blob([JSON.stringify(pkg, null, 2)], { type: 'application/json' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = (p.name || 'chat') + '-记忆包-' + new Date().toISOString().slice(0, 10) + '.dayroom.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        exportBtn.textContent = origText;
+        exportBtn.disabled = false;
+        console.log('📦 已导出记忆包:', pkg.persona.name, '|', history.length, '条消息 → 1条摘要');
+      });
+
+      // ---- Auto-compress old conversation history (non-admin only) ----
+      var compressing = false;
+      async function compressHistory(personaId) {
+        if (compressing) return;
+        var history = chatHistories[personaId];
+        if (!history || history.length < 48) return;
+
+        compressing = true;
+        // Compress oldest ~35 messages, keep latest ~25
+        var keepCount = 25;
+        var toCompress = history.slice(0, history.length - keepCount);
+        var recent = history.slice(-keepCount);
+
+        var transcript = toCompress.map(function(h) {
+          return (h.role === 'user' ? '用户' : 'AI') + ': ' + h.content;
+        }).join('\n\n');
+
+        var p = getPersonaInfo(personaId);
+
+        try {
+          var resp = await fetch(CHAT_API, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'compress',
+              transcript: transcript,
+              personaName: p.name,
+            }),
+          });
+          if (!resp.ok) throw new Error('HTTP ' + resp.status);
+          var data = await resp.json();
+          var summary = (data.summary || '').trim();
+
+          if (summary) {
+            // Replace old messages: summary note + recent messages
+            chatHistories[personaId] = [
+              { role: 'system', content: '【之前的对话摘要，请记住这段上下文】' + summary },
+            ].concat(recent);
+            saveHistories();
+            console.log('🗜️ 对话已压缩: ' + toCompress.length + '条 → 1条摘要 + ' + recent.length + '条');
+          } else {
+            // No summary returned, just trim
+            chatHistories[personaId] = recent;
+            saveHistories();
+          }
+        } catch (e) {
+          console.warn('压缩失败，自动裁剪旧消息:', e.message);
+          chatHistories[personaId] = recent;
+          saveHistories();
+        } finally {
+          compressing = false;
+        }
+      }
+
       // ---- Send Message to DeepSeek ----
       async function sendMessage(text) {
         if (waitingForReply || !text.trim()) return;
@@ -4668,6 +2627,12 @@
 
         renderContacts();
         waitingForReply = false;
+
+        // Auto-compress for non-admin when history gets long
+        if (!chatUnlocked) {
+          var h = getHistory(activePersonaId);
+          if (h.length >= 48) compressHistory(activePersonaId);
+        }
       }
 
       function getLocalFallback(msg) {
@@ -4861,6 +2826,78 @@
           openPersonaOverlay(activePersonaId);
         } else {
           openPersonaOverlay(null);
+        }
+      });
+
+      // ---- Import Chat Package ----
+      var importChatFile = document.getElementById('importChatFile');
+      document.getElementById('importChatBtn').addEventListener('click', function(e) {
+        e.stopPropagation();
+        importChatFile.click();
+      });
+
+      importChatFile.addEventListener('change', async function() {
+        var file = importChatFile.files[0];
+        if (!file) return;
+        importChatFile.value = '';
+
+        try {
+          var text = await file.text();
+          var pkg = JSON.parse(text);
+
+          // Validate format
+          if (pkg.type !== 'dayroom-chat-backup') {
+            alert('文件格式不正确，请选择 .dayroom.json 备份文件');
+            return;
+          }
+
+          var p = pkg.persona || {};
+          var name = p.name || '导入的角色';
+          var avatar = p.avatar || '🤖';
+          var prompt = p.prompt || '';
+          var summary = pkg.summary || '';
+          var msgCount = pkg.messageCount || 0;
+
+          var preview = '📦 导入预览\n\n';
+          preview += '👤 角色: ' + name + '\n';
+          preview += '🖼️ 头像: ' + avatar + '\n';
+          preview += '💬 原始消息: ' + msgCount + ' 条 (已压缩)\n';
+          preview += '📅 导出时间: ' + (pkg.exportedAt || '未知') + '\n';
+          if (summary) preview += '\n📝 对话记忆摘要:\n' + summary.slice(0, 300) + (summary.length > 300 ? '...' : '');
+          preview += '\n\n确认导入？AI 将记住之前的对话背景并继续聊天。';
+
+          if (!confirm(preview)) return;
+
+          // Create new persona
+          var newPersona = {
+            id: generatePersonaId(),
+            name: name,
+            avatar: avatar,
+            prompt: prompt || '你是' + name + '，请根据对话上下文继续与用户交流。',
+            createdAt: Date.now(),
+          };
+          customPersonas.push(newPersona);
+          saveCustomPersonas();
+
+          // Inject summary as conversation context (not raw history)
+          if (summary) {
+            chatHistories[newPersona.id] = [
+              { role: 'system', content: '【以下是你与用户之前的对话记忆，请记住这些背景，继续自然地聊天】\n' + summary },
+              { role: 'assistant', content: '（已读取对话记忆）好的，我记得我们之前聊过的内容。继续吧~ 😊' },
+            ];
+          } else {
+            chatHistories[newPersona.id] = [];
+          }
+          saveHistories();
+
+          // Close overlay & switch to new persona
+          personaOverlay.classList.remove('open');
+          switchPersona(newPersona.id);
+          renderContacts();
+          console.log('📥 已导入记忆包:', name, '| 摘要长度:', summary.length, '字');
+        } catch (e) {
+          console.error('导入失败:', e.message);
+          alert('导入失败: ' + e.message + '\n请确认文件是有效的 .dayroom.json 备份文件');
         }
       });
 

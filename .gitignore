@@ -1,2 +1,9 @@
 # Local Netlify folder
 .netlify
+node_modules/
+
+# Backup and utility scripts
+index_original.html
+patch.js
+restore.js
+work.js
