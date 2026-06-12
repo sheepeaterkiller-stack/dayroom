@@ -1,7 +1,7 @@
 <div align="center">
 
 <img src="https://img.shields.io/badge/status-alive-brightgreen?style=for-the-badge" />
-<img src="https://img.shields.io/badge/deploy-netlify-00ad9f?style=for-the-badge&logo=netlify" />
+<img src="https://img.shields.io/badge/deploy-cloudflare%20pages-f38020?style=for-the-badge&logo=cloudflare" />
 
 </div>
 
@@ -38,15 +38,47 @@ start index.html
 npx serve .
 ```
 
-> 🌐 线上站: **[biankun.netlify.app](https://biankun.netlify.app)**
+> 🌐 线上站: **[dayroom-50g.pages.dev](https://dayroom-50g.pages.dev)**
 
 ---
 
 ## 🧩 技术栈
 
 ```
-HTML + CSS + JS  ·  Netlify Functions  ·  DeepSeek API  ·  IndexedDB
+HTML + CSS + JS  ·  Cloudflare Pages Functions  ·  DeepSeek API  ·  IndexedDB
 ```
+
+---
+
+## 🗂️ 项目结构
+
+```
+├── index.html              # 主页面（待办 + AI聊天 + 音乐）
+├── style.css               # 样式表
+├── bg.mp4                  # 默认动态背景
+├── functions/              # Cloudflare Pages Functions
+│   ├── api.js              # Todo CRUD（JSON Blob 代理）
+│   ├── chat.js             # AI 聊天（DeepSeek + 天气/运势/笑话）
+│   └── music.js            # 音乐搜索（hige.com 代理）
+├── netlify/functions/      # Netlify Functions（已弃用，保留备份）
+├── DESIGN.md               # 设计规范
+└── package.json            # wrangler 部署依赖
+```
+
+---
+
+## 🚢 部署
+
+```bash
+# 设置凭证
+export CLOUDFLARE_API_TOKEN=<your-token>
+export CLOUDFLARE_ACCOUNT_ID=<your-account-id>
+
+# 部署（必须加 --branch=main 否则 Secrets 不可用）
+npx wrangler pages deploy . --project-name dayroom --branch=main --commit-dirty=true
+```
+
+**Cloudflare Secret:** `DEEPSEEK_API_KEY` 需通过 `wrangler pages secret put` 设置。
 
 ---
 
