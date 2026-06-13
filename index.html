@@ -1868,7 +1868,7 @@
       const PRESETS = [
         {
           id: 'preset-default',
-          name: '默认动态背景',
+          name: '动态视频背景',
           type: 'video',
           src: 'bg.mp4',
           isPreset: true,
@@ -1922,13 +1922,22 @@
         if (bgImage.src && bgImage.src.startsWith('blob:')) URL.revokeObjectURL(bgImage.src);
         if (bgVideo.src && bgVideo.src.startsWith('blob:')) URL.revokeObjectURL(bgVideo.src);
 
-        if (!wpId || wpId === 'preset-default') {
-          // Default bg.mp4
+        if (!wpId) {
+          // No wallpaper selected — default to dark static gradient
+          bgVideo.classList.add('hidden');
+          bgImage.style.display = 'block';
+          const darkPreset = PRESETS.find(p => p.id === 'preset-gradient-dark');
+          const blob = await darkPreset.blob;
+          bgImage.src = URL.createObjectURL(blob);
+          return;
+        }
+
+        if (wpId === 'preset-default') {
+          // Explicitly selected video preset
           bgVideo.classList.remove('hidden');
           bgVideo.style.opacity = '0.5';
           bgImage.style.display = 'none';
           if (bgVideo.querySelector('source[src="bg.mp4"]')) {
-            // Already set, just play
             bgVideo.play().catch(() => {});
           } else {
             bgVideo.innerHTML = '<source src="bg.mp4" type="video/mp4">';
@@ -2188,7 +2197,7 @@
       async function initWallpaper() {
         loadActiveWallpaperId();
         await loadUserWallpapers();
-        if (activeWallpaperId) await applyWallpaper(activeWallpaperId);
+        await applyWallpaper(activeWallpaperId || null);
         renderWallpaperGrid();
       }
       initWallpaper();
