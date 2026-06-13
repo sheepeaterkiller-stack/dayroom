@@ -2359,5 +2359,7 @@
       object-fit: cover;
       z-index: 0;
       display: none;
+      pointer-events: none;
     }
+    #bgVideo { pointer-events: none; }
     #bgVideo.hidden { display: none; }
