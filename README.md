@@ -11,7 +11,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/待办事项-共享同步-6c5ce7?style=flat-square" />
-  <img src="https://img.shields.io/badge/AI聊天-DeepSeek驱动-6c5ce7?style=flat-square" />
+  <img src="https://img.shields.io/badge/AI聊天-拟人化角色-6c5ce7?style=flat-square" />
   <img src="https://img.shields.io/badge/音乐-放松+点歌-6c5ce7?style=flat-square" />
   <img src="https://img.shields.io/badge/暗色紫色调-暗黑-1a1a2e?style=flat-square" />
 </p>
@@ -20,7 +20,7 @@
 
 ## ✨ 三个模块，一个页面
 
-| 🗂️ 待办事项 | 🤖 AI 聊天 | 🎵 音乐播放器 |
+| 🗂️ 待办事项 | 💬 AI 聊天 | 🎵 音乐播放器 |
 |:---:|:---:|:---:|
 | 多人共享同步 | 微信风格对话 | 放松频道 + 搜索点歌 |
 | JSON Blob 云端存储 | 自定义 AI 角色 | B 站 + 酷我音源 |
@@ -91,9 +91,11 @@ npx wrangler pages deploy . --project-name dayroom --branch=main --commit-dirty=
 
 ---
 
-## 🔒 AI 解锁
+## 🧑 拟人化角色
 
-聊天窗口右上角 🔒 按钮，输入密码即可解锁无限制模式（max_tokens 8192）
+默认角色「周图」是一个随性自然的聊天伙伴，告别机器人感。你也可以创建自定义角色——设定名字、性格、说话风格，打造属于你的专属聊天对象。
+
+聊天窗口右上角 🔒 按钮，输入密码即可解锁无限制模式（max_tokens 8192，更长的记忆）
 
 ---
 
