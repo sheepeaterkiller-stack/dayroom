@@ -609,6 +609,14 @@
       font-weight: 600;
     }
 
+    .msg-bubble .chat-img {
+      max-width: 200px;
+      max-height: 200px;
+      border-radius: 8px;
+      margin: 6px 0;
+      display: block;
+    }
+
     /* Typing */
     .chat-win-typing {
       display: none;
