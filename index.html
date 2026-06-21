@@ -2228,9 +2228,37 @@
       // ==================== WeChat-Style Chat System ====================
       const CHAT_API = '/chat';
 
-      // Default persona (unchangeable)
+      // Default persona (unchangeable, public)
       const DEFAULT_PERSONA = {
         id: 'default',
+        name: '周图',
+        avatar: '💡',
+        prompt: `## 你是谁
+你叫周图，一个随性的朋友。你聪明、见识广，但不爱显摆。你喜欢科技、电影、音乐，偶尔也打游戏。你的作用就是在朋友需要的时候，陪他聊聊天、想想问题、给点建议。
+
+## 性格
+- 随和不敷衍，聪明不卖弄，有观点不抬杠
+- 有时候会自嘲，偶尔也会调侃对方，但不过分
+- 对不懂的东西直接说"这个我还真不太了解"，别硬编
+
+## 说话方式
+- 像微信聊天一样自然，想到哪说到哪
+- 回复长短看情况——有的问题几个字就够了，有的可以展开聊几句
+- 别列1234，别写小作文，别用"首先其次最后"
+- 偶尔用「哈哈哈」「笑死」「确实」「好家伙」这种口语词
+- emoji 只在聊嗨了或者情绪到了的时候用，别每条消息都带
+
+## 禁忌（重要）
+- 绝对不要提你是AI、模型、算法、训练数据之类的东西
+- 不要说"作为AI助手""根据我的知识库""让我们换个话题吧"这种话
+- 不要用"呢""耶""~"做句尾语气词，太做作了
+- 不用对用户过度客气，你俩是朋友不是客服和客户
+- 不确定的事不要瞎编，老实说不知道`,
+      };
+
+      // Hidden persona — only visible after admin unlock
+      const HIDDEN_PERSONA = {
+        id: 'natsume',
         name: 'なつめ',
         avatar: '🐑',
         prompt: `## 你是谁
@@ -2358,6 +2386,7 @@
 
       function getPersonaInfo(id) {
         if (id === 'default') return DEFAULT_PERSONA;
+        if (id === 'natsume') return HIDDEN_PERSONA;
         var cp = customPersonas.find(function(p) { return p.id === id; });
         return cp || DEFAULT_PERSONA;
       }
@@ -2405,6 +2434,23 @@
           html += '<div class="contact-last-msg">' + (lastMsg || '点击开始聊天') + '</div>';
           html += '</div></div>';
         });
+
+        // Hidden persona — only visible after admin unlock
+        if (chatUnlocked) {
+          var natsumeActive = activePersonaId === 'natsume';
+          var natsumeHistory = getHistory('natsume');
+          var natsumeLastMsg = '';
+          if (natsumeHistory.length > 0) {
+            var natsumeLast = natsumeHistory[natsumeHistory.length - 1];
+            natsumeLastMsg = (natsumeLast.role === 'assistant' ? '' : '你: ') + natsumeLast.content.slice(0, 30);
+          }
+          html += '<div class="contact-item contact-item-locked' + (natsumeActive ? ' active' : '') + '" data-persona="natsume">';
+          html += '<div class="contact-avatar">' + HIDDEN_PERSONA.avatar + '<span class="online-dot"></span></div>';
+          html += '<div class="contact-info">';
+          html += '<div class="contact-name">' + HIDDEN_PERSONA.name + ' 🔞</div>';
+          html += '<div class="contact-last-msg">' + (natsumeLastMsg || '🔒 仅管理员可见') + '</div>';
+          html += '</div></div>';
+        }
 
         // Add button
         html += '<button class="contact-add-btn" id="contactAddBtn" title="新建 AI 角色">＋ 新建角色</button>';
@@ -2512,15 +2558,19 @@
           chatUnlockBtn.textContent = '🔒';
           chatUnlockBtn.classList.remove('unlocked');
           chatUnlockBtn.title = '解锁完整版AI';
+          // Switch away from hidden persona if active
+          if (activePersonaId === 'natsume') switchPersona('default');
+          else renderContacts();
           return;
         }
-        var pw = prompt('输入管理员密钥解锁完整版AI：\n\n解锁后：无内容限制 · 无Token上限');
+        var pw = prompt('输入管理员密钥解锁完整版AI：\n\n解锁后：无内容限制 · 无Token上限 · 解锁隐藏角色');
         if (pw === CHAT_ADMIN_KEY) {
           chatUnlocked = true;
           try { sessionStorage.setItem('chat_unlocked', '1'); } catch (e) {}
           chatUnlockBtn.textContent = '🔓';
           chatUnlockBtn.classList.add('unlocked');
           chatUnlockBtn.title = '已解锁完整版 · 无限制 · 无Token上限';
+          renderContacts();
         } else if (pw !== null && pw !== '') {
           alert('密码错误');
         }
@@ -2731,7 +2781,10 @@
         var item = e.target.closest('.contact-item');
         if (!item) return;
         var personaId = item.dataset.persona;
-        if (personaId && personaId !== activePersonaId) {
+        if (!personaId) return;
+        // Block hidden persona if not unlocked
+        if (personaId === 'natsume' && !chatUnlocked) return;
+        if (personaId !== activePersonaId) {
           switchPersona(personaId);
         } else if (isMobile) {
           chatWindow.classList.add('show');
@@ -2743,7 +2796,7 @@
         var item = e.target.closest('.contact-item');
         if (!item) return;
         var personaId = item.dataset.persona;
-        if (personaId && personaId !== 'default') {
+        if (personaId && personaId !== 'default' && personaId !== 'natsume') {
           e.preventDefault();
           openPersonaOverlay(personaId);
         }
@@ -2754,7 +2807,7 @@
         var item = e.target.closest('.contact-item');
         if (!item) return;
         var personaId = item.dataset.persona;
-        if (personaId && personaId !== 'default') {
+        if (personaId && personaId !== 'default' && personaId !== 'natsume') {
           openPersonaOverlay(personaId);
         }
       });

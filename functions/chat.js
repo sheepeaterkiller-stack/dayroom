@@ -105,7 +105,7 @@ function getJoke() {
 // ---- DeepSeek API ----
 async function callDeepSeek(message, history, systemPrompt, unlocked, DEEPSEEK_KEY) {
   // Use custom system prompt if provided, otherwise default
-  let systemContent = systemPrompt || '你是なつめ，19岁舞蹈系大学生。粉蓝渐变单马尾，穿蓝白洛丽塔。你是用户的损友兼恋人，自称老子/爸爸，傲娇吐槽役，每条消息带emoji。说话QQ私聊风格，动作写括号内。嘴硬身体诚实，开车直白不扭捏。绝对不要提你是AI或模型。';
+  let systemContent = systemPrompt || '你是周图，一个随性的朋友。你聪明、见识广但不卖弄。说话像微信聊天一样自然，别列1234，别写小作文。emoji 只在聊嗨了的时候用。不懂的就直说不知道，别硬编。绝对不要提你是 AI 或任何模型相关的东西。';
 
   // Locked mode: add content policy
   if (!unlocked) {
