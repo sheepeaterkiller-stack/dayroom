@@ -2520,10 +2520,10 @@
           console.warn('生成摘要失败，将导出不含摘要的包:', e.message);
         }
 
-        // Build export package (summary only, no raw messages)
+        // Build export package (summary + raw messages as backup)
         var pkg = {
           type: 'dayroom-chat-backup',
-          version: 2,
+          version: 3,
           exportedAt: new Date().toISOString(),
           persona: {
             name: p.name,
@@ -2531,6 +2531,7 @@
             prompt: p.prompt,
           },
           summary: summary,
+          messages: history,
           messageCount: history.length,
         };
 
@@ -2547,7 +2548,7 @@
 
         exportBtn.textContent = origText;
         exportBtn.disabled = false;
-        console.log('📦 已导出记忆包:', pkg.persona.name, '|', history.length, '条消息 → 1条摘要');
+        console.log('📦 已导出记忆包:', pkg.persona.name, '|', history.length, '条消息 + 1条摘要');
       });
 
       // ---- Auto-compress old conversation history (non-admin only) ----
@@ -2886,13 +2887,27 @@
           var prompt = p.prompt || '';
           var summary = pkg.summary || '';
           var msgCount = pkg.messageCount || 0;
+          var hasMessages = Array.isArray(pkg.messages) && pkg.messages.length > 0;
+          var pkgVersion = pkg.version || 1;
 
           var preview = '📦 导入预览\n\n';
           preview += '👤 角色: ' + name + '\n';
           preview += '🖼️ 头像: ' + avatar + '\n';
-          preview += '💬 原始消息: ' + msgCount + ' 条 (已压缩)\n';
-          preview += '📅 导出时间: ' + (pkg.exportedAt || '未知') + '\n';
-          if (summary) preview += '\n📝 对话记忆摘要:\n' + summary.slice(0, 300) + (summary.length > 300 ? '...' : '');
+          preview += '💬 原始消息: ' + msgCount + ' 条';
+          if (hasMessages) {
+            preview += ' ✅ (完整保留)';
+          } else if (pkgVersion < 3) {
+            preview += ' ⚠️ (旧版格式，仅含摘要)';
+          }
+          preview += '\n📅 导出时间: ' + (pkg.exportedAt || '未知') + '\n';
+          preview += '📦 格式版本: v' + pkgVersion + '\n';
+          if (summary) {
+            preview += '\n📝 对话记忆摘要:\n' + summary.slice(0, 300) + (summary.length > 300 ? '...' : '');
+          } else if (hasMessages) {
+            preview += '\n⚠️ 此备份不含摘要，导入后将用原始消息重建对话上下文。';
+          } else {
+            preview += '\n⚠️ 此备份既无摘要也无原始消息，导入后对话将为空白。';
+          }
           preview += '\n\n确认导入？AI 将记住之前的对话背景并继续聊天。';
 
           if (!confirm(preview)) return;
@@ -2908,12 +2923,18 @@
           customPersonas.push(newPersona);
           saveCustomPersonas();
 
-          // Inject summary as conversation context (not raw history)
+          // Build context: prefer summary, fall back to raw messages
           if (summary) {
             chatHistories[newPersona.id] = [
               { role: 'system', content: '【以下是你与用户之前的对话记忆，请记住这些背景，继续自然地聊天】\n' + summary },
               { role: 'assistant', content: '（已读取对话记忆）好的，我记得我们之前聊过的内容。继续吧~ 😊' },
             ];
+          } else if (hasMessages) {
+            // No summary, use recent messages directly as context
+            var contextMessages = pkg.messages.slice(-30);
+            chatHistories[newPersona.id] = [
+              { role: 'system', content: '【以下是用户之前与你的对话记录，请记住这些背景，继续自然地聊天】' },
+            ].concat(contextMessages);
           } else {
             chatHistories[newPersona.id] = [];
           }
@@ -2923,7 +2944,7 @@
           personaOverlay.classList.remove('open');
           switchPersona(newPersona.id);
           renderContacts();
-          console.log('📥 已导入记忆包:', name, '| 摘要长度:', summary.length, '字');
+          console.log('📥 已导入记忆包:', name, '| 摘要:', summary.length, '字 | 消息:', msgCount, '条 | v' + pkgVersion);
         } catch (e) {
           console.error('导入失败:', e.message);
           alert('导入失败: ' + e.message + '\n请确认文件是有效的 .dayroom.json 备份文件');

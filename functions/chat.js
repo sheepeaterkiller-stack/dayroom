@@ -170,8 +170,16 @@ export async function onRequest(context) {
   if (body.action === 'compress' && body.transcript) {
     const personaName = body.personaName || 'AI';
     try {
+      // Truncate transcript if too long (safety limit for API context window)
+      let transcript = body.transcript;
+      const MAX_LEN = 40000;
+      if (transcript.length > MAX_LEN) {
+        transcript = transcript.slice(-MAX_LEN);
+        transcript = transcript.substring(transcript.indexOf('\n') + 1); // drop partial first line
+      }
+
       const summary = await callDeepSeek(
-        '请将以下对话记录压缩为一段简洁的摘要（150字以内），保留：1) 对话发生的场景和主题 2) 用户的关键信息和偏好 3) 最近讨论的话题方向。输出纯文本摘要，不要加"摘要："等前缀。',
+        '请将以下对话记录压缩为一段摘要（500字以内），保留：1) 对话发生的场景和主题 2) 用户的关键信息、偏好、个人细节 3) 讨论过的重要话题和得出的结论 4) 用户表达过的观点和态度。输出纯文本摘要，不要加"摘要："等前缀。\n\n对话记录：\n' + transcript,
         [],
         '你是「' + personaName + '」的对话摘要助手。你的任务是将对话历史压缩为简洁摘要，帮助' + personaName + '在后续对话中记住之前的内容。只输出摘要文本，不要加任何前缀或格式。',
         true,
