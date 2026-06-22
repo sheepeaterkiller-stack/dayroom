@@ -1018,6 +1018,7 @@
         overflow: hidden;
       }
       .chat-resize-handle { display: none; }
+      .dino-link { display: none; }
       .chat-sidebar {
         width: 100%;
         flex-shrink: 0;
