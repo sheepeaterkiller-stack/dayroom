@@ -1299,7 +1299,7 @@
       let ctxTargetId = null;
 
       try {
-        isAdmin = sessionStorage.getItem('todo_admin') === '1';
+        isAdmin = localStorage.getItem('todo_admin') === '1';
         if (isAdmin) appEl.classList.add('admin-active');
       } catch {}
 
@@ -1307,7 +1307,7 @@
         if (isAdmin) {
           isAdmin = false;
           appEl.classList.remove('admin-active');
-          try { sessionStorage.removeItem('todo_admin'); } catch {}
+          try { localStorage.removeItem('todo_admin'); } catch {}
           adminEntry.textContent = '🔒';
           return;
         }
@@ -1315,7 +1315,7 @@
         if (pw === ADMIN_KEY) {
           isAdmin = true;
           appEl.classList.add('admin-active');
-          try { sessionStorage.setItem('todo_admin', '1'); } catch {}
+          try { localStorage.setItem('todo_admin', '1'); } catch {}
           adminEntry.textContent = '🔓';
         } else if (pw !== null) {
           alert('密钥错误，无管理权限');
@@ -2501,7 +2501,7 @@
       let chatUnlocked = false;
       const chatUnlockBtn = document.getElementById('chatUnlockBtn');
 
-      try { chatUnlocked = sessionStorage.getItem('chat_unlocked') === '1'; } catch (e) {}
+      try { chatUnlocked = localStorage.getItem('chat_unlocked') === '1'; } catch (e) {}
       if (chatUnlocked) {
         chatUnlockBtn.textContent = '🔓';
         chatUnlockBtn.classList.add('unlocked');
@@ -2511,7 +2511,7 @@
       chatUnlockBtn.addEventListener('click', function() {
         if (chatUnlocked) {
           chatUnlocked = false;
-          try { sessionStorage.removeItem('chat_unlocked'); } catch (e) {}
+          try { localStorage.removeItem('chat_unlocked'); } catch (e) {}
           chatUnlockBtn.textContent = '🔒';
           chatUnlockBtn.classList.remove('unlocked');
           chatUnlockBtn.title = '解锁完整版AI';
@@ -2521,7 +2521,7 @@
         var pw = prompt('输入管理员密钥解锁完整版AI：\n\n解锁后：无内容限制 · 无Token上限 · 解锁隐藏角色');
         if (pw === CHAT_ADMIN_KEY) {
           chatUnlocked = true;
-          try { sessionStorage.setItem('chat_unlocked', '1'); } catch (e) {}
+          try { localStorage.setItem('chat_unlocked', '1'); } catch (e) {}
           chatUnlockBtn.textContent = '🔓';
           chatUnlockBtn.classList.add('unlocked');
           chatUnlockBtn.title = '已解锁完整版 · 无限制 · 无Token上限';
@@ -2756,7 +2756,7 @@
             return;
           }
           chatUnlocked = true;
-          try { sessionStorage.setItem('chat_unlocked', '1'); } catch (e) {}
+          try { localStorage.setItem('chat_unlocked', '1'); } catch (e) {}
           chatUnlockBtn.textContent = '🔓';
           chatUnlockBtn.classList.add('unlocked');
           chatUnlockBtn.title = '已解锁完整版 · 无限制 · 无Token上限';
