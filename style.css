@@ -597,6 +597,35 @@
       background: rgba(255,255,255,0.05);
       color: rgba(255,255,255,0.88);
       border-top-left-radius: 4px;
+      position: relative;
+    }
+
+    /* Copy button inside bot messages */
+    .msg-copy-btn {
+      position: absolute;
+      top: 4px;
+      right: 6px;
+      width: 24px;
+      height: 24px;
+      border-radius: 4px;
+      border: none;
+      background: rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.3);
+      font-size: 0.7rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.2s, background 0.2s, color 0.2s;
+      z-index: 1;
+    }
+    .chat-msg.bot .msg-bubble:hover .msg-copy-btn {
+      opacity: 1;
+    }
+    .msg-copy-btn:hover {
+      background: rgba(255,255,255,0.15);
+      color: rgba(255,255,255,0.9);
     }
     .chat-msg.user .msg-bubble {
       background: rgba(var(--accent-rgb), 0.25);
@@ -607,14 +636,6 @@
     .msg-bubble .highlight {
       color: #fbbf24;
       font-weight: 600;
-    }
-
-    .msg-bubble .chat-img {
-      max-width: 200px;
-      max-height: 200px;
-      border-radius: 8px;
-      margin: 6px 0;
-      display: block;
     }
 
     /* Typing */

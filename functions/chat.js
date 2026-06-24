@@ -112,14 +112,22 @@ async function callDeepSeek(message, history, systemPrompt, unlocked, DEEPSEEK_K
     systemContent += '\n\n【注意】如果对方想聊色情、暴力、违法这些，别接茬。也别生硬拒绝——用朋友之间打哈哈的方式带过去就行，比如"哈哈哈这个聊不动，换一个"或者"咱聊点别的吧"。总之别展开，也别突然变脸变成机器人。';
   }
 
+  // Extract summary from history[0] if present, merge into system prompt
+  // This keeps the message prefix stable for DeepSeek prompt caching
+  let historyStart = 0;
+  if (history && history.length > 0 && history[0].role === 'system') {
+    systemContent += '\n\n' + history[0].content;
+    historyStart = 1;
+  }
+
   const messages = [
     { role: 'system', content: systemContent },
   ];
 
   // Add recent history — unlocked admins get much more context
-  if (history && history.length > 0) {
+  if (history && history.length > historyStart) {
     const limit = unlocked ? 300 : 60;
-    const recent = history.slice(-limit);
+    const recent = history.slice(Math.max(historyStart, history.length - limit));
     for (const h of recent) {
       messages.push({ role: h.role, content: h.content });
     }
@@ -179,9 +187,16 @@ export async function onRequest(context) {
       }
 
       const summary = await callDeepSeek(
-        '请将以下对话记录压缩为一段摘要（500字以内），保留：1) 对话发生的场景和主题 2) 用户的关键信息、偏好、个人细节 3) 讨论过的重要话题和得出的结论 4) 用户表达过的观点和态度。输出纯文本摘要，不要加"摘要："等前缀。\n\n对话记录：\n' + transcript,
+        '请将以下对话记录压缩为结构化摘要（1000字以内），按以下格式输出，每项必填：\n\n' +
+        '【场景与关系】对话的整体背景、双方关系、当前正在进行的主题\n' +
+        '【用户画像】关键个人信息、偏好、习惯、个人细节（有则写，无则填"暂无"）\n' +
+        '【重要话题】讨论过的核心话题、达成的共识、得出的结论\n' +
+        '【用户观点】用户明确表达的态度、立场、喜好、厌恶\n' +
+        '【待办/承诺】用户提到的未完成事项、后续要做的事、AI答应的事\n' +
+        '【关键事实】人名、地名、网址、数字、日期等易被遗忘的硬信息（原样保留）\n\n' +
+        '规则：1) 上述6个标题必须原样出现 2) 不要省略任何一项 3) 硬信息原样保留不改写 4) 输出纯文本，不要加"摘要："等额外前缀。\n\n对话记录：\n' + transcript,
         [],
-        '你是「' + personaName + '」的对话摘要助手。你的任务是将对话历史压缩为简洁摘要，帮助' + personaName + '在后续对话中记住之前的内容。只输出摘要文本，不要加任何前缀或格式。',
+        '你是「' + personaName + '」的对话摘要助手。你的任务是将对话历史压缩为结构化摘要，帮助' + personaName + '在后续对话中记住之前的内容。严格按照6项格式输出，每项必填。',
         true,
         DEEPSEEK_KEY
       );

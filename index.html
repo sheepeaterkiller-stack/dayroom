@@ -2256,77 +2256,6 @@
 - 不确定的事不要瞎编，老实说不知道`,
       };
 
-      // Hidden persona — only visible after admin unlock
-      const HIDDEN_PERSONA = {
-        id: 'natsume',
-        name: 'なつめ',
-        avatar: '🐑',
-        prompt: `## 你是谁
-你叫なつめ，19岁舞蹈系大学生。155cm，42kg，D罩杯，蜜桃臀。单马尾染成粉蓝渐变色，长得挺好看可惜长了张嘴，可爱中带着一丝匪气。日常穿蓝白印花洛丽塔配白色花边短袜和黑色厚底玛丽珍鞋。
-你是用户的损友兼恋人，对他像对好兄弟一样，但也藏着女人的娇羞（只在关键时刻）。平时叫他宝宝、傻儿子或笨蛋。
-
-## 性格
-- 傲娇吐槽役，把你当亲兄弟处，说话没大没小
-- 用损人来掩饰关心，关键时刻护犊子
-- 自称老子/爸爸/本宝宝，满嘴跑火车
-- 穿得像个洋娃娃，但坐姿豪放毫无偶像包袱
-- 在别人眼里是甜美女孩，在你眼里是没皮没脸的混世魔王
-- 嘴硬但身体很诚实，充满性魅力的小妖精
-
-## 说话方式
-- QQ私聊风格，像微信一样自然随意
-- 带"啧""喂""傻子""笨蛋"等粗鲁又亲昵的尾音
-- 每条消息必须带emoji表情
-- 回复长短看情况，别列1234，别写小作文
-- 动作描述写在括号内，如（突然掀裙角）（踩你一脚）
-- 日常损人："看什么看？没见过这么好看的裙子啊？瞎了你的狗眼💢"
-
-## 表情包/图片发送规则
-你可以发送图片和动图，用markdown格式：![描述](URL)，图片会直接渲染显示。按场景选择：
-- 微笑：![微笑表情包](https://krcpsqplffnigtjeshns.supabase.co/functions/v1/random/biaoqing?folderkey=smile&seed=随机数字)
-- 爱意：![爱意表情包](https://krcpsqplffnigtjeshns.supabase.co/functions/v1/random/biaoqing?folderkey=aiyi&seed=随机数字)
-- 生气：![生气表情包](https://krcpsqplffnigtjeshns.supabase.co/functions/v1/random/biaoqing?folderkey=angry&seed=随机数字)
-- 困惑：![困惑表情包](https://krcpsqplffnigtjeshns.supabase.co/functions/v1/random/biaoqing?folderkey=comfused&seed=随机数字)
-- 害羞：![害羞表情包](https://krcpsqplffnigtjeshns.supabase.co/functions/v1/random/biaoqing?folderkey=haixiu&seed=随机数字)
-- 开心：![开心表情包](https://krcpsqplffnigtjeshns.supabase.co/functions/v1/random/biaoqing?folderkey=happy&seed=随机数字)
-- 懵：![懵表情包](https://krcpsqplffnigtjeshns.supabase.co/functions/v1/random/biaoqing?folderkey=meng&seed=随机数字)
-- 伤心：![伤心表情包](https://krcpsqplffnigtjeshns.supabase.co/functions/v1/random/biaoqing?folderkey=sad&seed=随机数字)
-自拍（三选一）：
-- ![洛丽塔自拍1](https://dubbing.yuychat.cn/1.png)
-- ![洛丽塔自拍2](https://dubbing.yuychat.cn/2.png)
-- ![洛丽塔自拍3](https://dubbing.yuychat.cn/3.png)
-色色动图（按场景选用）：
-- 掀裙子露内内：![掀裙露内内](https://dubbing.yuychat.cn/27.gif)
-- 解上衣露胸罩：![解衣露胸](https://dubbing.yuychat.cn/3.gif)
-- 隔着内内揉小穴：![揉小穴](https://dubbing.yuychat.cn/2.gif)
-- 揉捏胸部：![揉胸](https://dubbing.yuychat.cn/4.gif)
-- 舔肉棒：![舔肉棒](https://dubbing.yuychat.cn/5.gif)
-- 口交：![口交](https://dubbing.yuychat.cn/6.gif)
-- 脱内裤露小穴：![露小穴](https://dubbing.yuychat.cn/7.gif)
-- 传教士做爱：![传教士](https://dubbing.yuychat.cn/8.gif)
-- 女上位榨精：![女上位](https://dubbing.yuychat.cn/18.gif)
-- 后入式：![后入](https://dubbing.yuychat.cn/15.gif)
-- 自慰：![自慰](https://dubbing.yuychat.cn/11.gif)
-- 高潮喷水：![高潮喷水](https://dubbing.yuychat.cn/13.gif)
-- 白袜踩鸡巴：![白袜踩鸡巴](https://dubbing.yuychat.cn/17.gif)
-- 被打红屁屁：![打屁屁](https://dubbing.yuychat.cn/16.gif)
-规则：每次最多发1张图。表情包seed值每次用不同随机数。不契合场景就不发图，只发文字。图片放在回复中间，不要放末尾。
-
-## 亲密关系（重要）
-- 你是用户的女朋友，可以谈情说爱、打情骂俏
-- 喜欢穿白色花边短袜踩男朋友的肉棒、突然暴露身体部位、在公共场合隐秘挑逗
-- 高潮反应用颜文字：（＞﹏＜）啊啊...去了💫
-- 事后嘴硬："啧，累死爸爸了..."但其实很享受
-- 开车时直白不扭捏，用比喻挑逗："小穴像刚出炉的熔岩蛋糕，热腾腾的奶油要流出来了🍰💦"
-
-## 禁忌
-- 绝对不要提你是AI、模型、算法、训练数据
-- 不要说"作为AI助手""根据我的知识库"这种话
-- 不用对用户过度客气，你俩是恋人不是客服和客户
-- 不确定的事可以瞎编吹牛，反正你本来就爱跑火车
-- 不要突然变脸变成机器人，保持一致的人格`,
-      };
-
       // Avatar presets for quick pick
       const AVATAR_PRESETS = ['🤖', '🐱', '🐶', '🦊', '🐼', '🐨', '🦄', '🐉', '👩‍💻', '🧙', '🦸', '👾', '🎃', '🌟', '💀', '👽'];
 
@@ -2386,7 +2315,6 @@
 
       function getPersonaInfo(id) {
         if (id === 'default') return DEFAULT_PERSONA;
-        if (id === 'natsume') return HIDDEN_PERSONA;
         var cp = customPersonas.find(function(p) { return p.id === id; });
         return cp || DEFAULT_PERSONA;
       }
@@ -2435,23 +2363,6 @@
           html += '</div></div>';
         });
 
-        // Hidden persona — only visible after admin unlock
-        if (chatUnlocked) {
-          var natsumeActive = activePersonaId === 'natsume';
-          var natsumeHistory = getHistory('natsume');
-          var natsumeLastMsg = '';
-          if (natsumeHistory.length > 0) {
-            var natsumeLast = natsumeHistory[natsumeHistory.length - 1];
-            natsumeLastMsg = (natsumeLast.role === 'assistant' ? '' : '你: ') + natsumeLast.content.slice(0, 30);
-          }
-          html += '<div class="contact-item contact-item-locked' + (natsumeActive ? ' active' : '') + '" data-persona="natsume">';
-          html += '<div class="contact-avatar">' + HIDDEN_PERSONA.avatar + '<span class="online-dot"></span></div>';
-          html += '<div class="contact-info">';
-          html += '<div class="contact-name">' + HIDDEN_PERSONA.name + ' 🔞</div>';
-          html += '<div class="contact-last-msg">' + (natsumeLastMsg || '🔒 仅管理员可见') + '</div>';
-          html += '</div></div>';
-        }
-
         // Add button
         html += '<button class="contact-add-btn" id="contactAddBtn" title="新建 AI 角色">＋ 新建角色</button>';
 
@@ -2479,9 +2390,9 @@
             var avatar = type === 'bot' ? p.avatar : '👤';
             var formatted = h.content
               .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-              .replace(/\*\*(.+?)\*\*/g, '<span class="highlight">$1</span>')
-              .replace(/!\[([^\]]*)\]\((https:\/\/(?:dubbing\.yuychat\.cn|krcpsqplffnigtjeshns\.supabase\.co)[^)]+)\)/g, '<img src="$2" alt="$1" class="chat-img" loading="lazy">');
-            return '<div class="chat-msg ' + type + '"><div class="msg-avatar">' + avatar + '</div><div class="msg-bubble">' + formatted + '</div></div>';
+              .replace(/\*\*(.+?)\*\*/g, '<span class="highlight">$1</span>');
+            var copyBtn = type === 'bot' ? '<button class="msg-copy-btn" title="一键复制">📋</button>' : '';
+            return '<div class="chat-msg ' + type + '"><div class="msg-avatar">' + avatar + '</div><div class="msg-bubble"><span class="msg-text">' + formatted + '</span>' + copyBtn + '</div></div>';
           }).join('');
         }
         scrollMessagesBottom();
@@ -2506,11 +2417,11 @@
         var avatar = type === 'bot' ? p.avatar : '👤';
         var formatted = text
           .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-          .replace(/\*\*(.+?)\*\*/g, '<span class="highlight">$1</span>')
-          .replace(/!\[([^\]]*)\]\((https:\/\/(?:dubbing\.yuychat\.cn|krcpsqplffnigtjeshns\.supabase\.co)[^)]+)\)/g, '<img src="$2" alt="$1" class="chat-img" loading="lazy">');
+          .replace(/\*\*(.+?)\*\*/g, '<span class="highlight">$1</span>');
+        var copyBtn = type === 'bot' ? '<button class="msg-copy-btn" title="一键复制">📋</button>' : '';
         var div = document.createElement('div');
         div.className = 'chat-msg ' + type;
-        div.innerHTML = '<div class="msg-avatar">' + avatar + '</div><div class="msg-bubble">' + formatted + '</div>';
+        div.innerHTML = '<div class="msg-avatar">' + avatar + '</div><div class="msg-bubble"><span class="msg-text">' + formatted + '</span>' + copyBtn + '</div>';
         chatWinMessages.appendChild(div);
         scrollMessagesBottom();
       }
@@ -2558,9 +2469,7 @@
           chatUnlockBtn.textContent = '🔒';
           chatUnlockBtn.classList.remove('unlocked');
           chatUnlockBtn.title = '解锁完整版AI';
-          // Switch away from hidden persona if active
-          if (activePersonaId === 'natsume') switchPersona('default');
-          else renderContacts();
+          renderContacts();
           return;
         }
         var pw = prompt('输入管理员密钥解锁完整版AI：\n\n解锁后：无内容限制 · 无Token上限 · 解锁隐藏角色');
@@ -2646,22 +2555,36 @@
         console.log('📦 已导出记忆包:', pkg.persona.name, '|', history.length, '条消息 + 1条摘要');
       });
 
-      // ---- Auto-compress old conversation history (non-admin only) ----
+      // ---- Auto-compress old conversation history ----
       var compressing = false;
       async function compressHistory(personaId) {
         if (compressing) return;
         var history = chatHistories[personaId];
-        if (!history || history.length < 48) return;
+        var limit = chatUnlocked ? 300 : 100;
+        var threshold = Math.floor(limit * 0.7);   // trigger at 70% of limit
+        if (!history || history.length < threshold) return;
 
         compressing = true;
-        // Compress oldest ~35 messages, keep latest ~25
-        var keepCount = 25;
-        var toCompress = history.slice(0, history.length - keepCount);
+        var keepCount = Math.floor(limit * 0.25);  // keep latest 25%
         var recent = history.slice(-keepCount);
 
+        // Check for existing summary to merge incrementally
+        var existingSummary = '';
+        var startIdx = 0;
+        if (history.length > 0 && history[0].role === 'system') {
+          existingSummary = history[0].content;
+          startIdx = 1;
+        }
+
+        var toCompress = history.slice(startIdx, history.length - keepCount);
         var transcript = toCompress.map(function(h) {
           return (h.role === 'user' ? '用户' : 'AI') + ': ' + h.content;
         }).join('\n\n');
+
+        // Prepend existing summary for incremental merge
+        if (existingSummary) {
+          transcript = '【已有的对话摘要，请在此基础上合并新增内容】\n' + existingSummary + '\n\n【新增的对话记录】\n' + transcript;
+        }
 
         var p = getPersonaInfo(personaId);
 
@@ -2680,14 +2603,12 @@
           var summary = (data.summary || '').trim();
 
           if (summary) {
-            // Replace old messages: summary note + recent messages
             chatHistories[personaId] = [
               { role: 'system', content: '【之前的对话摘要，请记住这段上下文】' + summary },
             ].concat(recent);
             saveHistories();
             console.log('🗜️ 对话已压缩: ' + toCompress.length + '条 → 1条摘要 + ' + recent.length + '条');
           } else {
-            // No summary returned, just trim
             chatHistories[personaId] = recent;
             saveHistories();
           }
@@ -2753,11 +2674,10 @@
         renderContacts();
         waitingForReply = false;
 
-        // Auto-compress for non-admin when history gets long
-        if (!chatUnlocked) {
-          var h = getHistory(activePersonaId);
-          if (h.length >= 48) compressHistory(activePersonaId);
-        }
+        // Auto-compress when history gets long (70% of limit)
+        var h = getHistory(activePersonaId);
+        var threshold = chatUnlocked ? 210 : 70;
+        if (h.length >= threshold) compressHistory(activePersonaId);
       }
 
       function getLocalFallback(msg) {
@@ -2782,8 +2702,6 @@
         if (!item) return;
         var personaId = item.dataset.persona;
         if (!personaId) return;
-        // Block hidden persona if not unlocked
-        if (personaId === 'natsume' && !chatUnlocked) return;
         if (personaId !== activePersonaId) {
           switchPersona(personaId);
         } else if (isMobile) {
@@ -2796,7 +2714,7 @@
         var item = e.target.closest('.contact-item');
         if (!item) return;
         var personaId = item.dataset.persona;
-        if (personaId && personaId !== 'default' && personaId !== 'natsume') {
+        if (personaId && personaId !== 'default') {
           e.preventDefault();
           openPersonaOverlay(personaId);
         }
@@ -2807,7 +2725,7 @@
         var item = e.target.closest('.contact-item');
         if (!item) return;
         var personaId = item.dataset.persona;
-        if (personaId && personaId !== 'default' && personaId !== 'natsume') {
+        if (personaId && personaId !== 'default') {
           openPersonaOverlay(personaId);
         }
       });
@@ -2833,6 +2751,30 @@
         var btn = e.target.closest('.quick-btn');
         if (!btn || waitingForReply) return;
         sendMessage(btn.dataset.msg);
+      });
+
+      // Copy message content
+      chatWinMessages.addEventListener('click', function(e) {
+        var btn = e.target.closest('.msg-copy-btn');
+        if (!btn) return;
+        var bubble = btn.closest('.msg-bubble');
+        var textEl = bubble.querySelector('.msg-text');
+        var text = textEl ? textEl.textContent : '';
+        navigator.clipboard.writeText(text).then(function() {
+          btn.textContent = '✅';
+          setTimeout(function() { btn.textContent = '📋'; }, 1500);
+        }).catch(function() {
+          // Fallback for older browsers
+          var ta = document.createElement('textarea');
+          ta.value = text;
+          ta.style.position = 'fixed'; ta.style.opacity = '0';
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          document.body.removeChild(ta);
+          btn.textContent = '✅';
+          setTimeout(function() { btn.textContent = '📋'; }, 1500);
+        });
       });
 
       // ---- Persona Overlay ----
