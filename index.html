@@ -2748,6 +2748,19 @@
         if (!item) return;
         var personaId = item.dataset.persona;
         if (!personaId) return;
+        // 张雅：需要密码解锁才能进入
+        if (personaId === 'zhangya' && !chatUnlocked) {
+          var pw = prompt('🔒 输入密码解锁张雅：');
+          if (pw !== CHAT_ADMIN_KEY) {
+            if (pw !== null && pw !== '') alert('密码错误');
+            return;
+          }
+          chatUnlocked = true;
+          try { sessionStorage.setItem('chat_unlocked', '1'); } catch (e) {}
+          chatUnlockBtn.textContent = '🔓';
+          chatUnlockBtn.classList.add('unlocked');
+          chatUnlockBtn.title = '已解锁完整版 · 无限制 · 无Token上限';
+        }
         if (personaId !== activePersonaId) {
           switchPersona(personaId);
         } else if (isMobile) {
