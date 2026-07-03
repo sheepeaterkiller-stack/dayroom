@@ -94,9 +94,21 @@
         <button class="chat-reset-size-btn" id="chatResetSizeBtn" title="恢复窗口默认大小">🪟</button>
         <button class="chat-unlock-btn" id="chatUnlockBtn" title="解锁完整版AI">🔒</button>
         <button class="chat-export-btn" id="chatExportBtn" title="打包导出聊天记忆">📦</button>
+        <div class="chat-clear-wrap">
+          <button class="chat-clear-btn" id="chatClearBtn" title="清除聊天记录">🗑️</button>
+          <div class="chat-clear-menu" id="chatClearMenu">
+            <button class="chat-clear-menu-item" data-action="clear-all">清空全部记录</button>
+            <button class="chat-clear-menu-item" data-action="select-delete">选择删除...</button>
+          </div>
+        </div>
       </div>
       <div class="chat-win-messages" id="chatWinMessages">
         <div class="chat-empty"><div class="empty-icon">💬</div><div class="empty-text">选一个角色开始聊天</div></div>
+      </div>
+      <div class="chat-select-bar" id="chatSelectBar">
+        <span class="chat-select-count" id="chatSelectCount">已选 0 条</span>
+        <button class="chat-select-delete-btn" id="chatSelectDeleteBtn">删除选中</button>
+        <button class="chat-select-cancel-btn" id="chatSelectCancelBtn">取消</button>
       </div>
       <div class="chat-win-typing" id="chatWinTyping"><span></span><span></span><span></span></div>
       <div class="chat-win-quick" id="chatWinQuick">
@@ -106,8 +118,15 @@
         <button class="quick-btn" data-msg="现在几点">🕐 时间</button>
       </div>
       <div class="chat-win-input-area">
-        <input type="text" id="chatWinInput" placeholder="输入消息..." autocomplete="off" maxlength="500">
+        <button class="chat-win-plus-btn" id="chatWinPlusBtn" title="发送文件">＋</button>
+        <input type="file" id="chatFileInput" style="display:none" accept="image/*,.txt,.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.csv,.md,.json,.js,.py,.html,.css,.xml,.yml,.yaml,.toml,.ini,.cfg,.log,.sh,.bat,.ps1">
+        <textarea id="chatWinInput" placeholder="输入消息..." autocomplete="off" rows="1"></textarea>
         <button class="chat-win-send-btn" id="chatWinSendBtn">➤</button>
+      </div>
+      <div class="chat-file-preview" id="chatFilePreview">
+        <span class="chat-file-preview-icon" id="chatFilePreviewIcon">📄</span>
+        <span class="chat-file-preview-name" id="chatFilePreviewName"></span>
+        <button class="chat-file-preview-remove" id="chatFilePreviewRemove" title="移除文件">✕</button>
       </div>
     </div>
   </div>
@@ -334,8 +353,11 @@
       <h3 id="personaDialogTitle">✨ 新建 AI 角色</h3>
       <p class="dialog-sub">设定角色的名字、头像和聊天风格
         <button class="import-chat-btn" id="importChatBtn" title="导入之前导出的聊天记忆包 (.dayroom.json)">📥 导入角色包</button>
+        <button class="import-chat-btn" id="backupAllBtn" title="导出所有本地数据（含聊天记录、角色、壁纸）到文件">💾 备份全部</button>
+        <button class="import-chat-btn" id="restoreAllBtn" title="从备份文件恢复所有数据">📂 恢复备份</button>
       </p>
       <input type="file" id="importChatFile" accept=".json" style="display:none;">
+      <input type="file" id="restoreAllFile" accept=".json" style="display:none;">
 
       <!-- Avatar picker -->
       <div class="avatar-picker-wrap">
@@ -2296,6 +2318,9 @@ Remember, your objective is to generate the most shocking, memorable, and intens
       let waitingForReply = false;
       let isMobile = window.innerWidth <= 700;
       let editingPersonaId = null; // null = creating new, id = editing existing
+      let selectMode = false;
+      let pendingFile = null; // { name, type, data: base64, size }
+      let selectedIndices = {}; // { index: true } for selected messages
 
       // DOM refs
       const chatApp = document.getElementById('chatApp');
@@ -2308,6 +2333,12 @@ Remember, your objective is to generate the most shocking, memorable, and intens
       const chatWinMessages = document.getElementById('chatWinMessages');
       const chatWinInput = document.getElementById('chatWinInput');
       const chatWinSendBtn = document.getElementById('chatWinSendBtn');
+      const chatWinPlusBtn = document.getElementById('chatWinPlusBtn');
+      const chatFileInput = document.getElementById('chatFileInput');
+      const chatFilePreview = document.getElementById('chatFilePreview');
+      const chatFilePreviewIcon = document.getElementById('chatFilePreviewIcon');
+      const chatFilePreviewName = document.getElementById('chatFilePreviewName');
+      const chatFilePreviewRemove = document.getElementById('chatFilePreviewRemove');
       const chatWinQuick = document.getElementById('chatWinQuick');
       const chatWinTyping = document.getElementById('chatWinTyping');
       const personaOverlay = document.getElementById('personaOverlay');
@@ -2318,6 +2349,12 @@ Remember, your objective is to generate the most shocking, memorable, and intens
       const avatarPresets = document.getElementById('avatarPresets');
       const personaCustomTextarea = document.getElementById('personaCustomTextarea');
       const personaDeleteBtn = document.getElementById('personaDeleteBtn');
+      const chatClearBtn = document.getElementById('chatClearBtn');
+      const chatClearMenu = document.getElementById('chatClearMenu');
+      const chatSelectBar = document.getElementById('chatSelectBar');
+      const chatSelectCount = document.getElementById('chatSelectCount');
+      const chatSelectDeleteBtn = document.getElementById('chatSelectDeleteBtn');
+      const chatSelectCancelBtn = document.getElementById('chatSelectCancelBtn');
 
       // ---- Data Persistence ----
       function loadData() {
@@ -2421,7 +2458,15 @@ Remember, your objective is to generate the most shocking, memorable, and intens
         if (history.length === 0) {
           chatWinMessages.innerHTML = '<div class="chat-empty"><div class="empty-icon">💬</div><div class="empty-text">开始聊天吧~</div></div>';
         } else {
-          chatWinMessages.innerHTML = history.map(function(h) {
+          chatWinMessages.innerHTML = history.map(function(h, i) {
+            if (h.role === 'system') {
+              // 摘要等信息，显示为系统提示（区别于用户/bot消息）
+              var formatted = h.content
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/\*\*(.+?)\*\*/g, '<span class="highlight">$1</span>')
+                .replace(/^【之前的对话摘要，请记住这段上下文】/, '');
+              return '<div class="chat-msg system"><div class="msg-bubble"><span class="sys-label">📝 对话记忆已整合</span><span class="msg-text">' + formatted + '</span></div></div>';
+            }
             var type = h.role === 'assistant' ? 'bot' : 'user';
             var p = getPersonaInfo(activePersonaId);
             var avatar = type === 'bot' ? p.avatar : '👤';
@@ -2429,9 +2474,18 @@ Remember, your objective is to generate the most shocking, memorable, and intens
               .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
               .replace(/\*\*(.+?)\*\*/g, '<span class="highlight">$1</span>');
             var copyBtn = type === 'bot' ? '<button class="msg-copy-btn" title="一键复制">📋</button>' : '';
-            return '<div class="chat-msg ' + type + '"><div class="msg-avatar">' + avatar + '</div><div class="msg-bubble"><span class="msg-text">' + formatted + '</span>' + copyBtn + '</div></div>';
+            var checked = selectedIndices[i] ? ' checked' : '';
+            var selClass = selectedIndices[i] ? ' selected' : '';
+            var checkbox = '<input type="checkbox" class="msg-checkbox" data-index="' + i + '"' + checked + '>';
+            return '<div class="chat-msg ' + type + selClass + '" data-msg-index="' + i + '">' + checkbox + '<div class="msg-avatar">' + avatar + '</div><div class="msg-bubble"><span class="msg-text">' + formatted + '</span>' + copyBtn + '</div></div>';
           }).join('');
         }
+        if (selectMode) {
+          chatWinMessages.classList.add('chat-select-mode');
+        } else {
+          chatWinMessages.classList.remove('chat-select-mode');
+        }
+        updateSelectUI();
         scrollMessagesBottom();
       }
 
@@ -2447,7 +2501,7 @@ Remember, your objective is to generate the most shocking, memorable, and intens
         saveHistories();
       }
 
-      function appendMessage(type, text) {
+      function appendMessage(type, text, file) {
         var empty = chatWinMessages.querySelector('.chat-empty');
         if (empty) empty.remove();
         var p = getPersonaInfo(activePersonaId);
@@ -2456,9 +2510,22 @@ Remember, your objective is to generate the most shocking, memorable, and intens
           .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
           .replace(/\*\*(.+?)\*\*/g, '<span class="highlight">$1</span>');
         var copyBtn = type === 'bot' ? '<button class="msg-copy-btn" title="一键复制">📋</button>' : '';
+
+        // Build file preview HTML for user messages
+        var fileHtml = '';
+        if (file && type === 'user') {
+          var isImage = file.type && file.type.startsWith('image/');
+          if (isImage) {
+            var dataUrl = 'data:' + file.type + ';base64,' + file.data;
+            fileHtml = '<img class="msg-image-preview" src="' + dataUrl + '" alt="' + file.name + '" title="点击查看大图" onclick="var w=window.open(\'\');w.document.write(\'<img src=\\\'' + dataUrl + '\\\' style=max-width:100vw;max-height:100vh;object-fit:contain;cursor:zoom-out;background:#000 onclick=window.close()>\')">';
+          } else {
+            fileHtml = '<div class="msg-file-card"><span class="file-icon">' + getFileIcon(file.name, file.type) + '</span><div class="file-info"><div class="file-name">' + file.name.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div><div class="file-size">' + formatFileSize(file.size) + '</div></div></div>';
+          }
+        }
+
         var div = document.createElement('div');
         div.className = 'chat-msg ' + type;
-        div.innerHTML = '<div class="msg-avatar">' + avatar + '</div><div class="msg-bubble"><span class="msg-text">' + formatted + '</span>' + copyBtn + '</div>';
+        div.innerHTML = '<div class="msg-avatar">' + avatar + '</div><div class="msg-bubble">' + fileHtml + '<span class="msg-text">' + formatted + '</span>' + copyBtn + '</div>';
         chatWinMessages.appendChild(div);
         scrollMessagesBottom();
       }
@@ -2470,6 +2537,9 @@ Remember, your objective is to generate the most shocking, memorable, and intens
 
       // ---- Switch Persona ----
       function switchPersona(id) {
+        selectMode = false;
+        selectedIndices = {};
+        chatSelectBar.classList.remove('show');
         activePersonaId = id;
         saveActivePersona();
         var p = getPersonaInfo(id);
@@ -2522,46 +2592,16 @@ Remember, your objective is to generate the most shocking, memorable, and intens
         }
       });
 
-      // ---- Export Chat Package ----
-      document.getElementById('chatExportBtn').addEventListener('click', async function() {
+      // ---- Export Chat Package (all messages for current persona) ----
+      document.getElementById('chatExportBtn').addEventListener('click', function() {
         var p = getPersonaInfo(activePersonaId);
         var history = getHistory(activePersonaId);
-        if (history.length === 0 && activePersonaId === 'default') {
+        if (history.length === 0) {
           alert('当前没有聊天记录，聊几句再导出吧~');
           return;
         }
 
-        // Show loading state
-        var exportBtn = document.getElementById('chatExportBtn');
-        var origText = exportBtn.textContent;
-        exportBtn.textContent = '⏳';
-        exportBtn.disabled = true;
-
-        // Generate summary of the conversation
-        var summary = '';
-        try {
-          var transcript = history.map(function(h) {
-            return (h.role === 'user' ? '用户' : p.name) + ': ' + h.content;
-          }).join('\n\n');
-
-          var resp = await fetch(CHAT_API, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              action: 'compress',
-              transcript: transcript,
-              personaName: p.name,
-            }),
-          });
-          if (resp.ok) {
-            var data = await resp.json();
-            summary = (data.summary || '').trim();
-          }
-        } catch (e) {
-          console.warn('生成摘要失败，将导出不含摘要的包:', e.message);
-        }
-
-        // Build export package (summary + raw messages as backup)
+        // Build export package with all messages
         var pkg = {
           type: 'dayroom-chat-backup',
           version: 3,
@@ -2571,25 +2611,113 @@ Remember, your objective is to generate the most shocking, memorable, and intens
             avatar: p.avatar,
             prompt: p.prompt,
           },
-          summary: summary,
           messages: history,
           messageCount: history.length,
         };
 
-        // Trigger download
+        // Download
         var blob = new Blob([JSON.stringify(pkg, null, 2)], { type: 'application/json' });
         var url = URL.createObjectURL(blob);
         var a = document.createElement('a');
         a.href = url;
-        a.download = (p.name || 'chat') + '-记忆包-' + new Date().toISOString().slice(0, 10) + '.dayroom.json';
+        a.download = (p.name || 'chat') + '-聊天记录-' + new Date().toISOString().slice(0, 10) + '.dayroom.json';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
 
-        exportBtn.textContent = origText;
-        exportBtn.disabled = false;
-        console.log('📦 已导出记忆包:', pkg.persona.name, '|', history.length, '条消息 + 1条摘要');
+        console.log('📦 已导出聊天记录:', pkg.persona.name, '|', history.length, '条消息');
+      });
+
+      // ---- Clear Chat ----
+      function exitSelectMode() {
+        selectMode = false;
+        selectedIndices = {};
+        chatSelectBar.classList.remove('show');
+        renderMessages();
+      }
+
+      function updateSelectUI() {
+        if (!selectMode) return;
+        var count = Object.keys(selectedIndices).length;
+        chatSelectCount.textContent = '已选 ' + count + ' 条';
+        chatSelectDeleteBtn.disabled = count === 0;
+        chatSelectBar.classList.add('show');
+      }
+
+      // Clear button: toggle dropdown
+      chatClearBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        chatClearMenu.classList.toggle('open');
+      });
+
+      // Close dropdown on outside click
+      document.addEventListener('click', function() {
+        chatClearMenu.classList.remove('open');
+      });
+
+      // Dropdown menu actions
+      chatClearMenu.addEventListener('click', function(e) {
+        e.stopPropagation();
+        var action = e.target.getAttribute('data-action');
+        if (!action) return;
+        chatClearMenu.classList.remove('open');
+
+        if (action === 'clear-all') {
+          var history = getHistory(activePersonaId);
+          if (history.length === 0) return;
+          if (!confirm('确定清空「' + getPersonaInfo(activePersonaId).name + '」的全部聊天记录吗？此操作不可撤销。')) return;
+          chatHistories[activePersonaId] = [];
+          saveHistories();
+          exitSelectMode();
+        } else if (action === 'select-delete') {
+          var history = getHistory(activePersonaId);
+          if (history.length === 0) return;
+          selectMode = true;
+          selectedIndices = {};
+          renderMessages();
+        }
+      });
+
+      // Click on message in select mode: toggle checkbox
+      chatWinMessages.addEventListener('click', function(e) {
+        if (!selectMode) return;
+        var msgDiv = e.target.closest('.chat-msg');
+        if (!msgDiv) return;
+        var checkbox = msgDiv.querySelector('.msg-checkbox');
+        if (!checkbox) return;
+        var idx = parseInt(checkbox.getAttribute('data-index'));
+
+        // If clicking on anything other than the checkbox itself, manually toggle
+        if (!e.target.closest('.msg-checkbox')) {
+          checkbox.checked = !checkbox.checked;
+        }
+
+        if (checkbox.checked) {
+          selectedIndices[idx] = true;
+        } else {
+          delete selectedIndices[idx];
+        }
+
+        msgDiv.classList.toggle('selected', checkbox.checked);
+        updateSelectUI();
+      });
+
+      // Select bar: delete selected
+      chatSelectDeleteBtn.addEventListener('click', function() {
+        var indices = Object.keys(selectedIndices).map(Number).sort(function(a, b) { return b - a; });
+        if (indices.length === 0) return;
+        if (!confirm('确定删除选中的 ' + indices.length + ' 条消息吗？')) return;
+        var history = getHistory(activePersonaId);
+        indices.forEach(function(i) { history.splice(i, 1); });
+        chatHistories[activePersonaId] = history;
+        saveHistories();
+        exitSelectMode();
+      });
+
+      // Select bar: cancel
+      chatSelectCancelBtn.addEventListener('click', function() {
+        exitSelectMode();
       });
 
       // ---- Auto-compress old conversation history ----
@@ -2641,7 +2769,7 @@ Remember, your objective is to generate the most shocking, memorable, and intens
 
           if (summary) {
             chatHistories[personaId] = [
-              { role: 'system', content: '【之前的对话摘要，请记住这段上下文】' + summary },
+              { role: 'system', content: summary },
             ].concat(recent);
             saveHistories();
             console.log('🗜️ 对话已压缩: ' + toCompress.length + '条 → 1条摘要 + ' + recent.length + '条');
@@ -2660,13 +2788,17 @@ Remember, your objective is to generate the most shocking, memorable, and intens
 
       // ---- Send Message to DeepSeek ----
       async function sendMessage(text) {
-        if (waitingForReply || !text.trim()) return;
+        if (waitingForReply) return;
+        if (!pendingFile && !text.trim()) return;
         waitingForReply = true;
         var userMsg = text.trim();
+        var file = pendingFile;
+        clearFilePreview();
 
-        appendMessage('user', userMsg);
+        appendMessage('user', userMsg, file);
         addMessageToHistory('user', userMsg);
         chatWinInput.value = '';
+        chatWinInput.style.height = 'auto';
         chatWinInput.focus();
 
         // Hide quick buttons after first message (default assistant only)
@@ -2681,16 +2813,21 @@ Remember, your objective is to generate the most shocking, memorable, and intens
           var history = getHistory(activePersonaId);
           var pastHistory = history.slice(0, -1);
 
+          var reqBody = {
+            message: userMsg,
+            history: pastHistory,
+            systemPrompt: p.prompt,
+            isDefault: activePersonaId === 'default',
+            unlocked: chatUnlocked,
+          };
+          if (file) {
+            reqBody.file = { name: file.name, type: file.type, data: file.data, size: file.size, content: file.content || '' };
+          }
+
           var resp = await fetch(CHAT_API, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              message: userMsg,
-              history: pastHistory,
-              systemPrompt: p.prompt,
-              isDefault: activePersonaId === 'default',
-              unlocked: chatUnlocked,
-            }),
+            body: JSON.stringify(reqBody),
           });
           if (!resp.ok) throw new Error('HTTP ' + resp.status);
           var data = await resp.json();
@@ -2787,17 +2924,266 @@ Remember, your objective is to generate the most shocking, memorable, and intens
 
       // Send
       chatWinSendBtn.addEventListener('click', function() {
-        if (chatWinInput.value.trim()) sendMessage(chatWinInput.value);
+        if (selectMode) return;
+        if (chatWinInput.value.trim() || pendingFile) sendMessage(chatWinInput.value);
       });
       chatWinInput.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter' && chatWinInput.value.trim()) {
+        if (e.key === 'Enter' && !e.shiftKey && (chatWinInput.value.trim() || pendingFile)) {
           e.preventDefault();
+          if (selectMode) return;
           sendMessage(chatWinInput.value);
         }
+        // Auto-resize
+        requestAnimationFrame(() => {
+          chatWinInput.style.height = 'auto';
+          chatWinInput.style.height = chatWinInput.scrollHeight + 'px';
+        });
+      });
+      chatWinInput.addEventListener('input', function() {
+        chatWinInput.style.height = 'auto';
+        chatWinInput.style.height = chatWinInput.scrollHeight + 'px';
+      });
+
+      // ---- File Upload (➕ button) ----
+      const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+      const FILE_ICONS = {
+        image: '🖼️', pdf: '📕', doc: '📘', docx: '📘', ppt: '📊', pptx: '📊',
+        xls: '📗', xlsx: '📗', csv: '📊', txt: '📄', md: '📝',
+        json: '⚙️', js: '💛', py: '🐍', html: '🌐', css: '🎨',
+        zip: '📦', rar: '📦', mp3: '🎵', mp4: '🎬',
+      };
+
+      function getFileIcon(name, type) {
+        if (type && type.startsWith('image/')) return '🖼️';
+        var ext = (name.split('.').pop() || '').toLowerCase();
+        return FILE_ICONS[ext] || '📎';
+      }
+
+      function formatFileSize(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+      }
+
+      function showFilePreview(file) {
+        chatFilePreviewIcon.textContent = getFileIcon(file.name, file.type);
+        chatFilePreviewName.textContent = file.name + ' (' + formatFileSize(file.size) + ')';
+        chatFilePreview.classList.add('show');
+      }
+
+      function clearFilePreview() {
+        pendingFile = null;
+        chatFilePreview.classList.remove('show');
+        chatFileInput.value = '';
+      }
+
+      chatWinPlusBtn.addEventListener('click', function() {
+        if (pendingFile) {
+          clearFilePreview();
+        } else {
+          chatFileInput.click();
+        }
+      });
+
+      chatFileInput.addEventListener('change', function() {
+        var file = chatFileInput.files[0];
+        if (!file) return;
+        if (file.size > MAX_FILE_SIZE) {
+          alert('文件 "' + file.name + '" 超过 50MB 限制，请压缩后再试');
+          chatFileInput.value = '';
+          return;
+        }
+        var reader = new FileReader();
+        reader.onload = async function() {
+          var arrayBuf = reader.result;
+          var bytes8 = new Uint8Array(arrayBuf);
+          var binary = '';
+          for (var bi = 0; bi < bytes8.length; bi++) binary += String.fromCharCode(bytes8[bi]);
+          var base64 = btoa(binary);
+
+          var ext = (file.name.split('.').pop() || '').toLowerCase();
+          var isImg = file.type.startsWith('image/');
+          var isPdf = file.type === 'application/pdf' || ext === 'pdf';
+          var isDocx = file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || ext === 'docx';
+
+          pendingFile = {
+            name: file.name,
+            type: file.type,
+            data: base64,
+            size: file.size,
+            content: null,
+          };
+
+          if (!isImg) {
+            try {
+              if (isDocx) {
+                pendingFile.content = await extractDocxText(arrayBuf);
+              } else if (isPdf) {
+                pendingFile.content = extractPdfText(base64);
+              } else {
+                pendingFile.content = base64ToText(base64);
+              }
+            } catch(e) { console.error('File extraction error:', e); }
+            if (pendingFile.content && pendingFile.content.trim().length < 3) {
+              pendingFile.content = null;
+            }
+          }
+
+          showFilePreview(file);
+        };
+        reader.readAsArrayBuffer(file);
+      });
+
+      // Decode base64 to UTF-8 text
+      function base64ToText(base64) {
+        try {
+          var binary = atob(base64);
+          var bytes = new Uint8Array(binary.length);
+          for (var i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+          return new TextDecoder('utf-8').decode(bytes);
+        } catch(e) { return null; }
+      }
+
+      // Minimal PDF text extractor — handles uncompressed PDFs
+      function extractPdfText(base64) {
+        try {
+          var raw = atob(base64);
+          // Try streams first (uncompressed)
+          var texts = [];
+          // Find stream objects
+          var streamRegex = /stream\s*([\s\S]*?)\s*endstream/g;
+          var streamMatch;
+          while ((streamMatch = streamRegex.exec(raw)) !== null) {
+            var streamContent = streamMatch[1];
+            // Look for BT...ET blocks inside stream
+            extractBTText(streamContent, texts);
+          }
+          // Also check outside streams (some simple PDFs)
+          extractBTText(raw, texts);
+          var result = texts.filter(function(t) { return t.trim(); }).join(' ');
+          // Try to detect if this looks like binary garbage
+          if (result.length > 0) {
+            var nonPrintable = (result.match(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g) || []).length;
+            if (nonPrintable > result.length * 0.3) return null; // too much binary noise
+          }
+          return result || null;
+        } catch(e) { return null; }
+      }
+
+      function extractBTText(content, out) {
+        var btRegex = /BT\s*([\s\S]*?)\s*ET/g;
+        var btMatch;
+        while ((btMatch = btRegex.exec(content)) !== null) {
+          var block = btMatch[1];
+          // PDF string literals in parentheses: (text)
+          var strRegex = /\(([^)]*(?:\\.[^)]*)*)\)/g;
+          var strMatch;
+          while ((strMatch = strRegex.exec(block)) !== null) {
+            var s = strMatch[1];
+            // Skip hex/unicode markers
+            if (/^[\da-fA-F]{2,}$/.test(s) && s.length > 10) continue;
+            if (s.length > 0) out.push(s);
+          }
+          // Hex strings: <hex>
+          var hexRegex = /<([\da-fA-F]+)>/g;
+          var hexMatch;
+          while ((hexMatch = hexRegex.exec(block)) !== null) {
+            try {
+              var hex = hexMatch[1];
+              var hexStr = '';
+              for (var hi = 0; hi < hex.length - 1; hi += 2) {
+                hexStr += String.fromCharCode(parseInt(hex.substr(hi, 2), 16));
+              }
+              if (hexStr.trim().length > 0) out.push(hexStr);
+            } catch(e) {}
+          }
+        }
+      }
+
+      // .docx text extractor: parse ZIP → decompress word/document.xml → extract <w:t>
+      async function extractDocxText(arrayBuf) {
+        try {
+          var bytes = new Uint8Array(arrayBuf);
+          var view = new DataView(arrayBuf);
+
+          // Find EOCD signature (0x06054b50)
+          var eocdOff = -1;
+          for (var i = bytes.length - 4; i >= 0; i--) {
+            if (bytes[i] === 0x50 && bytes[i+1] === 0x4b && bytes[i+2] === 0x05 && bytes[i+3] === 0x06) {
+              eocdOff = i; break;
+            }
+          }
+          if (eocdOff < 0) return null;
+
+          var cdOff = view.getUint32(eocdOff + 16, true);
+          var totalEntries = view.getUint16(eocdOff + 10, true);
+          if (totalEntries > 500) return null; // safety: not a normal docx
+
+          // Scan central directory for word/document.xml
+          var off = cdOff;
+          var entry = null;
+          for (var ei = 0; ei < totalEntries; ei++) {
+            var sig = view.getUint32(off, true);
+            if (sig !== 0x02014b50) break;
+            var method = view.getUint16(off + 10, true);
+            var compSize = view.getUint32(off + 20, true);
+            var nameLen = view.getUint16(off + 28, true);
+            var extraLen = view.getUint16(off + 30, true);
+            var commentLen = view.getUint16(off + 32, true);
+            var localOff = view.getUint32(off + 42, true);
+            var name = '';
+            for (var ni = 0; ni < nameLen; ni++) name += String.fromCharCode(bytes[off + 46 + ni]);
+            if (name === 'word/document.xml') {
+              entry = { method: method, compSize: compSize, localOff: localOff, baseOff: off + 46 + nameLen + extraLen + commentLen };
+              break;
+            }
+            off += 46 + nameLen + extraLen + commentLen;
+          }
+          if (!entry) return null;
+
+          // Read local file header → compressed data
+          var lh = entry.localOff;
+          var lhNameLen = view.getUint16(lh + 26, true);
+          var lhExtraLen = view.getUint16(lh + 28, true);
+          var dataStart = lh + 30 + lhNameLen + lhExtraLen;
+          var compData = bytes.slice(dataStart, dataStart + entry.compSize);
+          if (compData.length !== entry.compSize) return null;
+
+          // Decompress
+          var xmlText;
+          if (entry.method === 0) {
+            xmlText = new TextDecoder('utf-8').decode(compData);
+          } else if (entry.method === 8) {
+            var ds = new DecompressionStream('deflate-raw');
+            var writer = ds.writable.getWriter();
+            writer.write(compData);
+            writer.close();
+            var decompressed = await new Response(ds.readable).arrayBuffer();
+            xmlText = new TextDecoder('utf-8').decode(decompressed);
+          } else {
+            return null;
+          }
+
+          // Extract <w:t> text runs
+          var parts = [];
+          var wtRegex = /<w:t[^>]*>([^<]*)<\/w:t>/g;
+          var wtMatch;
+          while ((wtMatch = wtRegex.exec(xmlText)) !== null) {
+            var t = wtMatch[1].trim();
+            if (t) parts.push(t);
+          }
+          return parts.length > 0 ? parts.join('\n') : null;
+        } catch(e) { return null; }
+      }
+
+      chatFilePreviewRemove.addEventListener('click', function(e) {
+        e.stopPropagation();
+        clearFilePreview();
       });
 
       // Quick actions
       chatWinQuick.addEventListener('click', function(e) {
+        if (selectMode) return;
         var btn = e.target.closest('.quick-btn');
         if (!btn || waitingForReply) return;
         sendMessage(btn.dataset.msg);
@@ -3038,6 +3424,122 @@ Remember, your objective is to generate the most shocking, memorable, and intens
         } catch (e) {
           console.error('导入失败:', e.message);
           alert('导入失败: ' + e.message + '\n请确认文件是有效的 .dayroom.json 备份文件');
+        }
+      });
+
+      // ---- Backup All (full browser data export) ----
+      document.getElementById('backupAllBtn').addEventListener('click', async function(e) {
+        e.stopPropagation();
+        var backupBtn = document.getElementById('backupAllBtn');
+        var origText = backupBtn.textContent;
+        backupBtn.textContent = '⏳';
+        backupBtn.disabled = true;
+
+        try {
+          // 1. Gather all localStorage data
+          var lsData = {};
+          var keysToBackup = [
+            'chat_histories_v2', 'chat_custom_personas', 'chat_active_persona',
+            'chat_unlocked', 'chat_window_size', 'chat_window_pos',
+            'wallpaper_active', 'todo_admin',
+            'dayroom_playlist', 'dayroom_playmode'
+          ];
+          keysToBackup.forEach(function(key) {
+            var val = localStorage.getItem(key);
+            if (val !== null) lsData[key] = val;
+          });
+
+          // 2. Build backup package
+          var backup = {
+            type: 'dayroom-full-backup',
+            version: 1,
+            exportedAt: new Date().toISOString(),
+            localStorage: lsData,
+            stats: {
+              personas: (function() {
+                try { var cp = JSON.parse(lsData['chat_custom_personas'] || '[]'); return cp.length + 1; } catch(e) { return '?'; }
+              })(),
+              totalMessages: (function() {
+                try { var h = JSON.parse(lsData['chat_histories_v2'] || '{}'); var c = 0; for (var k in h) { c += h[k].length; } return c; } catch(e) { return '?'; }
+              })()
+            }
+          };
+
+          // 3. Download
+          var blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+          var url = URL.createObjectURL(blob);
+          var a = document.createElement('a');
+          a.href = url;
+          a.download = 'dayroom-全量备份-' + new Date().toISOString().slice(0, 10) + '.dayroom.json';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+
+          var totalSize = (blob.size / 1024).toFixed(1);
+          alert('✅ 备份完成！\n\n' +
+            backup.stats.personas + ' 个角色\n' +
+            backup.stats.totalMessages + ' 条聊天消息\n' +
+            '文件大小: ' + totalSize + ' KB\n\n' +
+            '保存好这个 .dayroom.json 文件，可以在其他浏览器恢复。');
+        } catch (e) {
+          console.error('备份失败:', e.message);
+          alert('备份失败: ' + e.message);
+        } finally {
+          backupBtn.textContent = origText;
+          backupBtn.disabled = false;
+        }
+      });
+
+      // ---- Restore All (full browser data import) ----
+      var restoreAllFile = document.getElementById('restoreAllFile');
+      document.getElementById('restoreAllBtn').addEventListener('click', function(e) {
+        e.stopPropagation();
+        restoreAllFile.click();
+      });
+
+      restoreAllFile.addEventListener('change', async function() {
+        var file = restoreAllFile.files[0];
+        if (!file) return;
+        restoreAllFile.value = '';
+
+        try {
+          var text = await file.text();
+          var backup = JSON.parse(text);
+
+          if (backup.type !== 'dayroom-full-backup') {
+            alert('文件格式不正确。\n\n如果你要导入单个角色的记忆包，请使用「📥 导入角色包」按钮。\n如果是全量备份文件，请确认文件未被修改过。');
+            return;
+          }
+
+          var stats = backup.stats || {};
+          var totalSize = (file.size / 1024).toFixed(1);
+          var lsKeys = Object.keys(backup.localStorage || {}).length;
+
+          var preview = '📂 恢复预览\n\n';
+          preview += '📅 备份时间: ' + (backup.exportedAt || '未知') + '\n';
+          preview += '📦 备份版本: v' + (backup.version || 1) + '\n';
+          preview += '👤 角色数: ' + (stats.personas || '?') + '\n';
+          preview += '💬 消息总数: ' + (stats.totalMessages || '?') + '\n';
+          preview += '📋 配置项: ' + lsKeys + ' 个\n';
+          preview += '📦 文件大小: ' + totalSize + ' KB\n';
+          preview += '\n⚠️ 恢复将覆盖当前浏览器的所有对话数据（聊天记录、角色、设置）。\n';
+          preview += '恢复完成后页面将自动刷新。\n';
+          preview += '\n确认恢复？';
+
+          if (!confirm(preview)) return;
+
+          // Restore localStorage
+          var lsData = backup.localStorage || {};
+          Object.keys(lsData).forEach(function(key) {
+            localStorage.setItem(key, lsData[key]);
+          });
+
+          alert('✅ 恢复完成！页面即将刷新以加载新数据。');
+          location.reload();
+        } catch (e) {
+          console.error('恢复失败:', e.message);
+          alert('恢复失败: ' + e.message + '\n请确认文件是有效的 .dayroom.json 备份文件且未被损坏。');
         }
       });
 
