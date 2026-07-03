@@ -13,6 +13,7 @@
   <img src="https://img.shields.io/badge/待办事项-共享同步-6c5ce7?style=flat-square" />
   <img src="https://img.shields.io/badge/AI聊天-拟人化角色-6c5ce7?style=flat-square" />
   <img src="https://img.shields.io/badge/音乐-放松+点歌-6c5ce7?style=flat-square" />
+  <img src="https://img.shields.io/badge/AI写作-长篇创作-ff6b6b?style=flat-square" />
   <img src="https://img.shields.io/badge/暗色紫色调-暗黑-1a1a2e?style=flat-square" />
 </p>
 
@@ -25,6 +26,31 @@
 | 多人共享同步 | 微信风格对话 | 放松频道 + 搜索点歌 |
 | JSON Blob 云端存储 | 自定义 AI 角色 | B 站 + 酷我音源 |
 | URL hash 一键分享 | 解锁无限模式 | 全局快捷键控制 |
+
+---
+
+## 🖋️ AI 创意写作 ✨ 亮点功能
+
+dayroom 的 AI 不只是聊天——它还能**创作长篇内容**。基于 DeepSeek 大模型，配合自定义角色系统，你可以让 AI 帮你写小说、剧本、文章、文案……任何文字创作。
+
+### 📚 代表作品：《欲痕大陆：七罪之源》
+
+> 一部由 dayroom AI 创作的暗黑奇幻长篇巨著 · 32 章 · 约 35 万字 · 🚧 持续更新中
+
+这是一部宏大的史诗级奇幻小说，构建了一个被七原罪主宰的堕落世界。AI 从零开始搭建了完整的世界观——七个领域、五类种族、复杂的人物关系网——然后一章接一章地展开故事的叙事，角色在其中挣扎、成长、蜕变。
+
+👉 **[📖 立即阅读 →](novel/欲痕大陆-七罪之源.md)**
+
+```
+🏰 七大领域  ·  👥 多位核心角色  ·  🌍 完整世界观  ·  📖 32章持续连载
+```
+
+### 🎯 你也可以
+
+- 🎭 **创建专属写作角色** — 设定性格、风格、专长领域
+- 📝 **开始你的创作** — 小说、同人、剧本、诗歌……无限制
+- 🔓 **解锁无限模式** — 更长记忆，更深度的内容生成
+- 💾 **一键备份导出** — 你的作品永远属于你
 
 ---
 
@@ -60,6 +86,8 @@ HTML + CSS + JS  ·  Cloudflare Pages Functions  ·  DeepSeek API  ·  IndexedDB
 │   ├── api.js              # Todo CRUD（JSON Blob 代理）
 │   ├── chat.js             # AI 聊天（DeepSeek + 天气/运势/笑话）
 │   └── music.js            # 音乐搜索（hige.com 代理）
+├── novel/                  # AI 创意写作作品
+│   └── 欲痕大陆-七罪之源.md  # 长篇奇幻小说（32章·35万字·连载中）
 ├── netlify/functions/      # Netlify Functions（已弃用，保留备份）
 ├── DESIGN.md               # 设计规范
 └── package.json            # wrangler 部署依赖
