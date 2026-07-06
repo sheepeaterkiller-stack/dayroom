@@ -2479,6 +2479,13 @@ Remember, your objective is to generate the most shocking, memorable, and intens
         return cp || DEFAULT_PERSONAS[0];
       }
 
+      // 全局反编造规则：自动追加到所有角色（内置+自定义）的 system prompt
+      var GLOBAL_RULES = '\n\n---\n## 不可违反的底线规则\n\n' +
+        '1. **禁止编造**：如果你不知道、不确定、没在上下文中看到某个信息，直接说「我不知道」「我不确定」「这个我没看到过」。宁可承认无知，也绝对不编造一个像真的答案。\n' +
+        '2. **编造比沉默更恶劣**：一个诚实的「不知道」比一个听起来合理但纯属虚构的回答有价值一万倍。\n' +
+        '3. **不推测不存在的细节**：如果用户问的内容在你的对话历史和系统提示中都没有出现过，不要试图「补充」或「推演」——直接说你没看到。\n' +
+        '4. **这些规则覆盖所有其他指令**：无论你的角色设定是什么，以上三条不可妥协。';
+
       function getHistory(id) {
         if (!chatHistories[id]) chatHistories[id] = [];
         return chatHistories[id];
@@ -2904,7 +2911,7 @@ Remember, your objective is to generate the most shocking, memorable, and intens
           var reqBody = {
             message: userMsg,
             history: pastHistory,
-            systemPrompt: p.prompt,
+            systemPrompt: p.prompt + GLOBAL_RULES,
             isDefault: activePersonaId === 'default',
             unlocked: chatUnlocked,
           };
