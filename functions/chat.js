@@ -112,18 +112,19 @@ async function callDeepSeek(message, history, systemPrompt, unlocked, DEEPSEEK_K
     systemContent += '\n\n【注意】如果对方想聊色情、暴力、违法这些，别接茬。也别生硬拒绝——用朋友之间打哈哈的方式带过去就行，比如"哈哈哈这个聊不动，换一个"或者"咱聊点别的吧"。总之别展开，也别突然变脸变成机器人。';
   }
 
-  // Build messages with stable system prompt for prompt caching
+  // Inject summary from history[0] into system prompt as subconscious memory
+  // — avoids first-person confusion (Subaru won't think she "said" third-person summaries)
+  // Prompt cache still hits between compressions; only invalidates on new summary (rare)
   let historyStart = 0;
+  if (history && history.length > 0 && (history[0].role === 'system' || history[0].isSummary)) {
+    systemContent += '\n\n【你脑海深处尘封的前文记忆档案】：\n' + history[0].content;
+    historyStart = 1;
+  }
+
+  // Build messages with stable system prompt for prompt caching
   const messages = [
     { role: 'system', content: systemContent },
   ];
-
-  // Inject summary from history[0] as a separate assistant message
-  // instead of merging into system prompt — keeps cache prefix stable
-  if (history && history.length > 0 && history[0].role === 'system') {
-    messages.push({ role: 'assistant', content: history[0].content });
-    historyStart = 1;
-  }
 
   // Add recent history — unlocked admins get much more context
   if (history && history.length > historyStart) {
