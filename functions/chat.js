@@ -402,10 +402,11 @@ export async function onRequest(context) {
   }
 
   const unlocked = body.unlocked === true;
+  const systemPrompt = body.systemPrompt || '';
 
   // ---- DeepSeek for everything else ----
   try {
-    const reply = await callDeepSeek(message, history, body.systemPrompt, unlocked, DEEPSEEK_KEY);
+    const reply = await callDeepSeek(message, history, systemPrompt, unlocked, DEEPSEEK_KEY);
     if (reply) {
       return new Response(JSON.stringify({ reply }), {
         status: 200,
