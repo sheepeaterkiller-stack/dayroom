@@ -543,6 +543,42 @@
       color: #fff;
     }
 
+    /* Voice selector in chat header */
+    .voice-select {
+      height: 28px;
+      padding: 0 8px;
+      border-radius: 4px;
+      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.7);
+      font-size: 0.75rem;
+      max-width: 120px;
+      min-width: 75px;
+      cursor: pointer;
+      outline: none;
+      appearance: auto;
+      -webkit-appearance: auto;
+    }
+    .voice-select option {
+      background: #1a1a2e;
+      color: #fff;
+    }
+    .btn-voice-test {
+      width: 26px; height: 26px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: transparent;
+      color: rgba(255,255,255,0.4);
+      cursor: pointer;
+      font-size: 0.75rem;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s;
+    }
+    .btn-voice-test:hover {
+      background: rgba(255,255,255,0.08);
+      color: #fff;
+    }
+
     /* Messages */
     .chat-win-messages {
       flex: 1;
@@ -560,7 +596,8 @@
 
     .chat-msg {
       display: flex;
-      gap: 8px;
+      flex-wrap: wrap;
+      column-gap: 8px;
       max-width: 82%;
       animation: msgSlideIn 0.25s ease;
     }
@@ -631,32 +668,41 @@
     }
     .chat-msg.system .msg-avatar { display: none; }
 
-    /* Copy button inside bot messages */
-    .msg-copy-btn {
-      position: absolute;
-      top: 4px;
-      right: 6px;
-      width: 24px;
-      height: 24px;
+    /* Action buttons row below bot messages */
+    .msg-actions {
+      flex-basis: 100%;
+      display: flex;
+      gap: 4px;
+      margin-top: 3px;
+      margin-left: 40px;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .chat-msg.bot:hover .msg-actions,
+    .msg-actions:has(.msg-speak-btn.speaking) {
+      opacity: 1;
+    }
+    .msg-action-btn {
+      width: 26px;
+      height: 22px;
       border-radius: 4px;
       border: none;
-      background: rgba(255,255,255,0.06);
+      background: rgba(255,255,255,0.05);
       color: rgba(255,255,255,0.3);
       font-size: 0.7rem;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      opacity: 0;
-      transition: opacity 0.2s, background 0.2s, color 0.2s;
-      z-index: 1;
+      transition: background 0.2s, color 0.2s;
     }
-    .chat-msg.bot .msg-bubble:hover .msg-copy-btn {
-      opacity: 1;
-    }
-    .msg-copy-btn:hover {
+    .msg-action-btn:hover {
       background: rgba(255,255,255,0.15);
       color: rgba(255,255,255,0.9);
+    }
+    .msg-speak-btn.speaking {
+      background: rgba(108,92,231,0.4);
+      color: #fff;
     }
     .chat-msg.user .msg-bubble {
       background: rgba(var(--accent-rgb), 0.25);
@@ -946,7 +992,7 @@
     .chat-select-mode .chat-msg:hover {
       background: rgba(255,255,255,0.03);
     }
-    .chat-select-mode .msg-copy-btn {
+    .chat-select-mode .msg-actions {
       display: none !important;
     }
 
@@ -1327,6 +1373,8 @@
       }
 
       .chat-back-btn { display: flex; }
+      .voice-select, .btn-voice-test { display: none; }
+      .todo-toggle, .music-toggle { display: none; }
     }
 
     /* Hide old chat components */
@@ -2427,6 +2475,8 @@
       .btn-primary { justify-content: center; }
       .filter-section { flex-direction: column; align-items: stretch; }
       .filters { justify-content: center; }
+      .msg-actions { margin-left: 0; }
+      .voice-select { max-width: 80px; min-width: 55px; font-size: 0.65rem; }
     }
 
     /* ========== Wallpaper Toggle (Top Right) ========== */
