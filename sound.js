@@ -41,6 +41,8 @@
   let droneNodes = null;
   let visualAnimId = null;
   let scopeAnimId = null;
+  let scopeCanvas = null;
+  let scopeCtx = null;
 
   // 示波器粒子与波纹池
   const scopeParticles = [];
@@ -980,7 +982,10 @@
         e.stopPropagation();
         if (!drawer.classList.contains('open')) {
           openDrawer();
-        } else if (!isPoweredOn) {
+          if (!isPoweredOn) {
+            togglePower();
+          }
+        } else {
           togglePower();
         }
       });

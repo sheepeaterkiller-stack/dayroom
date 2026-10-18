@@ -21,6 +21,40 @@
       ]
     },
     {
+      "selector": "#soundAnchor",
+      "text": [
+        "戴上耳机？这是用纯数学合成的白噪音与微动效混音台 🎧",
+        "想沉浸一下？点开声音空间，听听雨声、柴火与心流和弦吧~",
+        "这里有永不重复循环的自然声场哦 🌊"
+      ]
+    },
+    {
+      "selector": ".sound-drawer",
+      "text": [
+        "声音空间调音台！三轨自然声场，怎么推都治愈舒服~ 🎧",
+        "试试点击‘激发声学水滴波纹’，有超清脆的水滴落入心湖哦 💧"
+      ]
+    },
+    {
+      "selector": "#sdBtnToggleMuffle",
+      "text": [
+        "虚掩房门！模拟声音穿过墙壁沉降至低频的‘隔壁房间效应’ 🚪",
+        "点击体验推开房门与虚掩房门的不同声学听感~"
+      ]
+    },
+    {
+      "selector": "#sdBtnWaterDrop",
+      "text": [
+        "叮咚~ 纯物理算法合成的晶莹水滴，听起来很治愈吧 💧"
+      ]
+    },
+    {
+      "selector": ".sd-presets-panel",
+      "text": [
+        "纠结怎么调？选一个精心校准的治愈配方，一键平滑变奏~"
+      ]
+    },
+    {
       "selector": "#themeToggle",
       "text": [
         "白天还是黑夜？点一下切换专属场景与萌宠哦~",
@@ -101,6 +135,73 @@
       "text": [
         "「一言」总能在不经意间触动人心呢~"
       ]
+    },
+    {
+      "selector": "#soundAnchor",
+      "text": [
+        "开启声音空间，享受没有循环接缝的有机自然声场~ 🎧",
+        "纯算力调制的声学空间，写代码或发呆时听最舒服啦 ✨"
+      ]
+    },
+    {
+      "selector": "#sdMasterToggle",
+      "text": [
+        "声音空间总电源：一键唤醒或休眠白噪音混音台~ ⚡"
+      ]
+    },
+    {
+      "selector": "#sdScopeCanvas",
+      "text": [
+        "实时声学示波器：上方观察有机微粒激荡，下方查看全频段能量分布 📊"
+      ]
+    },
+    {
+      "selector": ".sd-presets-panel",
+      "text": [
+        "治愈配方推荐：深海潮汐、暖炉冬夜、太空漫游... 一键进入心流氛围 🌧️"
+      ]
+    },
+    {
+      "selector": ".sd-track.tide",
+      "text": [
+        "暖色基底：布朗噪音与潮汐呼吸，仿佛深夜窗外绵延的雨幕与海浪 🌊"
+      ]
+    },
+    {
+      "selector": ".sd-track.crackle",
+      "text": [
+        "有机颗粒：泊松分布火星微粒，壁炉木柴噼啪与落雨屋檐 🪵"
+      ]
+    },
+    {
+      "selector": ".sd-track.drone",
+      "text": [
+        "漂移垫音：大七度微偏音悬留和弦，太空舱与深夜图书馆的空灵回响 🛸"
+      ]
+    },
+    {
+      "selector": "#sdBtnToggleMuffle",
+      "text": [
+        "隔壁房间效应：虚掩房门削减高频，在隔壁书房安心专注工作 🚪"
+      ]
+    },
+    {
+      "selector": "#sdBtnWaterDrop",
+      "text": [
+        "轻触水滴：在平静的声场中激荡起一颗纯净而空灵的水珠 💧"
+      ]
+    },
+    {
+      "selector": "#sdHapticsToggle, .sd-footer",
+      "text": [
+        "微交互触觉音效：赋予按钮与开关机械键盘般的清脆物理段落感 ⌨️"
+      ]
+    },
+    {
+      "selector": ".sound-drawer",
+      "text": [
+        "这里是声音空间混音台，随心调配独属于你的治愈白噪音吧~ 🌿"
+      ]
     }
   ],
   "click": [
@@ -114,6 +215,30 @@
       "selector": ".quick-btn",
       "text": [
         "挑一个快捷按钮，看看今日运势与好文吧~"
+      ]
+    },
+    {
+      "selector": "#soundAnchor",
+      "text": [
+        "开启声音空间，享受没有循环接缝的有机自然声场~ 🎧"
+      ]
+    },
+    {
+      "selector": "#sdBtnWaterDrop",
+      "text": [
+        "落下一颗纯净水滴~ 泛起一圈圈治愈波纹 💧"
+      ]
+    },
+    {
+      "selector": "#sdBtnToggleMuffle",
+      "text": [
+        "房门轻轻虚掩上啦，在隔壁书房安心专注工作吧~ 🚪"
+      ]
+    },
+    {
+      "selector": ".sd-preset-pill",
+      "text": [
+        "治愈配方切换成功！享受此刻的专注氛围吧 🌧️"
       ]
     }
   ],

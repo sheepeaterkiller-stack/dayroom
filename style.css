@@ -3899,6 +3899,18 @@
       pointer-events: auto;
     }
 
+    /* Hover Bridge to bridge the 10px gap between anchor and drawer */
+    .sound-drawer::before {
+      content: '';
+      position: absolute;
+      top: -14px;
+      left: 0;
+      right: 0;
+      height: 14px;
+      background: transparent;
+      pointer-events: auto;
+    }
+
     /* Header */
     .sd-header {
       display: flex;

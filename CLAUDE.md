@@ -281,3 +281,12 @@ The test: Every changed line should trace directly to the user's request.
     - `[🚪 切换至: 隔壁房间]`：允许用户在当前页面直接一键手动体验“隔壁房间”虚掩门的 360Hz 低通衰减对比；
     - `[💧 激发声学水滴波纹]`：纯数学合成水滴声（1750Hz ➔ 740Hz 扫频 + Q=8.5 带通滤波 + 55ms 衰减），并在 Canvas 上激荡水滴微粒子与扩散同心波纹；
   - **极致能耗控制**：Canvas `requestAnimationFrame` 仅在声音开启且抽屉展开时激活，收起或静音时自动休眠，0% 额外渲染开销。
+- **声音空间交互 Bug 修复与 Live2D 桌面萌宠深度联动（2026-10-18 深夜）**：
+  - **“点不开”Bug 根因排查与修复**：
+    - 根因：`sound.js` 头部声明了 `'use strict';`，第 947 行 `initUI()` 调用 `initScopeCanvas()` 时直接向未声明变量 `scopeCanvas` 与 `scopeCtx` 赋值，严格模式下抛出致命 `ReferenceError: scopeCanvas is not defined`，导致 `initUI()` 执行中断，后续 `#soundAnchor` 的 `click` 与 `mouseenter` 及滑动条事件全部未被绑定注册；
+    - 修复：在 `sound.js` 顶部显式补齐 `let scopeCanvas = null; let scopeCtx = null;` 声明；优化 `#soundAnchor` 点击逻辑（未展开时展开并顺滑通电，已展开时点击切换电源状态）；
+    - CSS 悬停桥接：在 `style.css` 为 `.sound-drawer` 增加 `::before` 隐形透明过渡层（高度 14px），覆盖入口胶囊（高 40px，top 20px）与展开面板（top 50px）之间的 10px 间隙，彻底消除鼠标滑入面板边缘时的悬停丢失闪烁。
+  - **Live2D 萌宠（柴犬 Wanko / 黑猫 Hijiki）声学空间悬停与点击专属回复**：
+    - 在 `waifu/waifu-tips.json` 的 `mouseover` 列表中注入声音空间全套组件响应：入口胶囊 `#soundAnchor`、总电源 `#sdMasterToggle`、实时示波器 `#sdScopeCanvas`、治愈配方推荐 `.sd-presets-panel`、暖色基底 `.sd-track.tide`、有机颗粒 `.sd-track.crackle`、漂移垫音 `.sd-track.drone`、隔壁房间 `#sdBtnToggleMuffle`、水滴波纹 `#sdBtnWaterDrop`、微交互触觉 `#sdHapticsToggle` 及面板背景 `.sound-drawer`；
+    - 遵循“具体组件在前、通用面板在后”的选择器顺序，当鼠标停留于声音空间任一旋钮或卡片时，看板娘萌宠即刻以轻快、治愈的语气向访客解读声学原理与心流状态；并在 `click` 列表中覆盖水滴激荡、配方切换与虚掩房门等动作的即时反馈；
+    - 在 `waifu/waifu-tips.js` 导出全局 `window.showWaifuMessage = i;` 接口，支持程序化主动调用。
