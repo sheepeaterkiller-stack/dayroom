@@ -1,16 +1,65 @@
 // Cloudflare Pages Function — AI Chat: weather/luck/jokes locally + DeepSeek for everything else
 
+const MAX_MESSAGE_CHARS = 100000;
+const MAX_IMAGE_BASE64 = 20 * 1024 * 1024;
+// 联网搜索触发词(命中即调 DeepSeek 原生 web_search)
+const SEARCH_HINTS = ['搜索', '搜一下', '搜搜', '搜一搜', '上网查', '百度一下', '谷歌一下', '查一下', '查查', '查询', '查一查', '帮我查', '最新', '新闻', '时事', '热点', '资讯', '报道', '行情', '股价', '汇率', '油价', '实时', '热搜'];
+const RATE_WINDOW_MS = 60000;
+const RATE_MAX_PER_WINDOW = 30;
+const rateHits = new Map();
+
+function jsonResponse(data, status) {
+  return new Response(JSON.stringify(data), {
+    status: status || 200,
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+
+function isSameOrigin(request) {
+  const origin = request.headers.get('Origin');
+  if (!origin) return true;
+  try {
+    return new URL(origin).host === new URL(request.url).host;
+  } catch (e) {
+    return false;
+  }
+}
+
+function checkRateLimit(request) {
+  const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+  const now = Date.now();
+  const hit = rateHits.get(ip) || { count: 0, resetAt: now + RATE_WINDOW_MS };
+  if (now > hit.resetAt) {
+    hit.count = 0;
+    hit.resetAt = now + RATE_WINDOW_MS;
+  }
+  hit.count++;
+  rateHits.set(ip, hit);
+  if (rateHits.size > 10000) rateHits.clear();
+  return hit.count > RATE_MAX_PER_WINDOW;
+}
+
 async function fetchJSON(url) {
   const resp = await fetch(url, { headers: { 'User-Agent': 'TodoApp/1.0' } });
   return await resp.json();
 }
 
 async function httpPost(url, body, headers) {
-  const resp = await fetch(url, {
-    method: 'POST',
-    headers: Object.assign({ 'Content-Type': 'application/json' }, headers),
-    body: JSON.stringify(body),
-  });
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 600000);
+  let resp;
+  try {
+    resp = await fetch(url, {
+      method: 'POST',
+      headers: Object.assign({ 'Content-Type': 'application/json' }, headers),
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+  } catch (e) {
+    clearTimeout(timer);
+    throw e;
+  }
+  clearTimeout(timer);
   try {
     return await resp.json();
   } catch (e) {
@@ -103,7 +152,8 @@ function getJoke() {
 }
 
 // ---- DeepSeek API ----
-async function callDeepSeek(message, history, systemPrompt, unlocked, DEEPSEEK_KEY) {
+async function callDeepSeek(message, history, systemPrompt, unlocked, DEEPSEEK_KEY, model, temperature, thinkingOn, reasoningEffort) {
+  let temperatureValue = (typeof temperature === 'number' && temperature >= 0 && temperature <= 2) ? temperature : 0.7;
   // Use custom system prompt if provided, otherwise default
   let systemContent = systemPrompt || '你是周图，一个随性的朋友。你聪明、见识广但不卖弄。说话像微信聊天一样自然，别列1234，别写小作文。emoji 只在聊嗨了的时候用。不懂的就直说不知道，别硬编。绝对不要提你是 AI 或任何模型相关的东西。';
 
@@ -112,50 +162,303 @@ async function callDeepSeek(message, history, systemPrompt, unlocked, DEEPSEEK_K
     systemContent += '\n\n【注意】如果对方想聊色情、暴力、违法这些，别接茬。也别生硬拒绝——用朋友之间打哈哈的方式带过去就行，比如"哈哈哈这个聊不动，换一个"或者"咱聊点别的吧"。总之别展开，也别突然变脸变成机器人。';
   }
 
-  // Inject summary from history[0] into system prompt as subconscious memory
-  // — avoids first-person confusion (Subaru won't think she "said" third-person summaries)
-  // Prompt cache still hits between compressions; only invalidates on new summary (rare)
+  // 思考语言: 强制推理过程用中文(DeepSeek 的 reasoning_content 默认倾向英文, 复杂/技术性思考时更明显)
+  systemContent += '\n\n【思考语言】你的推理过程（reasoning）必须始终使用中文，与对话语言保持一致。';
+
+  // 联网搜索: 明确告诉模型搜索结果是它自己联网获取的, 不是用户说的话, 方便整合
+  systemContent += '\n\n【联网搜索】当对话中出现"【以下是联网搜索到的实时信息"开头的内容时, 那是你自己通过联网搜索获取的实时信息, 不是用户说的话。请基于这些信息回答, 并标注来源。';
+
+  // 网页抓取与阅读: 系统自动抓取用户所给链接网页正文
+  systemContent += '\n\n【网页抓取】当对话中出现"【系统已自动抓取目标网页内容"开头的内容时, 那是系统自动为你抓取的用户所给链接的真实网页文本。请仔细阅读该网页内容，基于页面事实准确回答用户的提问、总结、提取或分析需求，并标注网页来源。';
+
+  // Summary lives as its own assistant message, NOT injected into system prompt.
+  // This keeps persona clean → prompt cache always hits, and the persona never gets
+  // buried under a growing summary (fixes "forgetting persona" after long chats).
   let historyStart = 0;
+  let summaryMsg = null;
   if (history && history.length > 0 && (history[0].role === 'system' || history[0].isSummary)) {
-    systemContent += '\n\n【你脑海深处尘封的前文记忆档案】：\n' + history[0].content;
+    summaryMsg = { role: 'assistant', content: '【你脑海深处尘封的前文记忆档案】：\n' + history[0].content };
     historyStart = 1;
   }
 
-  // Build messages with stable system prompt for prompt caching
+  // Build messages — system prompt is persona only, always stable
   const messages = [
     { role: 'system', content: systemContent },
   ];
+  if (summaryMsg) messages.push(summaryMsg);
 
   // Add recent history — unlocked admins get much more context
   if (history && history.length > historyStart) {
-    const limit = unlocked ? 300 : 60;
-    const recent = history.slice(Math.max(historyStart, history.length - limit));
-    for (const h of recent) {
-      messages.push({ role: h.role, content: h.content });
+    // 不再按条数截断，全量历史交给模型（V4 上下文窗口 1M）
+    for (let i = historyStart; i < history.length; i++) {
+      messages.push({ role: history[i].role, content: history[i].content });
     }
   }
 
   messages.push({ role: 'user', content: message });
 
-  const data = await httpPost('https://api.deepseek.com/v1/chat/completions', {
-    model: 'deepseek-chat',
+  const thinkingOnNow = thinkingOn !== false;
+  // 推理等级: low / high / max（官方映射: medium/xhigh → high，所以只暴露这三档）
+  // 非思考模式下该参数无意义，不传。
+  const effort = ['low', 'high', 'max'].indexOf(reasoningEffort) >= 0 ? reasoningEffort : 'high';
+  const reqBody = {
+    model: model || 'deepseek-flash',
     messages: messages,
-    max_tokens: unlocked ? 8192 : 2048,
-    temperature: 0.7,
+    max_tokens: unlocked ? 65536 : 2048,
+    temperature: temperatureValue,
     top_p: 0.9,
-  }, {
+    // V4 思考模式由前端开关控制（默认开启）。
+    // 思考模式下 temperature/top_p 被忽略、思考 token 双倍计费、响应更慢但质量更高。
+    // Gemini 的 OpenAI 兼容端点不支持 thinking 字段，不传。
+    thinking: thinkingOnNow ? { type: 'enabled' } : { type: 'disabled' },
+  };
+  if (thinkingOnNow) reqBody.reasoning_effort = effort;
+
+  const data = await httpPost('https://api.deepseek.com/v1/chat/completions', reqBody, {
     'Authorization': 'Bearer ' + DEEPSEEK_KEY,
     'Accept': 'application/json',
   });
 
   if (data.choices && data.choices[0]) {
-    return data.choices[0].message.content;
+    const content = data.choices[0].message.content;
+    // Check if DeepSeek returned a refusal (content filter triggered)
+    if (data.choices[0].finish_reason === 'content_filter') {
+      return { error: 'content_filtered', detail: content || 'DeepSeek 内容审核拦截' };
+    }
+    // 思考模式默认开启, reasoning_content 已在返回里, 一并转发给前端显示
+    return { reply: content, reasoning: data.choices[0].message.reasoning_content };
   }
   if (data.error) {
     console.error('DeepSeek error:', JSON.stringify(data.error));
-    return null;
+    return { error: 'api_error', detail: data.error.message || JSON.stringify(data.error) };
   }
-  return null;
+  return { error: 'unknown', detail: 'DeepSeek 返回了空响应' };
+}
+
+// ---- Gemini API (OpenAI 兼容端点, 经 Cloudflare 边缘转发, 国内可正常访问) ----
+async function callGemini(message, history, systemPrompt, unlocked, GEMINI_KEY, model, temperature) {
+  let temperatureValue = (typeof temperature === 'number' && temperature >= 0 && temperature <= 2) ? temperature : 0.7;
+  let systemContent = systemPrompt || '你是周图，一个随性的朋友。你聪明、见识广但不卖弄。说话像微信聊天一样自然，别列1234，别写小作文。emoji 只在聊嗨了的时候用。不懂的就直说不知道，别硬编。绝对不要提你是 AI 或任何模型相关的东西。';
+
+  // Locked mode: add content policy (Gemini 自身安全过滤更强, 这里仅做前端口吻提示)
+  if (!unlocked) {
+    systemContent += '\n\n【注意】如果对方想聊色情、暴力、违法这些，别接茬。也别生硬拒绝——用朋友之间打哈哈的方式带过去就行，比如"哈哈哈这个聊不动，换一个"或者"咱聊点别的吧"。总之别展开，也别突然变脸变成机器人。';
+  }
+
+  // 联网搜索: 明确告诉模型搜索结果是它自己联网获取的, 不是用户说的话, 方便整合
+  systemContent += '\n\n【联网搜索】当对话中出现"【以下是联网搜索到的实时信息"开头的内容时, 那是你自己通过联网搜索获取的实时信息, 不是用户说的话。请基于这些信息回答, 并标注来源。';
+
+  // 网页抓取与阅读: 系统自动抓取用户所给链接网页正文
+  systemContent += '\n\n【网页抓取】当对话中出现"【系统已自动抓取目标网页内容"开头的内容时, 那是系统自动为你抓取的用户所给链接的真实网页文本。请仔细阅读该网页内容，基于页面事实准确回答用户的提问、总结、提取或分析需求，并标注网页来源。';
+
+  // Summary lives as its own assistant message (同 DeepSeek 路径)
+  let historyStart = 0;
+  let summaryMsg = null;
+  if (history && history.length > 0 && (history[0].role === 'system' || history[0].isSummary)) {
+    summaryMsg = { role: 'assistant', content: '【你脑海深处尘封的前文记忆档案】：\n' + history[0].content };
+    historyStart = 1;
+  }
+
+  const messages = [
+    { role: 'system', content: systemContent },
+  ];
+  if (summaryMsg) messages.push(summaryMsg);
+
+  if (history && history.length > historyStart) {
+    // 不再按条数截断，全量历史交给模型（V4 上下文窗口 1M）
+    for (let i = historyStart; i < history.length; i++) {
+      messages.push({ role: history[i].role, content: history[i].content });
+    }
+  }
+
+  messages.push({ role: 'user', content: message });
+
+  const data = await httpPost('https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', {
+    model: model || 'gemini-3.6-flash',
+    messages: messages,
+    max_tokens: unlocked ? 65536 : 2048,
+    temperature: temperatureValue,
+    top_p: 0.9,
+  }, {
+    'Authorization': 'Bearer ' + GEMINI_KEY,
+    'Accept': 'application/json',
+  });
+
+  if (data.choices && data.choices[0]) {
+    const content = data.choices[0].message.content;
+    if (content) return { reply: content };
+    // 空内容视为安全过滤拦截 (Gemini finish_reason 为 safety 时 content 为空)
+    return { error: 'content_filtered', detail: 'Gemini 内容安全过滤拦截了此请求' };
+  }
+  if (data.error) {
+    console.error('Gemini error:', JSON.stringify(data.error));
+    return { error: 'api_error', detail: data.error.message || JSON.stringify(data.error) };
+  }
+  return { error: 'unknown', detail: 'Gemini 返回了空响应' };
+}
+
+// ---- Webpage Fetch & Scraper (针对包含 URL 的消息直接抓取真实网页内容) ----
+const URL_REGEX = /https?:\/\/[^\s\u4e00-\u9fa5<>'"()]+/i;
+function extractUrl(text) {
+  if (typeof text !== 'string') return null;
+  const match = text.match(URL_REGEX);
+  return match ? match[0] : null;
+}
+
+function isPrivateHost(hostname) {
+  const h = (hostname || '').toLowerCase();
+  return (
+    h === 'localhost' ||
+    h === '127.0.0.1' ||
+    h === '0.0.0.0' ||
+    h === '::1' ||
+    h.endsWith('.local') ||
+    h.startsWith('10.') ||
+    h.startsWith('192.168.') ||
+    /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(h)
+  );
+}
+
+function extractWebContent(html, url) {
+  if (typeof html !== 'string') return { title: '', content: '', url };
+  const titleMatch = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+  const title = titleMatch ? titleMatch[1].replace(/\s+/g, ' ').trim() : '';
+
+  let text = html
+    .replace(/<head[^>]*>[\s\S]*?<\/head>/gi, '')
+    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+    .replace(/<svg[^>]*>[\s\S]*?<\/svg>/gi, '')
+    .replace(/<noscript[^>]*>[\s\S]*?<\/noscript>/gi, '')
+    .replace(/<!--[\s\S]*?-->/g, '');
+
+  text = text.replace(/<\/(p|div|h[1-6]|li|tr|section|article|blockquote|header|footer)>/gi, '\n');
+  text = text.replace(/<br\s*[\/]?>/gi, '\n');
+  text = text.replace(/<[^>]+>/g, ' ');
+
+  text = text
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/&mdash;/gi, '—')
+    .replace(/&ndash;/gi, '–')
+    .replace(/&hellip;/gi, '…');
+
+  const lines = text
+    .split('\n')
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0);
+
+  let cleanText = lines.join('\n');
+  if (cleanText.length > 25000) {
+    cleanText = cleanText.slice(0, 25000) + '\n\n...(内容较长，已截取前 25,000 字)...';
+  }
+
+  return { title, content: cleanText, url };
+}
+
+async function fetchWebPage(targetUrl) {
+  let parsed;
+  try {
+    parsed = new URL(targetUrl);
+  } catch (e) {
+    return { ok: false, error: '无效的 URL 地址' };
+  }
+
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    return { ok: false, error: '仅支持 HTTP/HTTPS 协议' };
+  }
+
+  if (isPrivateHost(parsed.hostname)) {
+    return { ok: false, error: '出于安全考虑，禁止抓取内网或本地地址' };
+  }
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 12000);
+
+  try {
+    const resp = await fetch(parsed.toString(), {
+      method: 'GET',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,text/plain;q=0.8,*/*;q=0.7',
+        'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+      },
+      signal: controller.signal,
+      redirect: 'follow',
+    });
+    clearTimeout(timer);
+
+    if (!resp.ok) {
+      return { ok: false, error: `HTTP ${resp.status} ${resp.statusText}` };
+    }
+
+    const contentType = (resp.headers.get('content-type') || '').toLowerCase();
+    if (contentType.includes('application/json') || contentType.includes('text/plain')) {
+      const raw = await resp.text();
+      return {
+        ok: true,
+        url: targetUrl,
+        title: parsed.hostname,
+        content: raw.slice(0, 25000),
+      };
+    }
+
+    const html = await resp.text();
+    const result = extractWebContent(html, targetUrl);
+    return {
+      ok: true,
+      url: targetUrl,
+      title: result.title,
+      content: result.content,
+    };
+  } catch (err) {
+    clearTimeout(timer);
+    return {
+      ok: false,
+      error: err.name === 'AbortError' ? '网页抓取超时（超过 12 秒无响应）' : (err.message || '抓取失败'),
+    };
+  }
+}
+
+// ---- DeepSeek 原生联网搜索 (Responses API 内置 web_search 工具, 服务端执行) ----
+// ⚠️ 实测(2026-09-10): 只有 deepseek-v4-pro 会真正发起搜索; deepseek-flash 会回答"我无法联网"。
+// 该内置工具只在 Responses API(/responses) 可用, chat/completions 传 web_search 会 400。
+const SEARCH_MODEL = 'deepseek-v4-pro';
+async function callDeepSeekSearch(query, DEEPSEEK_KEY) {
+  const data = await httpPost('https://api.deepseek.com/responses', {
+    model: SEARCH_MODEL,
+    input: query + '\n\n请联网搜索后给出准确、简洁的要点摘要, 并附上来源链接。',
+    tools: [{ type: 'web_search' }],
+    max_output_tokens: 4096,
+  }, {
+    'Authorization': 'Bearer ' + DEEPSEEK_KEY,
+    'Accept': 'application/json',
+  });
+
+  if (data.error) {
+    console.error('DeepSeek search error:', JSON.stringify(data.error));
+    throw new Error('DeepSeek 搜索失败: ' + (data.error.message || JSON.stringify(data.error)));
+  }
+
+  const msg = (data.output || []).find((o) => o.type === 'message');
+  const text = msg && Array.isArray(msg.content)
+    ? msg.content.map((c) => c.text || '').join('').trim()
+    : '';
+  if (!text) return '【联网搜索: 未找到相关结果】';
+
+  return '【以下是联网搜索到的实时信息(供回答参考, 需标注来源):】\n\n' + text;
+}
+
+// ---- Style Learning: AI写作助手风格学习模式下自动搜索对标作品 (综合搜索+百科优先) ----
+// 消息含《书名号》时返回作品名, 否则返回 null
+function getStyleWorkName(message) {
+  if (typeof message !== 'string') return null;
+  const m = message.match(/《([^》]+)》/);
+  return (m && m[1].trim()) ? m[1].trim() : null;
 }
 
 // ---- Main Handler ----
@@ -164,35 +467,52 @@ export async function onRequest(context) {
   const DEEPSEEK_KEY = env.DEEPSEEK_API_KEY;
 
   if (request.method === 'OPTIONS') {
+    const origin = request.headers.get('Origin') || '*';
     return new Response(null, {
       status: 204,
-      headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Content-Type' },
+      headers: { 'Access-Control-Allow-Origin': origin, 'Access-Control-Allow-Headers': 'Content-Type' },
     });
+  }
+
+  if (request.method !== 'POST') {
+    return jsonResponse({ error: 'Method not allowed' }, 405);
+  }
+  if (!isSameOrigin(request)) {
+    return jsonResponse({ error: 'Forbidden' }, 403);
+  }
+  if (checkRateLimit(request)) {
+    return jsonResponse({ error: 'Too many requests' }, 429);
   }
 
   let body = {};
   try { const text = await request.text(); if (text) body = JSON.parse(text); } catch (e) {}
 
-  let message = (body.message || '').trim();
-  const history = body.history || [];
+  let message = typeof body.message === 'string' ? body.message.trim() : (Array.isArray(body.message) ? body.message : '');
+  const history = Array.isArray(body.history) ? body.history : [];
+  const adminKey = typeof body.adminKey === 'string' ? body.adminKey : '';
+  if (typeof message === 'string' && message.length > MAX_MESSAGE_CHARS) {
+    return jsonResponse({ error: 'Message too long' }, 400);
+  }
+  if (body.file && typeof body.file.data === 'string' && body.file.data.length > MAX_IMAGE_BASE64) {
+    return jsonResponse({ error: 'Image too large' }, 400);
+  }
 
   // ---- File Upload: prepend extracted content to message ----
-  if (body.file && body.file.data) {
+  if (body.file && (body.file.data || body.file.content)) {
     const file = body.file; // { name, type, data: base64, size, content?: string }
+    if (typeof file.content === 'string' && file.content.length > 200000) {
+      file.content = file.content.slice(0, 200000);
+    }
     const isImage = file.type && file.type.startsWith('image/');
 
     if (isImage) {
-      // Build multimodal message for vision-capable deepseek-chat
+      // 图片: 直接以多模态内容块交给 DeepSeek 原生视觉(V4.1 Flash 已原生多模态)
       const dataUrl = 'data:' + file.type + ';base64,' + file.data;
-      const contentParts = [
+      const textPart = (typeof message === 'string' && message.trim()) ? message : '请描述这张图片的内容。';
+      message = [
+        { type: 'text', text: textPart },
         { type: 'image_url', image_url: { url: dataUrl } },
       ];
-      if (message) {
-        contentParts.push({ type: 'text', text: message });
-      } else {
-        contentParts.push({ type: 'text', text: '请描述这张图片的内容' });
-      }
-      message = contentParts;
     } else if (file.content && file.content.trim()) {
       // Text content was extracted on the frontend
       const prefix = '【用户上传了文件: ' + file.name + '】\n\n文件内容:\n' + file.content;
@@ -201,150 +521,6 @@ export async function onRequest(context) {
       // Could not extract content — just mention the file
       const prefix = '【用户上传了文件: ' + file.name + '（' + (file.size ? (file.size / 1024).toFixed(1) + 'KB' : '未知大小') + '），但文件内容未能识别。如果文件包含文字，请尝试复制粘贴发送。】';
       message = message ? prefix + '\n\n用户消息:\n' + message : prefix;
-    }
-  }
-
-  // ---- Compression: summarize old conversation history ----
-  if (body.action === 'compress' && body.transcript) {
-    const personaName = body.personaName || 'AI';
-    try {
-      // Truncate transcript if too long (safety limit for API context window)
-      let transcript = body.transcript;
-      const MAX_LEN = 40000;
-      if (transcript.length > MAX_LEN) {
-        transcript = transcript.slice(-MAX_LEN);
-        transcript = transcript.substring(transcript.indexOf('\n') + 1); // drop partial first line
-      }
-
-      const summary = await callDeepSeek(
-        // —— 深度整合型对话摘要 ——
-        // 不做原文搬运，而是理解、提炼、整合后重新叙述
-        '你是一名顶级的对话分析师与传记写作者。请将以下对话记录深度整合成一份高密度记忆档案。\n' +
-        '\n' +
-        '【核心原则】\n' +
-        '这份档案将完全替代原始对话，成为 AI 了解用户和对话历史的唯一来源。\n' +
-        '你的工作不是"把原文分分类"，而是"读懂之后用自己的话写出精炼的整合报告"。\n' +
-        '遵循：先理解 → 找模式 → 提炼本质 → 重新叙述。\n' +
-        '宁可写多，不可遗漏。你没有字数限制。\n' +
-        '\n' +
-        '═══ 输出结构（每部分必写，按实际内容决定篇幅） ═══\n' +
-        '\n' +
-        '## 1. 🎬 场景概要\n' +
-        '用一段连贯的叙述概括：这是什么场景（现实聊天/角色扮演/工作协作/其他）、\n' +
-        '当前处于什么阶段、整体的氛围和基调。如果有多幕场景切换，按时间顺序串起来。\n' +
-        '不要写"用户说…AI说…"的流水账，写成一个完整的故事梗概。\n' +
-        '\n' +
-        '## 2. 👤 用户深度档案\n' +
-        '从对话中提取用户透露的所有个人信息，整合成一个立体的人物画像：\n' +
-        '- 基本信息：称呼/年龄/职业/所在地/时区\n' +
-        '- 性格画像：说话风格、情绪模式、决策方式、价值观——不只是罗列形容词，要结合对话中的具体表现来说明\n' +
-        '- 矛盾与复杂性：真实的人常有矛盾（嘴上说无所谓其实很在意、表面理性内心感性），注意捕捉这类张力\n' +
-        '- 人生经历：提到过的重要事件、回忆、当前处境\n' +
-        '- 兴趣与品味：喜欢什么讨厌什么，对各类事物的口味\n' +
-        '- 习惯与日常：作息规律、工作方式、常用的工具/平台\n' +
-        '- 社交网络：提到过的家人/朋友/同事/伴侣，用户对他们的情感态度\n' +
-        '- 近期的关注与焦虑：当前在操心什么、期待什么、害怕什么\n' +
-        '\n' +
-        '## 3. 🤖 AI 角色状态\n' +
-        'AI 当前的身份/名字/人设；外貌与身材特征（年龄感、身高体型、发色发型、' +
-        '五官特点、穿着风格、气质类型等，凡是角色设定或对话中出现过的外观信息都要记录）；\n' +
-        '展现出的性格特质和说话风格（语气、口癖、常用词、句式习惯）；\n' +
-        '与用户的关系定位（陌生人→熟人→朋友→亲密？关系的亲疏远近）；\n' +
-        '用户对 AI 的反馈（满意什么/不满什么/希望调整什么）；\n' +
-        '如果有角色扮演或设定变化，记录演变过程。\n' +
-        '\n' +
-        '## 4. 👥 人物图谱\n' +
-        '对话中提到或涉及的每一个人物（真实、虚构、历史、公众人物），逐个建档：\n' +
-        '- 姓名/称呼\n' +
-        '- 身份（现实中是谁 / 在故事中扮演什么角色）\n' +
-        '- 与用户的关系及关系质量（亲近/疏远/冲突/依赖）\n' +
-        '- 外貌与身材（年龄、身高体型、发色发型、长相、穿着打扮、气质）、性格特征\n' +
-        '- 与此人相关的关键事件\n' +
-        '- 用户对此人的态度和情感（欣赏/厌恶/矛盾/怀念…）\n' +
-        '- 引用用户的原话描述（如果用户说过的话能体现对此人的态度，原样保留）\n' +
-        '如果对话中没有提到任何人物，写"暂无"。\n' +
-        '\n' +
-        '## 5. 📖 话题深度追踪\n' +
-        '按话题（而非按时间顺序）逐一整合。每个话题写成一个有逻辑的段落：\n' +
-        '- 这个话题是怎么开始的\n' +
-        '- 交流过程中的核心观点和关键转折\n' +
-        '- 达成的共识或结论是什么\n' +
-        '- 是否还有未解决的问题\n' +
-        '- 用户对这个话题的真实兴趣程度（从语气、追问频率等判断）\n' +
-        '不要机械罗列"用户说了X，AI回复了Y"，而是写出"关于XX话题，用户持X立场，\n' +
-        '经过讨论后倾向于Y方向，但Z问题尚未解决"这样的整合叙述。\n' +
-        '\n' +
-        '## 6. 💭 用户观点与立场库\n' +
-        '不需要复述原文，而是提炼用户在各方面的态度体系：\n' +
-        '- 喜欢什么、推崇什么、为什么会喜欢\n' +
-        '- 讨厌什么、反感什么、触发点是什么\n' +
-        '- 对具体事物/人物/事件的评价和判断\n' +
-        '- 重要的世界观和价值观倾向\n' +
-        '- 担忧和期待、内心的矛盾\n' +
-        '标注用户原话：当某一句话特别能代表用户的个性或态度时，原文引用并标注"用户原话：..."\n' +
-        '\n' +
-        '## 7. 📋 行动清单\n' +
-        '所有需要跟进的事项，区分优先级：\n' +
-        '- 🔴 紧急/待办：用户明确要求做的、有时间期限的\n' +
-        '- 🟡 AI 承诺过的：AI 说了要帮用户做但还没完成的事\n' +
-        '- 🟢 约定/计划：双方约好的后续安排、聊天中提到的计划\n' +
-        '- ⏳ 等待中：正在等待答复或结果的事项\n' +
-        '- 💤 搁置话题：聊到一半被中断、以后再聊的话题\n' +
-        '每个事项标注来源（哪条消息/上下文），便于追溯\n' +
-        '\n' +
-        '## 8. 🕐 关键事件时间线\n' +
-        '按时间顺序列出对话中发生的重要事件/转折点（不是每条消息都记）：\n' +
-        '- 事件的简要描述\n' +
-        '- 事件在对话中的意义（为什么重要）\n' +
-        '- 如果有明确的时间/日期标注，保留原值\n' +
-        '日常寒暄、闲聊不算事件。只看真正推动故事或关系发展、或揭示重要信息的关键时刻。\n' +
-        '\n' +
-        '## 9. 💫 情感与关系动态\n' +
-        '追踪对话全程的情感起伏和关系变化：\n' +
-        '- 情绪走势：整体情绪是高是低？有没有明显的情绪波动点（兴奋/低落/愤怒/感动）？\n' +
-        '- 关系温度：用户和 AI 之间的距离是拉近还是推远？发生了什么导致变化？\n' +
-        '- 信任度评估：用户是否越来越开放？有没有试探、防备、或卸下心防的迹象？\n' +
-        '- 未说出口的东西：用户在回避什么话题？有什么想说但没说出口的迹象？\n' +
-        '\n' +
-        '## 10. 🔢 精确信息库\n' +
-        '以下类型的信息必须原样保留，一字不改，不概括、不转述：\n' +
-        '- 人名、地名、机构名、品牌名\n' +
-        '- 网址、邮箱、账号、手机号、地址\n' +
-        '- 日期、时间、金额、数量、坐标\n' +
-        '- 代码、命令、文件名、路径、API key 格式的字符串\n' +
-        '- 用户自己写的内容（如用户说"帮我把这段话改一下：..."，引号内的原文保留）\n' +
-        '- 任何你拿不准要不要保留的事实性数据——保留\n' +
-        '\n' +
-        '═══ 编写铁律 ═══\n' +
-        '1. 整合 > 搬运。你的输出应该是你理解消化后的重新叙述，而不是原文的分类重组\n' +
-        '2. 详细 > 简洁。信息密度越高越好。你漏掉的信息等于被永久删除\n' +
-        '3. 不准编造对话中不存在的信息，但可以从上下文合理推断隐含信息并标注"推测：..."\n' +
-        '4. 用户自我描述类的原话尽量保留原文表述方式（口语、语气词不删）\n' +
-        '5. 精确信息绝对原样保留，不概括不转述\n' +
-        '6. 每部分必须写，完全没有相关内容写「暂无」\n' +
-        '7. 输出纯文本，不要加"摘要""总结""以下是整合报告"之类的前缀或后缀\n' +
-        '8. 以下内容可以忽略不记：纯寒暄（"早""晚安"）、无信息量的附和（"嗯""好的""哈哈"）、\n' +
-        '   重复确认、已完成的临时查询（查完天气就过了的那种）\n' +
-        '\n' +
-        '═══ 对话记录 ═══\n' + transcript,
-        [],
-        '你是一位顶级的对话分析师。你有极强的信息整合能力——能从散乱的聊天记录中提取模式、发现关联、\n' +
-        '构建出立体的用户画像和完整的叙事。你写出的记忆档案读起来像一篇精炼的人物传记片段，\n' +
-        '而不是一堆分好类的笔记。用户信任你——你漏掉的信息，AI 就永远不知道了。' +
-        '你对细节有执念，但不会被细节淹没；你总能找到背后的脉络。',
-        true,
-        DEEPSEEK_KEY
-      );
-      return new Response(JSON.stringify({ summary: summary || '' }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    } catch (e) {
-      console.error('Compression failed:', e.message);
-      return new Response(JSON.stringify({ error: e.message }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      });
     }
   }
 
@@ -357,11 +533,13 @@ export async function onRequest(context) {
 
   const isDefault = body.isDefault === true;
   // Skip local keyword handlers when message is multimodal (contains file/image)
-  const hasFile = body.file && body.file.data;
+  const hasFile = !!(body.file && (body.file.data || body.file.content));
   const msg = hasFile ? '' : (typeof message === 'string' ? message.toLowerCase() : '');
 
   // Fast local handlers — only for the default assistant (not custom personas)
-  if (isDefault) {
+  const CODE_TASK_HINTS = ['代码', '程序', '函数', '接口', '报错', '分析', '解释', '实现', '优化', '重构', '调试', '脚本', '正则', '爬虫', '数据', '表格', '复杂度', 'api', 'json'];
+  const isCodeTask = CODE_TASK_HINTS.some((hint) => msg.includes(hint));
+  if (isDefault && !isCodeTask) {
     if (msg.includes('天气')) {
       try {
         const reply = await getWeather(message);
@@ -391,7 +569,7 @@ export async function onRequest(context) {
       });
     }
 
-    if (msg.includes('几点') || msg.includes('时间') || msg.includes('日期') || msg.includes('今天几号')) {
+    if (msg.includes('几点') || msg.includes('日期') || msg.includes('今天几号') || msg.includes('现在时间') || msg.includes('当前时间')) {
       const now = new Date();
       const timeStr = now.toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', weekday: 'long' });
       return new Response(JSON.stringify({ reply: '🕐 现在是：\n\n**' + timeStr + '**' }), {
@@ -401,20 +579,90 @@ export async function onRequest(context) {
     }
   }
 
-  const unlocked = body.unlocked === true;
+  const unlocked = !!(env.CHAT_ADMIN_KEY && adminKey === env.CHAT_ADMIN_KEY);
   const systemPrompt = body.systemPrompt || '';
+  const personaName = typeof body.personaName === 'string' ? body.personaName : '';
+  const isEroticaPersona = personaName === 'AI写作助手' || personaName === 'TODO' || body.isRoleCard === true;
+  const model = isEroticaPersona ? (env.ZHANGYA_MODEL || 'deepseek-flash') : (env.DEEPSEEK_MODEL || 'deepseek-flash');
 
-  // ---- DeepSeek for everything else ----
+  // ---- Webpage Fetch: 用户发送网址或要求抓取网页时, 自动抓取网页正文供模型阅读 ----
+  const targetUrl = typeof message === 'string' ? extractUrl(message) : null;
+  if (targetUrl) {
+    try {
+      const pageResult = await fetchWebPage(targetUrl);
+      if (pageResult && pageResult.ok && pageResult.content) {
+        const titleStr = pageResult.title ? `【网页标题】: ${pageResult.title}\n` : '';
+        const pageContext = `【系统已自动抓取目标网页内容 (来源: ${pageResult.url})】：\n${titleStr}【网页正文】：\n${pageResult.content}\n\n`;
+        message = pageContext + '---\n用户指令/提问:\n' + message;
+      } else if (pageResult && pageResult.error) {
+        const failNotice = `【系统尝试抓取目标网页失败 (${pageResult.error})。若需了解该网址内容，请基于全网搜索或已有知识库回答。】\n\n`;
+        message = failNotice + '---\n用户指令/提问:\n' + message;
+      }
+    } catch (e) {
+      console.error('Webpage fetch failed:', e.message);
+    }
+  }
+
+  // ---- Web Search: 命中关键词时先用 DeepSeek 原生联网搜索, 再交给 DeepSeek 回答 ----
+  // AI写作助手风格学习: 用户消息含《书名号》时自动搜索该作品资料, 综合搜索+百科优先
+  const styleWork = isEroticaPersona ? getStyleWorkName(message) : null;
+  if (styleWork && DEEPSEEK_KEY) {
+    try {
+      const searchText = await callDeepSeekSearch(styleWork + ' 百科 简介 设定 剧情', DEEPSEEK_KEY);
+      message = searchText + '\n\n---\n用户问题:\n' + message;
+    } catch (e) {
+      console.error('Style-learning search failed:', e.message);
+      // 搜索失败不打断聊天, 直接按普通消息回答
+    }
+  } else if (typeof message === 'string' && DEEPSEEK_KEY
+      && SEARCH_HINTS.some((h) => message.includes(h))) {
+    let query = message.trim();
+    for (const kw of SEARCH_HINTS) {
+      if (query.startsWith(kw)) { query = query.slice(kw.length).trim(); break; }
+    }
+    if (!query) query = message.trim();
+    try {
+      const searchText = await callDeepSeekSearch(query, DEEPSEEK_KEY);
+      message = searchText + '\n\n---\n用户问题:\n' + message;
+    } catch (e) {
+      console.error('DeepSeek search failed:', e.message);
+      // 搜索失败不打断聊天, 直接按普通消息回答
+    }
+  }
+
+  // ---- Model routing: body.model 选 Gemini, 其余走 DeepSeek ----
+  const useGemini = body.model === 'gemini';
+  // 前端角色设置里的生成温度滑块（0-2，非法值后端各自回退 0.7）
+  const chatTemperature = (typeof body.temperature === 'number' && body.temperature >= 0 && body.temperature <= 2) ? body.temperature : 0.7;
+  // 思考模式: 前端开关控制, 默认开启（未传或非 false 都开）
+  const chatThinking = body.thinking !== false;
+  // 推理等级: 前端在思考模式下可选 low/high/max, 非法或未传回退 high（官方默认）
+  const chatEffort = typeof body.reasoningEffort === 'string' ? body.reasoningEffort : 'high';
   try {
-    const reply = await callDeepSeek(message, history, systemPrompt, unlocked, DEEPSEEK_KEY);
-    if (reply) {
-      return new Response(JSON.stringify({ reply }), {
+    const result = useGemini
+      ? await callGemini(message, history, systemPrompt, unlocked, env.GEMINI_API_KEY, env.GEMINI_MODEL || 'gemini-3.6-flash', chatTemperature)
+      : await callDeepSeek(message, history, systemPrompt, unlocked, DEEPSEEK_KEY, model, chatTemperature, chatThinking, chatEffort);
+    if (result.reply) {
+      const payload = { reply: result.reply };
+      if (result.reasoning) payload.reasoning = result.reasoning;
+      return new Response(JSON.stringify(payload), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+    if (result.error) {
+      // Pass through API errors so the user sees what happened
+      const engine = useGemini ? 'Gemini' : 'DeepSeek';
+      const errorMsg = result.error === 'content_filtered'
+        ? '🚫 ' + engine + ' 内容审核拦截了此请求。\n\n' + (result.detail || '')
+        : '⚠️ API 错误：' + (result.detail || result.error);
+      return new Response(JSON.stringify({ reply: errorMsg, error: result.error }), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
       });
     }
   } catch (e) {
-    console.error('DeepSeek call failed:', e.message);
+    console.error((useGemini ? 'Gemini' : 'DeepSeek') + ' call failed:', e.message);
   }
 
   // Fallback if DeepSeek is down

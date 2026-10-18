@@ -1,0 +1,1201 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DAYROOM · NOVA DECK — 预览版</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Fira+Code:wght@400;500&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ============ DESIGN TOKENS · NOVA DECK ============ */
+:root {
+  --bg: #07070b;
+  --bg-deep: #040406;
+  --surface: rgba(255,255,255,0.03);
+  --surface-hover: rgba(255,255,255,0.06);
+  --surface-active: rgba(0,212,255,0.08);
+  --border: rgba(255,255,255,0.08);
+  --border-hover: rgba(255,255,255,0.16);
+  --border-glow: rgba(0,212,255,0.4);
+  --text: #eceef2;
+  --text-secondary: #9aa0ab;
+  --text-tertiary: #5d6270;
+  --accent: #00d4ff;
+  --accent-2: #8b5cf6;
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --error: #ef4444;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --font-display: 'Space Grotesk', 'Noto Sans SC', sans-serif;
+  --font-body: 'Inter', 'Noto Sans SC', sans-serif;
+  --font-mono: 'Fira Code', 'SF Mono', Consolas, monospace;
+  --accent-rgb: 0, 212, 255;
+  --violet-rgb: 139, 92, 246;
+  --statusbar-h: 44px;
+  --rail-w: 172px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body { height: 100%; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.6;
+  letter-spacing: 0.01em;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection { background: rgba(var(--accent-rgb), 0.25); }
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.16); }
+
+/* ============ AMBIENT BACKGROUND (性能友好: 无 filter blur, 预混渐变) ============ */
+.nebula {
+  position: fixed; inset: 0;
+  pointer-events: none; z-index: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(1200px 800px at 82% -10%, rgba(var(--violet-rgb), 0.10), transparent 60%),
+    radial-gradient(1000px 700px at -5% 110%, rgba(var(--accent-rgb), 0.07), transparent 60%),
+    var(--bg);
+}
+.nebula i {
+  position: absolute; border-radius: 50%;
+  opacity: 0.5; will-change: transform;
+}
+.nebula i.b1 {
+  width: 520px; height: 520px; left: -160px; top: -180px;
+  background: radial-gradient(circle at 40% 40%, rgba(var(--violet-rgb), 0.16), transparent 65%);
+  animation: drift1 26s ease-in-out infinite alternate;
+}
+.nebula i.b2 {
+  width: 620px; height: 620px; right: -220px; top: 18%;
+  background: radial-gradient(circle at 55% 45%, rgba(var(--accent-rgb), 0.13), transparent 65%);
+  animation: drift2 32s ease-in-out infinite alternate;
+}
+.nebula i.b3 {
+  width: 420px; height: 420px; left: 28%; bottom: -220px;
+  background: radial-gradient(circle at 50% 50%, rgba(var(--violet-rgb), 0.10), transparent 65%);
+  animation: drift3 38s ease-in-out infinite alternate;
+}
+@keyframes drift1 { from { transform: translate3d(0,0,0) scale(1); } to { transform: translate3d(60px, 40px, 0) scale(1.12); } }
+@keyframes drift2 { from { transform: translate3d(0,0,0) scale(1); } to { transform: translate3d(-70px, -30px, 0) scale(1.08); } }
+@keyframes drift3 { from { transform: translate3d(0,0,0) scale(1); } to { transform: translate3d(40px, -50px, 0) scale(1.15); } }
+
+/* 极淡的网格线，控制台质感 */
+.grid-overlay {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.016) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.016) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: radial-gradient(1200px 800px at 50% 30%, rgba(0,0,0,0.9), transparent 75%);
+}
+
+.app { position: relative; z-index: 1; height: 100vh; display: flex; flex-direction: column; }
+
+/* ============ STATUS BAR ============ */
+.statusbar {
+  height: var(--statusbar-h);
+  flex: 0 0 var(--statusbar-h);
+  display: flex; align-items: center; gap: 16px;
+  padding: 0 16px;
+  background: rgba(10,10,14,0.72);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(14px);
+  user-select: none;
+}
+.brand { display: flex; align-items: center; gap: 10px; }
+.brand .mark {
+  width: 26px; height: 26px; border-radius: 8px;
+  display: grid; place-items: center;
+  background: linear-gradient(135deg, rgba(var(--accent-rgb),0.22), rgba(var(--violet-rgb),0.22));
+  border: 1px solid var(--border-glow);
+  box-shadow: 0 0 16px rgba(var(--accent-rgb), 0.25), inset 0 0 12px rgba(var(--accent-rgb), 0.18);
+  color: var(--accent);
+}
+.brand .mark svg { width: 15px; height: 15px; }
+.brand .name {
+  font-family: var(--font-display); font-weight: 700; letter-spacing: 0.18em;
+  font-size: 13px;
+}
+.brand .name em { font-style: normal; color: var(--accent); }
+.brand .ver {
+  font-family: var(--font-mono); font-size: 10px; color: var(--text-tertiary);
+  border: 1px solid var(--border); border-radius: 4px; padding: 1px 6px;
+  letter-spacing: 0.06em;
+}
+.statusbar .spacer { flex: 1; }
+.statusbar .field { display: flex; align-items: center; gap: 7px; color: var(--text-secondary); font-family: var(--font-mono); font-size: 11.5px; letter-spacing: 0.04em; }
+.statusbar .field .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--success); box-shadow: 0 0 8px rgba(34,197,94,0.8); }
+.statusbar .field .dot.pulse { animation: pulse 2.2s ease-in-out infinite; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+.statusbar .focus-chip {
+  display: flex; align-items: center; gap: 8px;
+  font-family: var(--font-mono); font-size: 11px; color: var(--accent);
+  border: 1px solid var(--border-glow); border-radius: 999px; padding: 3px 12px;
+  cursor: pointer; transition: all .2s;
+  background: rgba(var(--accent-rgb), 0.06);
+}
+.statusbar .focus-chip:hover { background: rgba(var(--accent-rgb), 0.14); box-shadow: 0 0 14px rgba(var(--accent-rgb), 0.25); }
+.statusbar .focus-chip .tm { color: var(--text); font-variant-numeric: tabular-nums; min-width: 40px; text-align: center; }
+.iconbtn {
+  width: 30px; height: 30px; border-radius: 8px;
+  display: grid; place-items: center; cursor: pointer;
+  color: var(--text-secondary); background: transparent; border: 1px solid transparent;
+  transition: all .18s;
+}
+.iconbtn:hover { color: var(--text); background: var(--surface-hover); border-color: var(--border); }
+.iconbtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.iconbtn svg { width: 16px; height: 16px; }
+
+/* ============ SHELL (rail + deck) ============ */
+.shell { flex: 1; display: flex; min-height: 0; }
+
+/* --- left rail --- */
+.rail {
+  width: var(--rail-w); flex: 0 0 var(--rail-w);
+  display: flex; flex-direction: column;
+  border-right: 1px solid var(--border);
+  background: rgba(10,10,14,0.5);
+  padding: 12px 10px;
+  gap: 4px;
+}
+.rail .rail-label {
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.16em;
+  color: var(--text-tertiary); padding: 4px 10px 8px;
+}
+.rail-item {
+  position: relative; display: flex; align-items: center; gap: 11px;
+  padding: 9px 12px; border-radius: var(--radius-sm);
+  color: var(--text-secondary); cursor: pointer;
+  border: 1px solid transparent;
+  transition: all .18s; font-size: 13px;
+}
+.rail-item svg { width: 17px; height: 17px; flex: 0 0 auto; }
+.rail-item:hover { color: var(--text); background: var(--surface-hover); }
+.rail-item.active {
+  color: var(--accent); background: var(--surface-active);
+  border-color: rgba(var(--accent-rgb), 0.18);
+}
+.rail-item.active::before {
+  content: ''; position: absolute; left: -10px; top: 20%; bottom: 20%;
+  width: 3px; border-radius: 2px;
+  background: var(--accent);
+  box-shadow: 0 0 12px rgba(var(--accent-rgb), 0.9);
+}
+.rail .rail-foot { margin-top: auto; display: flex; flex-direction: column; gap: 4px; border-top: 1px solid var(--border); padding-top: 10px; }
+.rail .rail-hint {
+  font-family: var(--font-mono); font-size: 10px; color: var(--text-tertiary);
+  padding: 2px 12px; line-height: 1.7;
+}
+
+/* --- deck: 三栏仪表盘 --- */
+.deck { flex: 1; display: flex; min-width: 0; }
+.panel {
+  flex: 0 0 var(--w, 360px);
+  min-width: 0;
+  display: flex; flex-direction: column;
+  border-right: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.01) 30%);
+  transition: flex-basis .28s cubic-bezier(.4,0,.2,1), background .2s;
+  overflow: hidden;
+  position: relative;
+}
+.panel.collapsed { flex: 0 0 52px !important; cursor: pointer; }
+.panel.collapsed:hover { background: var(--surface-hover); }
+.panel.collapsed .p-head { writing-mode: vertical-rl; justify-content: flex-start; padding: 14px 16px; transform: rotate(180deg); }
+.panel.collapsed .p-head .p-title, .panel.collapsed .p-head .p-actions { display: none; }
+.panel.collapsed .p-head .p-count { display: block; }
+.panel.collapsed .p-body { display: none; }
+.p-head {
+  flex: 0 0 auto;
+  display: flex; align-items: center; gap: 10px;
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--border);
+  user-select: none;
+}
+.p-head .p-ico { color: var(--accent); display: grid; place-items: center; }
+.p-head .p-ico svg { width: 16px; height: 16px; }
+.p-head .p-title { font-family: var(--font-display); font-size: 13px; font-weight: 600; letter-spacing: 0.14em; }
+.p-head .p-sub { font-family: var(--font-mono); font-size: 10px; color: var(--text-tertiary); letter-spacing: 0.1em; }
+.p-count {
+  font-family: var(--font-mono); font-size: 10.5px; color: var(--accent);
+  background: rgba(var(--accent-rgb), 0.1); border: 1px solid rgba(var(--accent-rgb), 0.2);
+  border-radius: 999px; padding: 1px 8px;
+}
+.p-head .spacer { flex: 1; }
+.p-actions { display: flex; gap: 4px; }
+
+.p-body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.p-body.scroll { overflow-y: auto; }
+
+/* splitter 拖拽条 */
+.splitter {
+  flex: 0 0 6px; cursor: col-resize;
+  position: relative; z-index: 2;
+  background: transparent; transition: background .15s;
+}
+.splitter:hover, .splitter.dragging { background: rgba(var(--accent-rgb), 0.28); }
+.splitter::after {
+  content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: 2px; height: 26px; border-radius: 2px;
+  background: rgba(255,255,255,0.10); transition: background .15s;
+}
+.splitter:hover::after { background: var(--accent); }
+
+/* ============ 通用控件 ============ */
+.btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  border-radius: var(--radius-sm); cursor: pointer;
+  font-family: var(--font-body); font-size: 12.5px; font-weight: 500;
+  transition: all .18s; white-space: nowrap;
+}
+.btn:active { transform: scale(0.97); }
+.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent), #38bdf8);
+  color: #04121a; border: none; padding: 8px 16px;
+  box-shadow: 0 0 18px rgba(var(--accent-rgb), 0.28);
+}
+.btn-primary:hover { box-shadow: 0 0 26px rgba(var(--accent-rgb), 0.5); filter: brightness(1.08); }
+.btn-ghost {
+  background: transparent; color: var(--text-secondary);
+  border: 1px solid var(--border); padding: 7px 13px;
+}
+.btn-ghost:hover { color: var(--text); background: var(--surface-hover); border-color: var(--border-hover); }
+.btn-sm { padding: 4px 9px; font-size: 11.5px; }
+
+.input {
+  width: 100%;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  color: var(--text); font-family: var(--font-body); font-size: 13px;
+  padding: 9px 13px; transition: all .18s;
+}
+.input::placeholder { color: var(--text-tertiary); }
+.input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.12), 0 0 16px rgba(var(--accent-rgb), 0.12); }
+
+kbd {
+  font-family: var(--font-mono); font-size: 10px; color: var(--text-secondary);
+  background: var(--surface-hover); border: 1px solid var(--border);
+  border-bottom-width: 2px; border-radius: 4px; padding: 1px 6px;
+}
+
+/* ============ TASK PANEL ============ */
+.todo-filters { display: flex; gap: 6px; padding: 12px 16px 8px; }
+.todo-filters .flt {
+  font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.05em;
+  color: var(--text-tertiary); padding: 3px 10px; border-radius: 999px;
+  cursor: pointer; border: 1px solid transparent; transition: all .15s;
+}
+.todo-filters .flt:hover { color: var(--text); }
+.todo-filters .flt.active { color: var(--accent); border-color: rgba(var(--accent-rgb), 0.25); background: rgba(var(--accent-rgb), 0.08); }
+.todo-list { flex: 1; overflow-y: auto; padding: 4px 10px 12px; display: flex; flex-direction: column; gap: 3px; }
+
+.todo-item {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 9px 10px; border-radius: var(--radius-sm);
+  border: 1px solid transparent; transition: all .15s;
+  animation: slideIn .25s ease;
+}
+@keyframes slideIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.todo-item:hover { background: var(--surface-hover); border-color: var(--border); }
+.todo-item .ck {
+  flex: 0 0 auto; width: 17px; height: 17px; margin-top: 2px;
+  border: 1.5px solid var(--text-tertiary); border-radius: 5px;
+  cursor: pointer; display: grid; place-items: center;
+  transition: all .18s;
+}
+.todo-item .ck svg { width: 11px; height: 11px; opacity: 0; transform: scale(0.4); transition: all .18s; color: #04121a; }
+.todo-item .ck:hover { border-color: var(--accent); }
+.todo-item.done .ck { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 12px rgba(var(--accent-rgb), 0.5); }
+.todo-item.done .ck svg { opacity: 1; transform: scale(1); }
+.todo-item .tx { flex: 1; min-width: 0; }
+.todo-item .t-line { font-size: 13px; line-height: 1.45; word-break: break-word; }
+.todo-item.done .t-line { color: var(--text-tertiary); text-decoration: line-through; }
+.todo-item .t-meta { display: flex; align-items: center; gap: 7px; margin-top: 3px; }
+.todo-item .t-tag {
+  font-family: var(--font-mono); font-size: 9.5px; letter-spacing: 0.04em;
+  color: var(--text-secondary); border: 1px solid var(--border); border-radius: 4px; padding: 1px 6px;
+}
+.todo-item .t-tag.pri-high { color: var(--error); border-color: rgba(239,68,68,0.35); }
+.todo-item .t-tag.pri-mid { color: var(--warning); border-color: rgba(245,158,11,0.35); }
+.todo-item .t-tag.pri-low { color: var(--success); border-color: rgba(34,197,94,0.35); }
+.todo-item .row-acts { display: flex; gap: 4px; opacity: 0; transition: opacity .15s; }
+.todo-item:hover .row-acts { opacity: 1; }
+.todo-item .mini {
+  width: 24px; height: 24px; border-radius: 6px; display: grid; place-items: center;
+  color: var(--text-tertiary); cursor: pointer; border: 1px solid transparent; transition: all .15s;
+}
+.todo-item .mini:hover { color: var(--accent); border-color: var(--border); background: var(--surface-hover); }
+.todo-item .mini.del:hover { color: var(--error); }
+.todo-item .mini svg { width: 13px; height: 13px; }
+.todo-item .ai-ping { opacity: 1; }
+.todo-item .ai-ping.pending { color: var(--accent); border-color: rgba(var(--accent-rgb),0.4); animation: pulse 1s ease-in-out infinite; }
+
+.todo-add { flex: 0 0 auto; display: flex; gap: 8px; padding: 10px 16px 14px; border-top: 1px solid var(--border); }
+
+/* ============ CHAT PANEL ============ */
+.personas { display: flex; gap: 8px; padding: 12px 16px 10px; overflow-x: auto; flex: 0 0 auto; }
+.persona {
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 12px 5px 6px; border-radius: 999px;
+  border: 1px solid var(--border); cursor: pointer; transition: all .18s;
+  background: transparent;
+}
+.persona .av {
+  width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center;
+  font-size: 12px; background: var(--surface-hover); border: 1px solid var(--border);
+}
+.persona .nm { font-size: 12px; color: var(--text-secondary); }
+.persona.active { border-color: rgba(var(--accent-rgb), 0.4); background: var(--surface-active); }
+.persona.active .nm { color: var(--text); }
+.persona.active .av { border-color: var(--accent); box-shadow: 0 0 10px rgba(var(--accent-rgb), 0.4); }
+
+.chat-msgs { flex: 1; overflow-y: auto; padding: 6px 16px 14px; display: flex; flex-direction: column; gap: 12px; }
+.msg { display: flex; gap: 9px; max-width: 86%; animation: slideIn .25s ease; }
+.msg .m-av {
+  flex: 0 0 auto; width: 28px; height: 28px; border-radius: 9px;
+  display: grid; place-items: center; font-size: 13px;
+  background: var(--surface-hover); border: 1px solid var(--border);
+}
+.msg .m-body { min-width: 0; }
+.msg .m-who { display: flex; align-items: center; gap: 8px; margin-bottom: 3px; }
+.msg .m-who .nm { font-family: var(--font-mono); font-size: 10px; color: var(--text-tertiary); letter-spacing: 0.06em; }
+.msg .m-who .tm { font-family: var(--font-mono); font-size: 9.5px; color: var(--text-tertiary); opacity: 0.7; }
+.msg .bub {
+  font-size: 13px; line-height: 1.7; padding: 9px 13px; border-radius: 4px 12px 12px 12px;
+  background: var(--surface-hover); border: 1px solid var(--border);
+}
+.msg.me { flex-direction: row-reverse; align-self: flex-end; }
+.msg.me .bub {
+  background: rgba(var(--accent-rgb), 0.1); border-color: rgba(var(--accent-rgb), 0.22);
+  border-radius: 12px 4px 12px 12px;
+}
+.msg.sys { align-self: center; max-width: 92%; }
+.msg.sys .bub {
+  font-family: var(--font-mono); font-size: 11px; color: #fbbf24;
+  background: rgba(245,158,11,0.07); border-color: rgba(245,158,11,0.22);
+  border-radius: 999px; padding: 5px 14px; text-align: center;
+}
+.msg .bub b { color: var(--accent); font-weight: 600; }
+
+.chat-input { flex: 0 0 auto; padding: 12px 16px 14px; border-top: 1px solid var(--border); }
+.chat-input .ci { display: flex; gap: 8px; }
+.chat-input .ci .input { flex: 1; }
+.chat-input .hints { display: flex; gap: 10px; margin-top: 8px; align-items: center; color: var(--text-tertiary); font-family: var(--font-mono); font-size: 10px; }
+
+/* ============ MUSIC PANEL ============ */
+.music-wrap { padding: 14px 16px; display: flex; flex-direction: column; gap: 14px; }
+.now-playing {
+  border-radius: var(--radius); padding: 14px;
+  background: linear-gradient(160deg, rgba(var(--violet-rgb), 0.12), rgba(var(--accent-rgb), 0.06) 60%, rgba(255,255,255,0.02));
+  border: 1px solid rgba(var(--violet-rgb), 0.25);
+  position: relative; overflow: hidden;
+}
+.now-playing::before {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(300px 140px at 85% 0%, rgba(var(--accent-rgb), 0.16), transparent 70%);
+}
+.np-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.np-top .label { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.16em; color: var(--accent); }
+.np-top .badge { font-family: var(--font-mono); font-size: 9.5px; color: var(--text-secondary); border: 1px solid var(--border); border-radius: 4px; padding: 1px 6px; }
+.np-info { display: flex; align-items: center; gap: 12px; }
+.np-cover {
+  width: 52px; height: 52px; border-radius: 10px; flex: 0 0 auto;
+  background: linear-gradient(135deg, rgba(var(--accent-rgb), 0.5), rgba(var(--violet-rgb), 0.6));
+  display: grid; place-items: center; color: #04121a;
+  box-shadow: 0 0 18px rgba(var(--accent-rgb), 0.35);
+}
+.np-cover svg { width: 22px; height: 22px; }
+.np-text { min-width: 0; flex: 1; }
+.np-text .t1 { font-family: var(--font-display); font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.np-text .t2 { font-size: 12px; color: var(--text-secondary); margin-top: 1px; }
+.spectrum { display: flex; align-items: flex-end; gap: 3px; height: 30px; margin-top: 12px; }
+.spectrum i { flex: 1; border-radius: 2px; background: linear-gradient(180deg, var(--accent), rgba(var(--accent-rgb), 0.2)); }
+.spectrum i:nth-child(odd) { background: linear-gradient(180deg, #a78bfa, rgba(var(--violet-rgb), 0.2)); }
+.spectrum.play i { animation: eq 0.8s ease-in-out infinite alternate; }
+@keyframes eq { from { transform: scaleY(0.18); } to { transform: scaleY(1); } }
+.spectrum.pause i { transform: scaleY(0.12); }
+.transport { display: flex; align-items: center; justify-content: space-between; }
+.transport .t-acts { display: flex; gap: 8px; align-items: center; }
+.tbtn {
+  width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center;
+  color: var(--text-secondary); cursor: pointer; border: 1px solid var(--border); transition: all .18s;
+  background: var(--surface);
+}
+.tbtn:hover { color: var(--text); border-color: var(--border-hover); }
+.tbtn.main {
+  width: 42px; height: 42px; color: #04121a;
+  background: linear-gradient(135deg, var(--accent), #38bdf8);
+  border: none; box-shadow: 0 0 18px rgba(var(--accent-rgb), 0.4);
+}
+.tbtn.main:hover { filter: brightness(1.1); box-shadow: 0 0 26px rgba(var(--accent-rgb), 0.6); }
+.tbtn svg { width: 15px; height: 15px; }
+.tbtn.main svg { width: 18px; height: 18px; }
+.vol { display: flex; align-items: center; gap: 9px; font-family: var(--font-mono); font-size: 10px; color: var(--text-tertiary); }
+.vol .bar { width: 74px; height: 4px; border-radius: 2px; background: var(--surface-hover); position: relative; overflow: hidden; }
+.vol .bar::after { content: ''; position: absolute; inset: 0 auto 0 0; width: 68%; background: var(--accent); border-radius: 2px; box-shadow: 0 0 8px rgba(var(--accent-rgb), 0.7); }
+.src-switch { display: flex; gap: 6px; }
+.src-switch .flt { flex: 1; text-align: center; }
+.music-list { display: flex; flex-direction: column; gap: 3px; }
+.mlist-item {
+  display: flex; align-items: center; gap: 11px; padding: 8px 10px; border-radius: var(--radius-sm);
+  cursor: pointer; border: 1px solid transparent; transition: all .15s;
+}
+.mlist-item:hover { background: var(--surface-hover); border-color: var(--border); }
+.mlist-item.playing { background: var(--surface-active); border-color: rgba(var(--accent-rgb), 0.22); }
+.mlist-item .no { font-family: var(--font-mono); font-size: 10px; color: var(--text-tertiary); width: 18px; text-align: center; }
+.mlist-item .mt { flex: 1; min-width: 0; }
+.mlist-item .mt .a { font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mlist-item .mt .b { font-size: 10.5px; color: var(--text-tertiary); }
+.mlist-item.playing .mt .a { color: var(--accent); }
+.mlist-item .dur { font-family: var(--font-mono); font-size: 10px; color: var(--text-tertiary); }
+.search-row { display: flex; gap: 8px; }
+
+/* ============ COMMAND PALETTE ============ */
+.palette {
+  position: fixed; inset: 0; z-index: 50;
+  display: none; align-items: flex-start; justify-content: center;
+  background: rgba(3,3,6,0.55);
+  backdrop-filter: blur(8px);
+  padding-top: 12vh;
+}
+.palette.open { display: flex; animation: fadeIn .15s ease; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.palette-box {
+  width: 560px; max-width: calc(100vw - 40px);
+  border-radius: var(--radius); overflow: hidden;
+  background: rgba(12,12,18,0.92);
+  border: 1px solid var(--border-hover);
+  box-shadow: 0 24px 80px rgba(0,0,0,0.6), 0 0 40px rgba(var(--accent-rgb), 0.08);
+  animation: popIn .18s ease;
+}
+@keyframes popIn { from { opacity: 0; transform: translateY(-8px) scale(0.98); } to { opacity: 1; transform: none; } }
+.palette-search { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--border); }
+.palette-search svg { width: 17px; height: 17px; color: var(--accent); flex: 0 0 auto; }
+.palette-search input {
+  flex: 1; background: transparent; border: none; outline: none;
+  color: var(--text); font-family: var(--font-body); font-size: 14px;
+}
+.palette-search input::placeholder { color: var(--text-tertiary); }
+.palette-list { max-height: 340px; overflow-y: auto; padding: 8px; }
+.palette-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 12px; border-radius: var(--radius-sm); cursor: pointer;
+  border: 1px solid transparent; transition: all .1s;
+}
+.palette-item .pi-ico { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; background: var(--surface-hover); color: var(--text-secondary); flex: 0 0 auto; }
+.palette-item .pi-ico svg { width: 15px; height: 15px; }
+.palette-item .pi-tx { flex: 1; font-size: 13px; }
+.palette-item .pi-tx .cat { font-family: var(--font-mono); font-size: 9.5px; color: var(--text-tertiary); display: block; letter-spacing: 0.08em; }
+.palette-item .pi-kbd { display: flex; gap: 4px; }
+.palette-item.hl, .palette-item:hover { background: var(--surface-active); border-color: rgba(var(--accent-rgb), 0.3); }
+.palette-item.hl .pi-tx { color: var(--accent); }
+.palette-item mark { background: transparent; color: var(--accent); }
+
+/* ============ TOAST ============ */
+.toast-wrap { position: fixed; right: 20px; bottom: 20px; z-index: 80; display: flex; flex-direction: column; gap: 8px; }
+.toast {
+  display: flex; align-items: center; gap: 10px;
+  background: rgba(12,12,18,0.94); border: 1px solid var(--border-hover);
+  border-left: 2px solid var(--accent);
+  border-radius: var(--radius-sm); padding: 10px 16px;
+  font-size: 12.5px; box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+  animation: toastIn .25s ease;
+}
+.toast.ok { border-left-color: var(--success); }
+.toast.warn { border-left-color: var(--warning); }
+@keyframes toastIn { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: none; } }
+
+/* ============ FOCUS OVERLAY ============ */
+.focus-overlay {
+  position: fixed; inset: 0; z-index: 40;
+  background: radial-gradient(1000px 600px at 50% 40%, rgba(var(--accent-rgb), 0.06), transparent 70%), rgba(4,4,7,0.92);
+  display: none; align-items: center; justify-content: center; flex-direction: column; gap: 22px;
+}
+.focus-overlay.open { display: flex; animation: fadeIn .3s ease; }
+.focus-overlay .fo-timer {
+  font-family: var(--font-display); font-size: 88px; font-weight: 700; letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 40px rgba(var(--accent-rgb), 0.5);
+}
+.focus-overlay .fo-label { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.24em; color: var(--accent); }
+.focus-overlay .fo-task { font-size: 14px; color: var(--text-secondary); }
+.focus-overlay .fo-acts { display: flex; gap: 12px; }
+
+/* ============ 入场 ============ */
+.statusbar, .rail, .deck { animation: fadeInUp .4s ease both; }
+.panel:nth-child(3) { animation-delay: .05s; }
+.panel:nth-child(5) { animation-delay: .1s; }
+.panel:nth-child(7) { animation-delay: .15s; }
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+/* ============ 无障碍降级 ============ */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+}
+
+/* ============ 移动端兜底 (仅占位, PC 先做) ============ */
+@media (max-width: 600px) {
+  .rail { width: 60px; flex-basis: 60px; }
+  .rail-item .rail-item-label { display: none; }
+  .rail .rail-label { display: none; }
+}
+</style>
+</head>
+<body>
+
+<div class="nebula" aria-hidden="true"><i class="b1"></i><i class="b2"></i><i class="b3"></i></div>
+<div class="grid-overlay" aria-hidden="true"></div>
+
+<div class="app">
+
+  <!-- ======== STATUS BAR ======== -->
+  <header class="statusbar">
+    <div class="brand">
+      <div class="mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 4.8L20 8l-4 4 1 6-5-3-5 3 1-6-4-4 5.6-1.2z"/></svg>
+      </div>
+      <div class="name">DAY<em>ROOM</em></div>
+      <span class="ver">NOVA DECK</span>
+    </div>
+
+    <div class="spacer"></div>
+
+    <div class="field"><span class="dot pulse"></span>SYNC&nbsp;·&nbsp;JSON&nbsp;BLOB</div>
+    <div class="field" id="clock">--:--:--</div>
+    <div class="focus-chip" id="focusChip" title="启动专注模式">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+      <span>专注</span>
+      <span class="tm" id="focusTm">25:00</span>
+    </div>
+    <button class="iconbtn" id="wallBtn" title="切换壁纸">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+    </button>
+    <button class="iconbtn" id="setBtn" title="设置">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    </button>
+  </header>
+
+  <!-- ======== SHELL ======== -->
+  <div class="shell">
+
+    <!-- LEFT RAIL -->
+    <nav class="rail">
+      <div class="rail-label">NAVIGATION</div>
+      <div class="rail-item active" data-target="panel-todo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4"/><path d="M16 3v4"/><path d="M3 10h18"/><path d="m9 14 2 2 4-4"/></svg>
+        <span class="rail-item-label">任务面板</span>
+      </div>
+      <div class="rail-item" data-target="panel-chat">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <span class="rail-item-label">通讯台</span>
+      </div>
+      <div class="rail-item" data-target="panel-music">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+        <span class="rail-item-label">音频控制台</span>
+      </div>
+      <div class="rail-item" data-target="panel-wall">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+        <span class="rail-item-label">壁纸</span>
+      </div>
+      <div class="rail-foot">
+        <div class="rail-item" data-target="settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          <span class="rail-item-label">设置</span>
+        </div>
+        <div class="rail-hint">Ctrl+K 命令面板<br>拖拽分隔条调整栏宽</div>
+      </div>
+    </nav>
+
+    <!-- DECK -->
+    <main class="deck">
+
+      <!-- TASK PANEL -->
+      <section class="panel" id="panel-todo" style="--w:340px">
+        <div class="p-head">
+          <div class="p-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4"/><path d="M16 3v4"/><path d="M3 10h18"/><path d="m9 14 2 2 4-4"/></svg></div>
+          <div class="p-title">TASK&nbsp;PANEL</div>
+          <div class="p-sub">任务面板</div>
+          <span class="p-count" id="todoCount">5</span>
+          <div class="spacer"></div>
+          <div class="p-actions">
+            <button class="iconbtn" title="收起面板" data-collapse>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="todo-filters">
+          <span class="flt active" data-f="all">全部</span>
+          <span class="flt" data-f="active">进行中</span>
+          <span class="flt" data-f="done">已完成</span>
+        </div>
+
+        <div class="todo-list" id="todoList"></div>
+
+        <div class="todo-add">
+          <input class="input" id="todoInput" type="text" placeholder="添加任务… (Enter)">
+          <button class="btn btn-primary" id="todoAddBtn">添加</button>
+        </div>
+      </section>
+
+      <div class="splitter" data-prev="panel-todo"></div>
+
+      <!-- CHAT PANEL -->
+      <section class="panel" id="panel-chat" style="--w:420px">
+        <div class="p-head">
+          <div class="p-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+          <div class="p-title">COMM&nbsp;LINK</div>
+          <div class="p-sub">通讯台</div>
+          <div class="spacer"></div>
+          <div class="p-actions">
+            <button class="iconbtn" title="收起面板" data-collapse>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="personas" id="personas">
+          <div class="persona active"><span class="av">💡</span><span class="nm">周图</span></div>
+          <div class="persona"><span class="av">📖</span><span class="nm">小说助理</span></div>
+          <div class="persona"><span class="av">🖋️</span><span class="nm">AI写作助手</span></div>
+        </div>
+
+        <div class="chat-msgs" id="chatMsgs"></div>
+
+        <div class="chat-input">
+          <div class="ci">
+            <input class="input" id="chatInput" type="text" placeholder="输入消息… (Enter)">
+            <button class="btn btn-primary" id="chatSendBtn">发送</button>
+          </div>
+          <div class="hints"><kbd>Enter</kbd> 发送 <kbd>Shift</kbd>+<kbd>Enter</kbd> 换行 <span>·</span> 任务「派给 AI」按钮 → 自动带入上下文</div>
+        </div>
+      </section>
+
+      <div class="splitter" data-prev="panel-chat"></div>
+
+      <!-- MUSIC PANEL -->
+      <section class="panel" id="panel-music" style="--w:340px">
+        <div class="p-head">
+          <div class="p-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></div>
+          <div class="p-title">AUDIO&nbsp;DECK</div>
+          <div class="p-sub">音频控制台</div>
+          <div class="spacer"></div>
+          <div class="p-actions">
+            <button class="iconbtn" title="收起面板" data-collapse>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="music-wrap">
+          <div class="now-playing">
+            <div class="np-top">
+              <span class="label">NOW&nbsp;PLAYING</span>
+              <span class="badge">放松频道</span>
+            </div>
+            <div class="np-info">
+              <div class="np-cover"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></div>
+              <div class="np-text">
+                <div class="t1" id="npTitle">Midnight Rain</div>
+                <div class="t2" id="npArtist">Lo-fi Beats · 放松频道</div>
+              </div>
+            </div>
+            <div class="spectrum play" id="spectrum">
+              <i style="animation-delay:0s"></i><i style="animation-delay:.1s"></i><i style="animation-delay:.2s"></i><i style="animation-delay:.05s"></i><i style="animation-delay:.15s"></i><i style="animation-delay:.25s"></i><i style="animation-delay:.08s"></i><i style="animation-delay:.18s"></i><i style="animation-delay:.3s"></i><i style="animation-delay:.12s"></i><i style="animation-delay:.22s"></i><i style="animation-delay:.03s"></i>
+            </div>
+          </div>
+
+          <div class="transport">
+            <div class="t-acts">
+              <button class="tbtn" id="prevBtn" title="上一首"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/></svg></button>
+              <button class="tbtn main" id="playBtn" title="播放/暂停"><svg id="playIco" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button>
+              <button class="tbtn" id="nextBtn" title="下一首"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 6h2v12h-2zM6 18l8.5-6L6 6z"/></svg></button>
+            </div>
+            <div class="vol">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg>
+              <span class="bar"></span>
+              <span>68</span>
+            </div>
+          </div>
+
+          <div class="src-switch">
+            <span class="flt active" data-src="relax">放松频道</span>
+            <span class="flt" data-src="search">搜索点歌</span>
+          </div>
+
+          <div id="musicSearchWrap" style="display:none">
+            <div class="search-row">
+              <input class="input" id="musicSearch" type="text" placeholder="搜索歌曲… (Enter)">
+              <button class="btn btn-ghost btn-sm" id="musicSearchBtn">搜索</button>
+            </div>
+          </div>
+
+          <div class="music-list" id="musicList"></div>
+        </div>
+      </section>
+
+      <div class="splitter" data-prev="panel-music"></div>
+
+      <!-- WALLPAPER PANEL (占位) -->
+      <section class="panel" id="panel-wall" style="--w:0px; display:none">
+        <div class="p-head">
+          <div class="p-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div>
+          <div class="p-title">WALLPAPER</div>
+          <div class="p-sub">壁纸</div>
+          <div class="spacer"></div>
+          <div class="p-actions">
+            <button class="iconbtn" title="收起面板" data-collapse><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
+          </div>
+        </div>
+        <div class="p-body scroll" style="padding:16px; color:var(--text-secondary); font-size:13px; gap:12px; display:flex; flex-direction:column;">
+          <p>壁纸系统（预览占位）</p>
+          <p style="font-size:12px; color:var(--text-tertiary)">真实站将在此放：IndexedDB 上传 + 5 个预设 + 缩略图网格。</p>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<!-- COMMAND PALETTE -->
+<div class="palette" id="palette">
+  <div class="palette-box">
+    <div class="palette-search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <input id="paletteInput" type="text" placeholder="输入命令或搜索…" autocomplete="off">
+      <kbd>ESC</kbd>
+    </div>
+    <div class="palette-list" id="paletteList"></div>
+  </div>
+</div>
+
+<!-- FOCUS OVERLAY -->
+<div class="focus-overlay" id="focusOverlay">
+  <div class="fo-label">FOCUS SESSION</div>
+  <div class="fo-timer" id="foTimer">25:00</div>
+  <div class="fo-task" id="foTask">绑定的任务显示在这里</div>
+  <div class="fo-acts">
+    <button class="btn btn-ghost" id="foPause">暂停</button>
+    <button class="btn btn-primary" id="foStop">结束</button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script>
+/* ================= 工具 ================= */
+const $ = (s, el) => (el || document).querySelector(s);
+const $$ = (s, el) => Array.from((el || document).querySelectorAll(s));
+const esc = s => s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function toast(msg, kind) {
+  const el = document.createElement('div');
+  el.className = 'toast ' + (kind || '');
+  el.innerHTML = '<span>' + esc(msg) + '</span>';
+  $('#toastWrap').appendChild(el);
+  setTimeout(() => { el.style.transition = 'opacity .3s, transform .3s'; el.style.opacity = '0'; el.style.transform = 'translateX(16px)'; setTimeout(() => el.remove(), 300); }, 2600);
+}
+
+/* ================= 时钟 ================= */
+function tick() {
+  const d = new Date();
+  const p = n => String(n).padStart(2, '0');
+  $('#clock').textContent = d.getFullYear() + '-' + p(d.getMonth()+1) + '-' + p(d.getDate()) + ' · ' + p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds());
+}
+tick(); setInterval(tick, 1000);
+
+/* ================= 导航 ================= */
+const navMap = { 'panel-todo': '#panel-todo', 'panel-chat': '#panel-chat', 'panel-music': '#panel-music', 'panel-wall': '#panel-wall' };
+$$('.rail-item').forEach(item => {
+  item.addEventListener('click', () => {
+    const t = item.dataset.target;
+    if (navMap[t]) {
+      $$('.rail-item').forEach(i => i.classList.remove('active'));
+      item.classList.add('active');
+      const panel = $(navMap[t]);
+      if (panel.classList.contains('collapsed')) panel.classList.remove('collapsed');
+      toast('已切换到：' + item.textContent.trim());
+    } else if (t === 'settings') {
+      toast('设置面板（预览占位）', 'warn');
+    }
+  });
+});
+
+/* ================= 面板收起 / 拖拽 ================= */
+$$('[data-collapse]').forEach(btn => {
+  btn.addEventListener('click', e => { e.stopPropagation(); btn.closest('.panel').classList.add('collapsed'); });
+});
+$$('.panel').forEach(p => p.addEventListener('click', e => {
+  if (p.classList.contains('collapsed')) { p.classList.remove('collapsed'); e.stopPropagation(); }
+}));
+
+$$('.splitter').forEach(sp => {
+  sp.addEventListener('mousedown', e => {
+    e.preventDefault();
+    const prev = document.getElementById(sp.dataset.prev);
+    if (!prev) return;
+    const startX = e.clientX;
+    const startW = prev.getBoundingClientRect().width;
+    sp.classList.add('dragging');
+    const onMove = ev => {
+      let w = startW + (ev.clientX - startX);
+      w = Math.max(200, Math.min(760, w));
+      prev.style.setProperty('--w', w + 'px');
+    };
+    const onUp = () => {
+      sp.classList.remove('dragging');
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  });
+});
+
+/* ================= 待办 ================= */
+const todos = [
+  { id: 1, text: '完成季度报告初稿', tag: '工作', pri: 'pri-high', done: false },
+  { id: 2, text: '给周图讲今晚的星空', tag: '闲聊', pri: 'pri-low', done: false },
+  { id: 3, text: '买菜：番茄 / 鸡蛋 / 牛奶', tag: '生活', pri: 'pri-mid', done: false },
+  { id: 4, text: '写《欲痕大陆》第七章', tag: '创作', pri: 'pri-mid', done: false },
+  { id: 5, text: '整理桌面壁纸', tag: '系统', pri: 'pri-low', done: true },
+];
+let filter = 'all';
+const todoListEl = $('#todoList');
+
+function renderTodos() {
+  const shown = todos.filter(t => filter === 'all' || (filter === 'done' ? t.done : !t.done));
+  $('#todoCount').textContent = todos.filter(t => !t.done).length;
+  if (!shown.length) {
+    todoListEl.innerHTML = '<div style="text-align:center;color:var(--text-tertiary);font-size:12px;padding:30px 0;font-family:var(--font-mono)">// 没有任务，休息一下</div>';
+    return;
+  }
+  todoListEl.innerHTML = shown.map(t => `
+    <div class="todo-item ${t.done ? 'done' : ''}" data-id="${t.id}">
+      <div class="ck" data-act="toggle" title="完成/取消">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+      </div>
+      <div class="tx">
+        <div class="t-line">${esc(t.text)}</div>
+        <div class="t-meta">
+          <span class="t-tag ${t.pri}">${t.pri === 'pri-high' ? '高优' : t.pri === 'pri-mid' ? '中优' : '低优'}</span>
+          <span class="t-tag">${esc(t.tag)}</span>
+        </div>
+      </div>
+      <div class="row-acts">
+        <button class="mini ai-ping" data-act="ai" title="派给 AI 处理">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a4 4 0 0 1 4 4c0 .9-.3 1.7-.8 2.3l.8 1.7a8 8 0 0 1 3.5 1l-1 1.7a10 10 0 0 1 1.4 3.1l-1.8.6a12 12 0 0 1-1 3.2l-1.7-.9a10 10 0 0 1-5.6 0l-1.7.9a12 12 0 0 1-1-3.2l-1.8-.6a10 10 0 0 1 1.4-3.1l-1-1.7a8 8 0 0 1 3.5-1l.8-1.7A4 4 0 0 1 12 2z"/><circle cx="12" cy="6" r="1.6" fill="currentColor" stroke="none"/></svg>
+        </button>
+        <button class="mini del" data-act="del" title="删除">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+        </button>
+      </div>
+    </div>`).join('');
+}
+
+todoListEl.addEventListener('click', e => {
+  const btn = e.target.closest('[data-act]');
+  if (!btn) return;
+  const item = btn.closest('.todo-item');
+  const id = Number(item.dataset.id);
+  const t = todos.find(x => x.id === id);
+  if (!t) return;
+  const act = btn.dataset.act;
+  if (act === 'toggle') { t.done = !t.done; if (t.done) toast('任务完成 ✓', 'ok'); }
+  if (act === 'del') { todos.splice(todos.indexOf(t), 1); }
+  if (act === 'ai') { delegateToAI(t); btn.classList.add('pending'); btn.querySelector('svg').style.pointerEvents = 'none'; }
+  renderTodos();
+});
+
+function addTodo(text) {
+  if (!text.trim()) return;
+  todos.unshift({ id: Date.now(), text: text.trim(), tag: '手动', pri: 'pri-low', done: false });
+  renderTodos();
+  toast('已添加任务：' + text.trim());
+}
+$('#todoAddBtn').addEventListener('click', () => { const v = $('#todoInput').value; addTodo(v); $('#todoInput').value = ''; });
+$('#todoInput').addEventListener('keydown', e => { if (e.key === 'Enter') { addTodo($('#todoInput').value); $('#todoInput').value = ''; } });
+
+$$('.todo-filters .flt').forEach(f => f.addEventListener('click', () => {
+  $$('.todo-filters .flt').forEach(x => x.classList.remove('active'));
+  f.classList.add('active');
+  filter = f.dataset.f;
+  renderTodos();
+}));
+
+/* ================= 任务 → AI 联动 ================= */
+let chatHistory = [];
+function delegateToAI(todo) {
+  switchToPanel('#panel-chat');
+  addMsg('me', '周图', todo.text, true);
+  const sys = { role: 'assistant', content: '将任务交给 AI 处理：' + todo.text };
+  chatHistory.push({ role: 'user', content: todo.text });
+  renderMsgs();
+  toast('已把任务「' + todo.text + '」派给 AI');
+  setTimeout(() => {
+    addMsg('bot', '周图', '收到！我先把「' + todo.text + '」加入今天的执行序列。建议先从拆分步骤开始，需要我现在列出第一步吗？');
+    toast('周图已接手任务', 'ok');
+  }, 700);
+}
+
+/* ================= 聊天 ================= */
+const personasEl = $('#personas');
+let activePersona = '周图';
+personasEl.addEventListener('click', e => {
+  const p = e.target.closest('.persona');
+  if (!p) return;
+  $$('.persona', personasEl).forEach(x => x.classList.remove('active'));
+  p.classList.add('active');
+  activePersona = p.querySelector('.nm').textContent;
+  toast('切换到：' + activePersona);
+});
+
+function addMsg(who, name, text, skipHistory) {
+  chatHistory.push({ role: who, name, text });
+  renderMsgs();
+  if (!skipHistory) {
+    // nothing extra — history already stores it
+  }
+}
+
+function renderMsgs() {
+  $('#chatMsgs').innerHTML = chatHistory.map((m, i) => {
+    if (m.role === 'sys') {
+      return `<div class="msg sys"><div class="bub">${esc(m.text)}</div></div>`;
+    }
+    const me = m.role === 'me';
+    return `
+      <div class="msg ${me ? 'me' : ''}" data-i="${i}">
+        <div class="m-av">${esc(m.name === '周图' ? '💡' : m.name === '小说助理' ? '📖' : '🖋️')}</div>
+        <div class="m-body">
+          <div class="m-who"><span class="nm">${me ? 'YOU' : esc(m.name)}</span><span class="tm">${nowHM()}</span></div>
+          <div class="bub">${esc(m.text)}</div>
+        </div>
+      </div>`;
+  }).join('');
+  const msgs = $('#chatMsgs');
+  msgs.scrollTop = msgs.scrollHeight;
+}
+const nowHM = () => { const d = new Date(); const p = n => String(n).padStart(2, '0'); return p(d.getHours()) + ':' + p(d.getMinutes()); };
+
+function sendChat() {
+  const v = $('#chatInput').value.trim();
+  if (!v) return;
+  $('#chatInput').value = '';
+  addMsg('me', 'YOU', v);
+  setTimeout(() => {
+    addMsg('bot', activePersona, demoReply(activePersona, v));
+  }, 500);
+}
+function demoReply(persona, q) {
+  const r = {
+    '周图': '（预览演示）我听到啦：「' + q + '」。真实站这里会走 DeepSeek 回复你～',
+    '小说助理': '（预览演示）好，这个设定我先记下：「' + q + '」。等接入真实 API 后我来续写。',
+    'AI写作助手': '（预览演示）收到创作需求：「' + q + '」。正式版会走完整创作流程。',
+  };
+  return r[persona] || '（预览演示）已收到你的消息。';
+}
+$('#chatSendBtn').addEventListener('click', sendChat);
+$('#chatInput').addEventListener('keydown', e => { if (e.key === 'Enter') sendChat(); });
+
+/* 初始聊天内容 */
+chatHistory = [
+  { role: 'sys', text: '📝 对话记忆已整合 · 2026-08-07' },
+  { role: 'bot', name: '周图', text: '早安呀，今天也有好多事要一起做吗？' },
+];
+renderMsgs();
+
+/* ================= 音乐 ================= */
+const tracks = [
+  { no: 1, a: 'Midnight Rain', b: 'Lo-fi Beats', dur: '3:42' },
+  { no: 2, a: 'Drifting Nebula', b: 'Ambient Space', dur: '5:10' },
+  { no: 3, a: 'Coffee Shop Window', b: 'Lo-fi Beats', dur: '4:05' },
+  { no: 4, a: 'Neon City Pulse', b: 'Synthwave', dur: '3:58' },
+  { no: 5, a: 'Rain on the Rooftop', b: 'Ambient Rain', dur: '6:22' },
+];
+let playingIdx = 0;
+let isPlaying = true;
+
+function renderMusic() {
+  $('#musicList').innerHTML = tracks.map((t, i) => `
+    <div class="mlist-item ${i === playingIdx ? 'playing' : ''}" data-i="${i}">
+      <span class="no">${i === playingIdx ? (isPlaying ? '▶' : '❚❚') : String(t.no).padStart(2, '0')}</span>
+      <div class="mt"><div class="a">${esc(t.a)}</div><div class="b">${esc(t.b)}</div></div>
+      <span class="dur">${t.dur}</span>
+    </div>`).join('');
+}
+$('#musicList').addEventListener('click', e => {
+  const it = e.target.closest('.mlist-item');
+  if (!it) return;
+  playingIdx = Number(it.dataset.i);
+  const t = tracks[playingIdx];
+  $('#npTitle').textContent = t.a;
+  $('#npArtist').textContent = t.b + ' · 放松频道';
+  isPlaying = true; syncPlay();
+  renderMusic();
+});
+
+function syncPlay() {
+  $('#spectrum').className = 'spectrum ' + (isPlaying ? 'play' : 'pause');
+  $('#playIco').innerHTML = isPlaying ? '<path d="M8 5v14l11-7z"/>' : '<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>';
+  renderMusic();
+}
+$('#playBtn').addEventListener('click', () => { isPlaying = !isPlaying; syncPlay(); toast(isPlaying ? '播放中' : '已暂停'); });
+$('#nextBtn').addEventListener('click', () => { playingIdx = (playingIdx + 1) % tracks.length; const t = tracks[playingIdx]; $('#npTitle').textContent = t.a; $('#npArtist').textContent = t.b + ' · 放松频道'; isPlaying = true; syncPlay(); });
+$('#prevBtn').addEventListener('click', () => { playingIdx = (playingIdx - 1 + tracks.length) % tracks.length; const t = tracks[playingIdx]; $('#npTitle').textContent = t.a; $('#npArtist').textContent = t.b + ' · 放松频道'; isPlaying = true; syncPlay(); });
+
+$$('.src-switch .flt').forEach(f => f.addEventListener('click', () => {
+  $$('.src-switch .flt').forEach(x => x.classList.remove('active'));
+  f.classList.add('active');
+  $('#musicSearchWrap').style.display = f.dataset.src === 'search' ? 'block' : 'none';
+  renderMusic();
+}));
+$('#musicSearchBtn').addEventListener('click', () => {
+  const v = $('#musicSearch').value.trim();
+  if (!v) return;
+  toast('（预览）搜索歌曲：' + v);
+});
+$('#musicSearch').addEventListener('keydown', e => { if (e.key === 'Enter') $('#musicSearchBtn').click(); });
+
+renderMusic();
+
+/* ================= 专注模式 ================= */
+let focusSeconds = 25 * 60;
+let focusRunning = false;
+let focusTask = null;
+let focusInterval = null;
+
+function renderFocus() {
+  const m = String(Math.floor(focusSeconds / 60)).padStart(2, '0');
+  const s = String(focusSeconds % 60).padStart(2, '0');
+  const t = m + ':' + s;
+  $('#focusTm').textContent = t;
+  $('#foTimer').textContent = t;
+  $('#foPause').textContent = focusRunning ? '暂停' : '继续';
+}
+function startFocus(task) {
+  focusTask = task;
+  $('#foTask').textContent = task ? '绑定任务：' + task : '自由专注';
+  $('#focusOverlay').classList.add('open');
+  focusRunning = true;
+  focusInterval = setInterval(() => {
+    focusSeconds--;
+    if (focusSeconds <= 0) { clearInterval(focusInterval); focusRunning = false; renderFocus(); $('#focusOverlay').classList.remove('open'); toast('专注完成！休息一下吧 🎉', 'ok'); focusSeconds = 25 * 60; renderFocus(); return; }
+    renderFocus();
+  }, 1000);
+  toast('专注模式启动 · 25 分钟');
+}
+$('#focusChip').addEventListener('click', () => {
+  if ($('#focusOverlay').classList.contains('open')) return;
+  const firstActive = todos.find(t => !t.done);
+  startFocus(firstActive ? firstActive.text : null);
+});
+$('#foStop').addEventListener('click', () => {
+  clearInterval(focusInterval); focusRunning = false;
+  $('#focusOverlay').classList.remove('open');
+  toast('专注已结束');
+});
+$('#foPause').addEventListener('click', () => {
+  focusRunning = !focusRunning;
+  if (!focusRunning) clearInterval(focusInterval);
+  else focusInterval = setInterval(() => {
+    focusSeconds--;
+    if (focusSeconds <= 0) { clearInterval(focusInterval); focusRunning = false; renderFocus(); $('#focusOverlay').classList.remove('open'); toast('专注完成！休息一下吧 🎉', 'ok'); focusSeconds = 25 * 60; renderFocus(); return; }
+    renderFocus();
+  }, 1000);
+  renderFocus();
+});
+renderFocus();
+
+/* ================= 命令面板 ================= */
+const commands = [
+  { cat: '跳转', label: '切换到 · 任务面板', act: () => { switchToPanel('#panel-todo'); } },
+  { cat: '跳转', label: '切换到 · 通讯台', act: () => { switchToPanel('#panel-chat'); } },
+  { cat: '跳转', label: '切换到 · 音频控制台', act: () => { switchToPanel('#panel-music'); } },
+  { cat: '跳转', label: '切换到 · 壁纸', act: () => { switchToPanel('#panel-wall'); } },
+  { cat: '任务', label: '添加任务', act: () => { closePalette(); $('#todoInput').focus(); } },
+  { cat: '通讯', label: '发送消息给 AI', act: () => { closePalette(); $('#chatInput').focus(); } },
+  { cat: '音乐', label: '搜索歌曲', act: () => { closePalette(); $('#musicSearch').focus(); } },
+  { cat: '系统', label: '专注模式 · 25 分钟', act: () => { closePalette(); $('#focusChip').click(); } },
+  { cat: '系统', label: '切换壁纸', act: () => { closePalette(); toast('（预览）切换壁纸'); } },
+  { cat: '系统', label: '打开设置', act: () => { closePalette(); toast('设置面板（预览占位）', 'warn'); } },
+];
+let palIdx = 0;
+const palette = $('#palette');
+
+function switchToPanel(sel) {
+  const panel = $(sel);
+  if (panel.classList.contains('collapsed')) panel.classList.remove('collapsed');
+  $$('.rail-item').forEach(i => i.classList.toggle('active', i.dataset.target === panel.id));
+  toast('已切换到：' + panel.querySelector('.p-title').textContent);
+  closePalette();
+}
+
+function openPalette() {
+  palette.classList.add('open');
+  $('#paletteInput').value = '';
+  palIdx = 0;
+  renderPalette();
+  $('#paletteInput').focus();
+}
+function closePalette() {
+  palette.classList.remove('open');
+}
+function renderPalette() {
+  const q = $('#paletteInput').value.toLowerCase();
+  const list = commands.filter(c => c.label.toLowerCase().includes(q));
+  if (!list.length) {
+    $('#paletteList').innerHTML = '<div style="text-align:center;color:var(--text-tertiary);font-size:12px;padding:20px 0;font-family:var(--font-mono)">// 无匹配命令</div>';
+    return;
+  }
+  if (palIdx >= list.length) palIdx = 0;
+  $('#paletteList').innerHTML = list.map((c, i) => {
+    const label = c.label.replace(new RegExp('(' + q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi'), '<mark>$1</mark>');
+    return `<div class="palette-item ${i === palIdx ? 'hl' : ''}" data-i="${i}">
+      <div class="pi-tx"><span class="cat">${c.cat}</span>${label}</div>
+    </div>`;
+  }).join('');
+}
+$('#paletteInput').addEventListener('input', () => { palIdx = 0; renderPalette(); });
+$('#paletteInput').addEventListener('keydown', e => {
+  const q = $('#paletteInput').value.toLowerCase();
+  const list = commands.filter(c => c.label.toLowerCase().includes(q));
+  if (e.key === 'ArrowDown') { e.preventDefault(); palIdx = (palIdx + 1) % Math.max(list.length, 1); renderPalette(); }
+  if (e.key === 'ArrowUp') { e.preventDefault(); palIdx = (palIdx - 1 + Math.max(list.length, 1)) % Math.max(list.length, 1); renderPalette(); }
+  if (e.key === 'Enter') { const c = list[palIdx]; if (c) { c.act(); } }
+  if (e.key === 'Escape') closePalette();
+});
+$('#paletteList').addEventListener('click', e => {
+  const it = e.target.closest('.palette-item');
+  if (!it) return;
+  const c = commands[Number(it.dataset.i)];
+  if (c) c.act();
+});
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); palette.classList.contains('open') ? closePalette() : openPalette(); }
+  if (e.key === 'Escape' && palette.classList.contains('open')) closePalette();
+});
+
+/* 壁纸 / 设置按钮占位 */
+$('#wallBtn').addEventListener('click', () => toast('（预览）切换壁纸'));
+$('#setBtn').addEventListener('click', () => toast('设置面板（预览占位）', 'warn'));
+
+renderTodos();
+</script>
+</body>
+</html>

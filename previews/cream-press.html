@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DAYROOM · CREAM PRESS — 预览版</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Caveat:wght@500;600;700&family=Noto+Serif+SC:wght@500;700;900&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ============ DESIGN TOKENS · CREAM PRESS ============ */
+:root {
+  --paper: #ece7de;
+  --paper-2: #f4efe6;
+  --card: #ffffff;
+  --ink: #2a2722;
+  --ink-2: #6b6560;
+  --ink-3: #9a9188;
+  --accent: #e8682a;
+  --accent-deep: #c04a14;
+  --seal: #c0392b;
+  --teal: #2c5f6e;
+  --rule: #d8d2c6;
+  --rule-strong: #b8b0a2;
+  --font-serif: 'Playfair Display', 'Noto Serif SC', serif;
+  --font-serif-sc: 'Noto Serif SC', 'Playfair Display', serif;
+  --font-body: 'DM Sans', 'Noto Sans SC', sans-serif;
+  --font-body-sc: 'Noto Sans SC', 'DM Sans', sans-serif;
+  --font-hand: 'Caveat', cursive;
+  --shadow-card: 0 1px 2px rgba(42,39,34,0.05), 0 8px 28px rgba(42,39,34,0.07);
+  --radius: 6px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.7;
+  letter-spacing: 0.02em;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* 纸面颗粒质感（极淡，静态背景不耗性能） */
+body::before {
+  content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background-image:
+    radial-gradient(rgba(42,39,34,0.035) 1px, transparent 1px);
+  background-size: 5px 5px;
+  opacity: 0.35;
+}
+
+::selection { background: rgba(232,104,42,0.22); }
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(42,39,34,0.16); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(42,39,34,0.28); }
+
+.page { position: relative; z-index: 1; max-width: 1320px; margin: 0 auto; padding: 0 28px 40px; }
+
+/* ============ MASTHEAD（刊头） ============ */
+.masthead { text-align: center; padding: 26px 0 14px; }
+.masthead .overline {
+  font-family: var(--font-body); font-size: 10.5px; letter-spacing: 0.42em;
+  color: var(--accent); text-transform: uppercase; font-weight: 700;
+}
+.masthead h1 {
+  font-family: var(--font-serif); font-weight: 900;
+  font-size: clamp(44px, 7vw, 84px); line-height: 1.05;
+  letter-spacing: 0.28em; margin: 6px 0 4px; text-indent: 0.28em;
+  color: var(--ink);
+}
+.masthead .tagline {
+  font-family: var(--font-serif-sc); font-weight: 500; font-size: 14px;
+  color: var(--ink-2); letter-spacing: 0.5em; text-indent: 0.5em; margin-top: 2px;
+}
+.masthead .rule {
+  display: flex; align-items: center; gap: 16px; margin-top: 16px;
+  color: var(--ink-3); font-size: 10px; letter-spacing: 0.2em;
+}
+.masthead .rule::before, .masthead .rule::after {
+  content: ''; flex: 1; height: 1px; background: var(--rule-strong);
+}
+.masthead .rule .orn { font-family: var(--font-serif); font-size: 14px; color: var(--accent); }
+
+.nav-tabs {
+  display: flex; justify-content: center; gap: 6px; flex-wrap: wrap;
+  margin: 14px auto 26px; padding-bottom: 18px;
+  border-bottom: 3px double var(--rule-strong);
+}
+.nav-tabs .tab {
+  font-family: var(--font-body-sc); font-size: 12.5px; color: var(--ink-2);
+  padding: 6px 18px; border-radius: 999px; cursor: pointer;
+  border: 1px solid transparent; transition: all .18s;
+}
+.nav-tabs .tab:hover { color: var(--ink); background: var(--paper-2); }
+.nav-tabs .tab.active { color: var(--accent-deep); border-color: rgba(232,104,42,0.4); background: rgba(232,104,42,0.06); font-weight: 700; }
+
+/* ============ 三栏版面 ============ */
+.columns {
+  display: flex; gap: 0;
+  background: var(--card);
+  border: 1px solid var(--rule);
+  box-shadow: var(--shadow-card);
+  border-radius: var(--radius);
+  overflow: hidden;
+  min-height: 620px;
+}
+.col {
+  flex: 1; min-width: 0;
+  display: flex; flex-direction: column;
+  padding: 26px 26px 20px;
+}
+.col + .col { border-left: 1px solid var(--rule); }
+
+/* 栏目眉（kicker） */
+.col .kicker {
+  font-family: var(--font-body); font-size: 10px; font-weight: 700;
+  letter-spacing: 0.28em; text-transform: uppercase; color: var(--accent);
+}
+.col .headline {
+  font-family: var(--font-serif-sc); font-weight: 900; font-size: 21px;
+  margin: 5px 0 3px; line-height: 1.3; letter-spacing: 0.04em;
+}
+.col .headline .en { font-family: var(--font-serif); font-style: italic; font-weight: 600; color: var(--ink-3); font-size: 14px; margin-left: 8px; letter-spacing: 0.02em; }
+.col .sub {
+  font-family: var(--font-body-sc); font-size: 11.5px; color: var(--ink-3);
+  padding-bottom: 12px; border-bottom: 1px solid var(--rule); margin-bottom: 12px;
+}
+
+/* ============ 编辑部 · 待办 ============ */
+.ed-tabs { display: flex; gap: 8px; margin-bottom: 10px; }
+.ed-tabs .flt {
+  font-family: var(--font-body-sc); font-size: 11.5px; color: var(--ink-2);
+  border: 1px solid var(--rule); border-radius: 999px; padding: 3px 12px;
+  cursor: pointer; transition: all .15s; background: var(--paper-2);
+}
+.ed-tabs .flt:hover { color: var(--ink); border-color: var(--rule-strong); }
+.ed-tabs .flt.active { color: #fff; background: var(--accent); border-color: var(--accent); }
+
+.ed-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; padding-right: 4px; }
+
+.ed-item {
+  position: relative;
+  display: flex; gap: 11px; align-items: flex-start;
+  padding: 11px 10px 11px 8px; border-radius: var(--radius);
+  transition: background .15s;
+  animation: rise .3s ease;
+}
+@keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.ed-item:hover { background: var(--paper-2); }
+.ed-item .ck {
+  flex: 0 0 auto; width: 18px; height: 18px; margin-top: 1px;
+  border: 1.5px solid var(--ink-3); border-radius: 3px;
+  cursor: pointer; display: grid; place-items: center;
+  font-family: var(--font-serif-sc); font-size: 13px; font-weight: 700; color: transparent;
+  transition: all .15s; background: var(--card);
+}
+.ed-item .ck:hover { border-color: var(--accent); }
+.ed-item.done .ck { color: var(--accent-deep); border-color: var(--accent); background: rgba(232,104,42,0.06); }
+.ed-item .bd { flex: 1; min-width: 0; }
+.ed-item .bd .txt { font-family: var(--font-body-sc); font-size: 13px; line-height: 1.55; word-break: break-word; }
+.ed-item.done .bd .txt { color: var(--ink-3); text-decoration: line-through; text-decoration-color: var(--accent); }
+.ed-item .bd .meta { display: flex; gap: 6px; margin-top: 4px; flex-wrap: wrap; }
+.ed-item .tag {
+  font-family: var(--font-body-sc); font-size: 10px; color: var(--ink-2);
+  border: 1px solid var(--rule); border-radius: 3px; padding: 1px 7px; letter-spacing: 0.04em;
+}
+.ed-item .tag.annot {
+  font-family: var(--font-hand); font-size: 12.5px; color: var(--accent-deep);
+  border-color: rgba(232,104,42,0.4); background: rgba(232,104,42,0.05); padding: 0 8px;
+}
+.ed-item .tag.draft { color: var(--accent-deep); border-color: rgba(232,104,42,0.4); }
+.ed-item .tag.parked { color: var(--ink-3); text-decoration: line-through; }
+.ed-item .acts { display: flex; gap: 4px; opacity: 0; transition: opacity .15s; }
+.ed-item:hover .acts { opacity: 1; }
+.ed-item .mini {
+  width: 26px; height: 26px; border-radius: 6px; display: grid; place-items: center;
+  color: var(--ink-3); cursor: pointer; background: var(--card); border: 1px solid var(--rule);
+  transition: all .15s;
+}
+.ed-item .mini:hover { color: var(--accent-deep); border-color: var(--accent); }
+.ed-item .mini.del:hover { color: var(--seal); border-color: var(--seal); }
+.ed-item .mini svg { width: 13px; height: 13px; }
+
+/* 已核稿 印章 */
+.stamp {
+  position: absolute; right: 8px; top: 8px; z-index: 3; pointer-events: none;
+  font-family: var(--font-serif-sc); font-weight: 900; font-size: 13px;
+  color: var(--seal); letter-spacing: 0.18em;
+  border: 2px solid var(--seal); border-radius: 4px;
+  padding: 2px 9px 2px 12px; text-indent: 0.18em;
+  background: rgba(255,255,255,0.4);
+  opacity: 0; transform: scale(1.6) rotate(-8deg);
+}
+.ed-item.done .stamp { animation: stampIn .4s cubic-bezier(.34,1.56,.64,1) forwards; }
+@keyframes stampIn { from { opacity: 0; transform: scale(1.8) rotate(-10deg); } to { opacity: 1; transform: scale(1) rotate(-6deg); } }
+
+.ed-add { display: flex; gap: 8px; margin-top: 10px; padding-top: 12px; border-top: 1px dashed var(--rule-strong); }
+.ed-add .input {
+  flex: 1; font-family: var(--font-body-sc); font-size: 13px;
+  border: 1px solid var(--rule); border-radius: var(--radius);
+  padding: 9px 13px; background: var(--paper-2); color: var(--ink);
+  transition: all .18s;
+}
+.ed-add .input::placeholder { color: var(--ink-3); }
+.ed-add .input:focus { outline: none; border-color: var(--accent); background: #fff; box-shadow: 0 0 0 3px rgba(232,104,42,0.12); }
+
+/* ============ 通讯 · 往来书信 ============ */
+.letter-head { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.letter-head .who {
+  font-family: var(--font-body-sc); font-size: 11.5px; color: var(--ink-2);
+  border: 1px solid var(--rule); border-radius: 999px; padding: 3px 12px;
+  cursor: pointer; background: var(--paper-2); transition: all .15s;
+}
+.letter-head .who:hover { color: var(--ink); }
+.letter-head .who.active { color: #fff; background: var(--teal); border-color: var(--teal); }
+
+.letters { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; padding-right: 4px; }
+.letter { animation: rise .3s ease; }
+.letter .paper {
+  position: relative;
+  background: linear-gradient(180deg, #fffdf7, #fbf6ec);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 15px 16px 16px;
+  box-shadow: 0 1px 2px rgba(42,39,34,0.05);
+}
+.letter.me .paper { background: linear-gradient(180deg, #fffaf3, #fdf3e4); border-color: rgba(232,104,42,0.35); }
+.letter .paper::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+  background: linear-gradient(180deg, var(--accent), rgba(232,104,42,0.15));
+}
+.letter .who-line { display: flex; align-items: baseline; gap: 10px; margin-bottom: 7px; }
+.letter .who-line .nm { font-family: var(--font-serif-sc); font-weight: 700; font-size: 13px; }
+.letter.me .who-line .nm { color: var(--accent-deep); }
+.letter .who-line .flip { font-family: var(--font-hand); font-size: 13px; color: var(--ink-3); transform: rotate(-2deg); }
+.letter .who-line .tm { margin-left: auto; font-family: var(--font-body); font-size: 10px; color: var(--ink-3); letter-spacing: 0.06em; }
+.letter .body { font-family: var(--font-serif-sc); font-size: 13px; line-height: 1.8; color: var(--ink); }
+.letter.me .body { font-family: var(--font-body-sc); }
+.letter .sign {
+  margin-top: 9px; text-align: right;
+  font-family: var(--font-hand); font-size: 16px; color: var(--accent-deep); transform: rotate(-2deg);
+}
+.letter.sys .paper { background: var(--paper-2); box-shadow: none; }
+.letter.sys .paper::before { background: var(--ink-3); opacity: 0.5; }
+.letter.sys .body { font-size: 11.5px; color: var(--ink-2); letter-spacing: 0.05em; }
+
+.letter-input { margin-top: 10px; padding-top: 12px; border-top: 1px dashed var(--rule-strong); display: flex; gap: 8px; }
+.letter-input .input {
+  flex: 1; font-family: var(--font-body-sc); font-size: 13px;
+  border: 1px solid var(--rule); border-radius: var(--radius);
+  padding: 9px 13px; background: var(--paper-2); color: var(--ink); transition: all .18s;
+}
+.letter-input .input::placeholder { color: var(--ink-3); }
+.letter-input .input:focus { outline: none; border-color: var(--teal); background: #fff; box-shadow: 0 0 0 3px rgba(44,95,110,0.12); }
+
+/* ============ 通用按钮 ============ */
+.btn {
+  font-family: var(--font-body-sc); font-weight: 700; font-size: 12.5px;
+  border-radius: var(--radius); padding: 8px 16px; cursor: pointer;
+  border: 1px solid transparent; transition: all .18s; letter-spacing: 0.04em;
+}
+.btn:active { transform: translateY(1px); }
+.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.btn-primary { background: var(--accent); color: #fff; box-shadow: 0 3px 12px rgba(232,104,42,0.28); }
+.btn-primary:hover { background: var(--accent-deep); box-shadow: 0 4px 16px rgba(232,104,42,0.38); }
+.btn-ink { background: var(--ink); color: #fff; }
+.btn-ink:hover { background: #000; }
+
+/* ============ 唱片机 ============ */
+.record-top { display: flex; gap: 22px; align-items: center; margin-bottom: 8px; }
+.vinyl-wrap { position: relative; flex: 0 0 auto; }
+.vinyl {
+  width: 168px; height: 168px; border-radius: 50%;
+  background:
+    radial-gradient(circle,
+      #8a1f1f 0%, #8a1f1f 7%, #5a1212 8%, #0d0d0d 10%, #111111 12%, #0a0a0a 13%, #0a0a0a 100%),
+    repeating-radial-gradient(circle, rgba(255,255,255,0.05) 0 1px, transparent 1px 3px);
+  background-blend-mode: screen, normal;
+  border: 1px solid rgba(0,0,0,0.4);
+  box-shadow: 0 14px 34px rgba(42,39,34,0.3), inset 0 0 40px rgba(0,0,0,0.5);
+  position: relative;
+}
+.vinyl::after {
+  content: ''; position: absolute; inset: 0; border-radius: 50%;
+  background: radial-gradient(circle, transparent 44%, rgba(255,255,255,0.07) 45%, transparent 46%);
+}
+.vinyl .label {
+  position: absolute; inset: 0; margin: auto;
+  width: 62px; height: 62px; border-radius: 50%;
+  background: linear-gradient(160deg, #f7ead8, #e9d7bb);
+  border: 1px solid #d8c3a0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 1px; text-align: center;
+  box-shadow: 0 0 0 3px rgba(0,0,0,0.25), inset 0 0 10px rgba(0,0,0,0.08);
+}
+.vinyl .label .co { font-family: var(--font-serif); font-style: italic; font-size: 7px; color: var(--accent-deep); letter-spacing: 0.12em; }
+.vinyl .label .ti { font-family: var(--font-serif-sc); font-size: 8px; font-weight: 700; color: var(--ink); line-height: 1.15; }
+.vinyl .label .face { font-family: var(--font-serif-sc); font-size: 7px; color: var(--ink-2); }
+.vinyl .label .hole { width: 7px; height: 7px; border-radius: 50%; background: var(--ink); margin-top: 2px; }
+.vinyl.play { animation: spin 4s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.vinyl.pause { animation-play-state: paused; }
+.vinyl-wrap .tonearm {
+  position: absolute; right: -6px; top: 6px; width: 56px; height: 4px;
+  background: linear-gradient(90deg, #3a3a3a, #555); border-radius: 2px;
+  transform-origin: right center; transform: rotate(-30deg);
+  transition: transform .5s cubic-bezier(.4,0,.2,1);
+}
+.vinyl-wrap .tonearm::after { content: ''; position: absolute; left: 0; top: -3px; width: 5px; height: 10px; border-radius: 2px; background: #333; }
+.vinyl-wrap.paused .tonearm { transform: rotate(18deg); }
+
+.record-info { flex: 1; min-width: 0; }
+.record-info .cur { font-family: var(--font-serif); font-style: italic; font-size: 12px; color: var(--accent-deep); }
+.record-info .tt { font-family: var(--font-serif-sc); font-weight: 900; font-size: 21px; line-height: 1.25; margin: 3px 0 1px; }
+.record-info .ar { font-family: var(--font-body-sc); font-size: 12px; color: var(--ink-2); }
+.record-info .side {
+  margin-top: 8px; display: inline-block;
+  font-family: var(--font-hand); font-size: 15px; color: var(--teal);
+  border: 1px solid rgba(44,95,110,0.4); border-radius: 3px; padding: 1px 9px; transform: rotate(-1deg);
+  cursor: pointer; background: rgba(44,95,110,0.05); transition: all .15s;
+}
+.record-info .side:hover { background: rgba(44,95,110,0.12); }
+
+.transport { display: flex; align-items: center; gap: 12px; margin: 10px 0 14px; }
+.tbtn {
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 1px solid var(--rule-strong); background: var(--paper-2); color: var(--ink);
+  display: grid; place-items: center; cursor: pointer; transition: all .18s;
+}
+.tbtn:hover { color: var(--accent-deep); border-color: var(--accent); }
+.tbtn.main { width: 48px; height: 48px; color: #fff; background: var(--ink); border: none; box-shadow: 0 4px 14px rgba(42,39,34,0.3); }
+.tbtn.main:hover { background: var(--accent-deep); color: #fff; transform: scale(1.05); }
+.tbtn svg { width: 15px; height: 15px; }
+.tbtn.main svg { width: 18px; height: 18px; }
+.progress { flex: 1; height: 3px; background: var(--rule); border-radius: 2px; position: relative; overflow: hidden; }
+.progress::after { content: ''; position: absolute; inset: 0 auto 0 0; width: 34%; background: var(--accent); border-radius: 2px; }
+
+.tracklist { border-top: 1px solid var(--rule); padding-top: 10px; flex: 1; overflow-y: auto; }
+.tracklist .tl-face {
+  font-family: var(--font-serif); font-style: italic; font-size: 11px;
+  color: var(--ink-3); letter-spacing: 0.2em; margin: 6px 0 3px;
+}
+.tl-item {
+  display: flex; align-items: center; gap: 10px; padding: 5px 8px; border-radius: 4px;
+  cursor: pointer; transition: background .12s;
+}
+.tl-item:hover { background: var(--paper-2); }
+.tl-item .no { font-family: var(--font-serif); font-style: italic; font-size: 12px; color: var(--ink-3); width: 20px; }
+.tl-item .nm { flex: 1; font-family: var(--font-body-sc); font-size: 12.5px; }
+.tl-item.playing .nm { color: var(--accent-deep); font-weight: 700; }
+.tl-item .tt { font-family: var(--font-body); font-size: 10.5px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.tl-item .ply { width: 16px; height: 16px; color: var(--accent); display: none; }
+.tl-item.playing .ply { display: block; }
+
+.record-search { display: flex; gap: 8px; margin-top: 10px; padding-top: 12px; border-top: 1px dashed var(--rule-strong); }
+.record-search .input {
+  flex: 1; font-family: var(--font-body-sc); font-size: 13px;
+  border: 1px solid var(--rule); border-radius: var(--radius);
+  padding: 8px 13px; background: var(--paper-2); color: var(--ink); transition: all .18s;
+}
+.record-search .input::placeholder { color: var(--ink-3); }
+.record-search .input:focus { outline: none; border-color: var(--accent); background: #fff; box-shadow: 0 0 0 3px rgba(232,104,42,0.12); }
+
+/* ============ 页脚 ============ */
+.footer { text-align: center; padding: 22px 0 0; font-family: var(--font-body); font-size: 10.5px; color: var(--ink-3); letter-spacing: 0.2em; }
+.footer .rule { border-top: 3px double var(--rule-strong); padding-top: 14px; max-width: 320px; margin: 0 auto 10px; }
+
+/* ============ 目录视图（封面导读条） ============ */
+.cover-strip {
+  display: flex; gap: 14px; margin-bottom: 22px; overflow-x: auto;
+}
+.cover-card {
+  flex: 1; min-width: 200px;
+  background: var(--card); border: 1px solid var(--rule); border-top: 3px solid var(--accent);
+  padding: 14px 16px; border-radius: var(--radius); box-shadow: var(--shadow-card);
+  cursor: pointer; transition: all .2s;
+}
+.cover-card:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(42,39,34,0.1); }
+.cover-card .cc-k { font-family: var(--font-body); font-size: 9.5px; font-weight: 700; letter-spacing: 0.24em; color: var(--accent); text-transform: uppercase; }
+.cover-card .cc-t { font-family: var(--font-serif-sc); font-weight: 900; font-size: 16px; margin: 4px 0 2px; }
+.cover-card .cc-d { font-family: var(--font-body-sc); font-size: 11.5px; color: var(--ink-2); }
+.cover-card .cc-n { font-family: var(--font-serif); font-style: italic; font-size: 26px; color: var(--ink-3); margin-top: 8px; line-height: 1; }
+
+/* 入场动画 */
+.masthead { animation: rise .4s ease both; }
+.cover-strip .cover-card:nth-child(1) { animation: rise .4s .05s ease both; }
+.cover-strip .cover-card:nth-child(2) { animation: rise .4s .1s ease both; }
+.cover-strip .cover-card:nth-child(3) { animation: rise .4s .15s ease both; }
+.columns { animation: rise .5s .12s ease both; }
+
+/* 无障碍 */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+  .vinyl.play { animation: none; }
+}
+
+/* 移动端占位（PC 优先，暂不细化） */
+@media (max-width: 600px) {
+  .columns { flex-direction: column; }
+  .col + .col { border-left: none; border-top: 1px solid var(--rule); }
+  .masthead h1 { font-size: 40px; letter-spacing: 0.18em; }
+  .page { padding: 0 12px 24px; }
+}
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- ======== MASTHEAD ======== -->
+  <header class="masthead">
+    <div class="overline">Daily Edition</div>
+    <h1>DAYROOM</h1>
+    <div class="tagline">个 人 工 作 站 · 每 日 一 刊</div>
+    <div class="rule">
+      <span>VOL.2026 · 第 08 期</span>
+      <span class="orn">✦</span>
+      <span>2026年8月7日 · 星期五 · 一刊三栏</span>
+    </div>
+  </header>
+
+  <!-- ======== 栏目导航 ======== -->
+  <nav class="nav-tabs">
+    <span class="tab active" data-to="columns">版面</span>
+    <span class="tab" data-to="editorial">编辑部 · 待办</span>
+    <span class="tab" data-to="letters">通讯 · 书信</span>
+    <span class="tab" data-to="record">唱片机</span>
+  </nav>
+
+  <!-- ======== 封面导读 ======== -->
+  <section class="cover-strip">
+    <div class="cover-card" data-to="editorial">
+      <div class="cc-k">Editorial</div>
+      <div class="cc-t">今日待办</div>
+      <div class="cc-d">4 条待核稿 · 已定稿 1 条</div>
+      <div class="cc-n">→</div>
+    </div>
+    <div class="cover-card" data-to="letters">
+      <div class="cc-k">Correspondence</div>
+      <div class="cc-t">往来书信</div>
+      <div class="cc-d">周图在等你的回信</div>
+      <div class="cc-n">✉</div>
+    </div>
+    <div class="cover-card" data-to="record">
+      <div class="cc-k">Records</div>
+      <div class="cc-t">今日唱片</div>
+      <div class="cc-d">A 面 · Midnight Rain</div>
+      <div class="cc-n">♪</div>
+    </div>
+  </section>
+
+  <!-- ======== 三栏版面 ======== -->
+  <main class="columns" id="columns">
+
+    <!-- 编辑部 · 待办 -->
+    <section class="col" id="editorial">
+      <div class="kicker">Editorial · 编辑部</div>
+      <div class="headline">今日待办<span class="en">To-Do</span></div>
+      <div class="sub">编辑批注制 · 完成即盖「已核稿」</div>
+
+      <div class="ed-tabs">
+        <span class="flt active" data-f="all">全部</span>
+        <span class="flt" data-f="active">进行中</span>
+        <span class="flt" data-f="done">已核稿</span>
+      </div>
+
+      <div class="ed-list" id="edList"></div>
+
+      <div class="ed-add">
+        <input class="input" id="edInput" type="text" placeholder="新条目… 按 Enter 归档">
+        <button class="btn btn-primary" id="edAddBtn">归档</button>
+      </div>
+    </section>
+
+    <!-- 通讯 · 书信 -->
+    <section class="col" id="letters">
+      <div class="kicker">Correspondence · 通讯</div>
+      <div class="headline">往来书信<span class="en">Letters</span></div>
+      <div class="sub">每一封都是手写的温度</div>
+
+      <div class="letter-head" id="letterHead">
+        <span class="who active" data-w="周图">周图 💡</span>
+        <span class="who" data-w="小说助理">小说助理 📖</span>
+        <span class="who" data-w="AI写作助手">AI写作助手 🖋️</span>
+      </div>
+
+      <div class="letters" id="lettersList"></div>
+
+      <div class="letter-input">
+        <input class="input" id="letterInput" type="text" placeholder="写一封信…">
+        <button class="btn btn-ink" id="letterSend">寄出</button>
+      </div>
+    </section>
+
+    <!-- 唱片机 -->
+    <section class="col" id="record">
+      <div class="kicker">Records · 唱片机</div>
+      <div class="headline">今日唱片<span class="en">Vinyl</span></div>
+      <div class="sub">黑胶在转 · 声音慢下来</div>
+
+      <div class="record-top">
+        <div class="vinyl-wrap play" id="vinylWrap">
+          <div class="vinyl play" id="vinyl">
+            <div class="label">
+              <span class="co">DAYROOM</span>
+              <span class="ti" id="vTitle">Midnight<br>Rain</span>
+              <span class="face" id="vFace">A 面</span>
+              <span class="hole"></span>
+            </div>
+          </div>
+          <div class="tonearm"></div>
+        </div>
+        <div class="record-info">
+          <div class="cur">Now Playing</div>
+          <div class="tt" id="npTitle">Midnight Rain</div>
+          <div class="ar" id="npArtist">Lo-fi Beats · 放松频道</div>
+          <div class="side" id="sideBtn">A 面</div>
+        </div>
+      </div>
+
+      <div class="transport">
+        <button class="tbtn" id="prevBtn" title="上一首"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/></svg></button>
+        <button class="tbtn main" id="playBtn" title="播放/暂停"><svg id="playIco" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button>
+        <button class="tbtn" id="nextBtn" title="下一首"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 6h2v12h-2zM6 18l8.5-6L6 6z"/></svg></button>
+        <div class="progress"></div>
+      </div>
+
+      <div class="tracklist" id="tracklist"></div>
+
+      <div class="record-search">
+        <input class="input" id="recSearch" type="text" placeholder="翻找唱片…">
+        <button class="btn btn-ink" id="recSearchBtn">查找</button>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <div class="rule">印 · DAYROOM PRESS</div>
+    <div>本刊由 待办 × AI 通讯 × 黑胶 联合出版 · 第 08 期</div>
+  </footer>
+</div>
+
+<!-- TOAST -->
+<div class="toast-wrap" id="toastWrap" style="position:fixed;right:20px;bottom:20px;z-index:80;display:flex;flex-direction:column;gap:8px;"></div>
+
+<script>
+/* ================= 工具 ================= */
+const $ = (s, el) => (el || document).querySelector(s);
+const $$ = (s, el) => Array.from((el || document).querySelectorAll(s));
+const esc = s => s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const nowHM = () => { const d = new Date(); const p = n => String(n).padStart(2, '0'); return p(d.getMonth()+1) + '月' + p(d.getDate()) + '日 · ' + p(d.getHours()) + ':' + p(d.getMinutes()); };
+
+function toast(msg) {
+  const el = document.createElement('div');
+  el.style.cssText = 'background:#fff;border:1px solid var(--rule-strong);border-left:3px solid var(--accent);border-radius:6px;padding:9px 15px;font-size:12.5px;box-shadow:0 8px 24px rgba(42,39,34,.12);animation:rise .25s ease;font-family:var(--font-body-sc);';
+  el.textContent = msg;
+  $('#toastWrap').appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity .3s'; setTimeout(() => el.remove(), 300); }, 2400);
+}
+
+/* ================= 栏目导航（tab 聚焦） ================= */
+function jumpTo(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  el.style.boxShadow = '0 0 0 3px rgba(232,104,42,0.25)';
+  setTimeout(() => { el.style.boxShadow = ''; }, 900);
+}
+$$('.nav-tabs .tab').forEach(t => t.addEventListener('click', () => {
+  $$('.nav-tabs .tab').forEach(x => x.classList.remove('active'));
+  t.classList.add('active');
+  if (t.dataset.to === 'columns') return;
+  jumpTo(t.dataset.to);
+}));
+$$('.cover-card').forEach(c => c.addEventListener('click', () => {
+  jumpTo(c.dataset.to);
+}));
+
+/* ================= 编辑部 · 待办 ================= */
+const todos = [
+  { id: 1, text: '完成季度报告初稿', tag: '工作', pri: 'high', done: false },
+  { id: 2, text: '给周图讲今晚的星空', tag: '闲聊', pri: 'low', done: false },
+  { id: 3, text: '买菜：番茄 / 鸡蛋 / 牛奶', tag: '生活', pri: 'mid', done: false },
+  { id: 4, text: '写《欲痕大陆》第七章', tag: '创作', pri: 'mid', done: false },
+  { id: 5, text: '整理桌面壁纸', tag: '系统', pri: 'low', done: true },
+];
+let edFilter = 'all';
+
+function annotOf(t) {
+  if (t.done) return '<span class="tag annot">✔ 已核稿</span>';
+  if (t.pri === 'high') return '<span class="tag draft">● 待核稿 · 高优先</span>';
+  return '<span class="tag">○ 待核稿</span>';
+}
+function renderED() {
+  const shown = todos.filter(t => edFilter === 'all' || (edFilter === 'done' ? t.done : !t.done));
+  if (!shown.length) {
+    $('#edList').innerHTML = '<div style="text-align:center;color:var(--ink-3);font-size:12px;padding:34px 0;font-family:var(--font-hand);font-size:18px;">本栏暂无条目</div>';
+    return;
+  }
+  $('#edList').innerHTML = shown.map(t => `
+    <div class="ed-item ${t.done ? 'done' : ''}" data-id="${t.id}">
+      <div class="stamp">已核稿</div>
+      <div class="ck" data-act="toggle">✓</div>
+      <div class="bd">
+        <div class="txt">${esc(t.text)}</div>
+        <div class="meta">${annotOf(t)}<span class="tag">${esc(t.tag)}</span></div>
+      </div>
+      <div class="acts">
+        <button class="mini" data-act="ai" title="委托给 AI">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a4 4 0 0 1 4 4c0 .9-.3 1.7-.8 2.3l.8 1.7a8 8 0 0 1 3.5 1l-1 1.7a10 10 0 0 1 1.4 3.1l-1.8.6a12 12 0 0 1-1 3.2l-1.7-.9a10 10 0 0 1-5.6 0l-1.7.9a12 12 0 0 1-1-3.2l-1.8-.6a10 10 0 0 1 1.4-3.1l-1-1.7a8 8 0 0 1 3.5-1l.8-1.7A4 4 0 0 1 12 2z"/><circle cx="12" cy="6" r="1.6" fill="currentColor" stroke="none"/></svg>
+        </button>
+        <button class="mini del" data-act="del" title="作废">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+        </button>
+      </div>
+    </div>`).join('');
+}
+$('#edList').addEventListener('click', e => {
+  const btn = e.target.closest('[data-act]');
+  if (!btn) return;
+  const t = todos.find(x => x.id === Number(btn.closest('.ed-item').dataset.id));
+  if (!t) return;
+  if (btn.dataset.act === 'toggle') {
+    t.done = !t.done;
+    if (t.done) toast('已核稿 ✓');
+  }
+  if (btn.dataset.act === 'del') todos.splice(todos.indexOf(t), 1);
+  if (btn.dataset.act === 'ai') { delegateLetter(t); }
+  renderED();
+});
+function addTodo(text) {
+  if (!text.trim()) return;
+  todos.unshift({ id: Date.now(), text: text.trim(), tag: '新条目', pri: 'low', done: false });
+  renderED();
+  toast('已归档：' + text.trim());
+}
+$('#edAddBtn').addEventListener('click', () => { addTodo($('#edInput').value); $('#edInput').value = ''; });
+$('#edInput').addEventListener('keydown', e => { if (e.key === 'Enter') { addTodo($('#edInput').value); $('#edInput').value = ''; } });
+$$('.ed-tabs .flt').forEach(f => f.addEventListener('click', () => {
+  $$('.ed-tabs .flt').forEach(x => x.classList.remove('active'));
+  f.classList.add('active');
+  edFilter = f.dataset.f;
+  renderED();
+}));
+
+/* ================= 通讯 · 书信 ================= */
+let activeWho = '周图';
+let letters = [];
+function addLetter(who, text, kind) {
+  letters.push({ who, text, kind });
+  renderLetters();
+}
+function renderLetters() {
+  $('#lettersList').innerHTML = letters.map(l => {
+    if (l.kind === 'sys') {
+      return `<div class="letter sys"><div class="paper"><div class="who-line"><span class="nm">编务</span></div><div class="body">${esc(l.text)}</div></div></div>`;
+    }
+    const me = l.kind === 'me';
+    return `
+      <div class="letter ${me ? 'me' : ''}">
+        <div class="paper">
+          <div class="who-line">
+            <span class="nm">${me ? '你' : esc(l.who)}</span>
+            <span class="flip">${me ? '（回信）' : ''}</span>
+            <span class="tm">${nowHM()}</span>
+          </div>
+          <div class="body">${esc(l.text)}</div>
+          <div class="sign">${me ? '' : '—— ' + esc(l.who)}</div>
+        </div>
+      </div>`;
+  }).join('');
+  const el = $('#lettersList');
+  el.scrollTop = el.scrollHeight;
+}
+function delegateLetter(t) {
+  jumpTo('letters');
+  addLetter('编务', '新委托：把任务「' + t.text + '」转交「' + activeWho + '」处理。', 'sys');
+  setTimeout(() => {
+    addLetter('bot', '收到委托。我会把「' + t.text + '」列入今天的待办执行，先拆三步：1) 清点现状 2) 定优先 3) 出初稿。需要现在就讲第一步吗？');
+  }, 700);
+  toast('已把「' + t.text + '」委托给 ' + activeWho);
+}
+$('#letterHead').addEventListener('click', e => {
+  const w = e.target.closest('.who');
+  if (!w) return;
+  $$('.who', $('#letterHead')).forEach(x => x.classList.remove('active'));
+  w.classList.add('active');
+  activeWho = w.dataset.w;
+  toast('收信人切换到：' + activeWho);
+});
+function sendLetter() {
+  const v = $('#letterInput').value.trim();
+  if (!v) return;
+  $('#letterInput').value = '';
+  addLetter('me', v, 'me');
+  const replies = {
+    '周图': '（预览演示）收到你的信啦：「' + v + '」。等接上真实 DeepSeek，我会好好回这封的。',
+    '小说助理': '（预览演示）这段我记在创作档案里了：「' + v + '」。',
+    'AI写作助手': '（预览演示）创作委托已收：「' + v + '」。正式版走完整流程。',
+  };
+  setTimeout(() => addLetter('bot', replies[activeWho] || '（预览演示）信已收到。'), 600);
+}
+$('#letterSend').addEventListener('click', sendLetter);
+$('#letterInput').addEventListener('keydown', e => { if (e.key === 'Enter') sendLetter(); });
+
+letters = [
+  { who: '周图', text: '早安呀。今天杂志的排版是奶油色的，像一杯拿铁。你昨天说的星空，今晚一起看吗？', kind: 'bot' },
+  { who: '你', text: '好呀，我先把报告初稿核完。', kind: 'me' },
+];
+renderLetters();
+
+/* ================= 唱片机 ================= */
+const tracks = [
+  { no: 'A1', a: 'Midnight Rain', b: 'Lo-fi Beats', dur: '3:42', face: 'A' },
+  { no: 'A2', a: 'Neon City Pulse', b: 'Synthwave', dur: '3:58', face: 'A' },
+  { no: 'A3', a: 'Coffee Shop Window', b: 'Lo-fi Beats', dur: '4:05', face: 'A' },
+  { no: 'B1', a: 'Drifting Nebula', b: 'Ambient Space', dur: '5:10', face: 'B' },
+  { no: 'B2', a: 'Rain on the Rooftop', b: 'Ambient Rain', dur: '6:22', face: 'B' },
+];
+let playingIdx = 0;
+let isPlaying = true;
+const faceName = { A: 'A 面', B: 'B 面' };
+
+function renderTL() {
+  const faces = ['A', 'B'];
+  $('#tracklist').innerHTML = faces.map(f => `
+    <div class="tl-face">— SIDE ${f} ${f === 'A' ? 'Ⅰ' : 'Ⅱ'} —</div>
+    ${tracks.filter(t => t.face === f).map((t, i) => {
+      const gi = tracks.indexOf(t);
+      return `
+      <div class="tl-item ${gi === playingIdx ? 'playing' : ''}" data-i="${gi}">
+        <span class="no">${t.no}</span>
+        <span class="nm">${esc(t.a)}</span>
+        <span class="tt">${t.dur}</span>
+        <svg class="ply" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+      </div>`;
+    }).join('')}
+  `).join('');
+}
+function updateNP() {
+  const t = tracks[playingIdx];
+  $('#npTitle').textContent = t.a;
+  $('#npArtist').textContent = t.b + ' · 放松频道';
+  $('#vTitle').innerHTML = t.a.replace(' ', '<br>');
+  $('#vFace').textContent = faceName[t.face];
+  $('#sideBtn').textContent = faceName[t.face];
+}
+function syncV() {
+  $('#vinyl').className = 'vinyl ' + (isPlaying ? 'play' : 'pause');
+  $('#vinylWrap').className = 'vinyl-wrap ' + (isPlaying ? 'play' : 'paused');
+  $('#playIco').innerHTML = isPlaying ? '<path d="M8 5v14l11-7z"/>' : '<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>';
+  renderTL();
+}
+$('#playBtn').addEventListener('click', () => { isPlaying = !isPlaying; syncV(); toast(isPlaying ? '唱盘转动中' : '已抬起唱针'); });
+$('#nextBtn').addEventListener('click', () => { playingIdx = (playingIdx + 1) % tracks.length; updateNP(); isPlaying = true; syncV(); });
+$('#prevBtn').addEventListener('click', () => { playingIdx = (playingIdx - 1 + tracks.length) % tracks.length; updateNP(); isPlaying = true; syncV(); });
+$('#tracklist').addEventListener('click', e => {
+  const it = e.target.closest('.tl-item');
+  if (!it) return;
+  playingIdx = Number(it.dataset.i);
+  updateNP(); isPlaying = true; syncV();
+});
+$('#sideBtn').addEventListener('click', () => {
+  const cur = tracks[playingIdx];
+  const other = cur.face === 'A' ? 'B' : 'A';
+  const candidates = tracks.filter(t => t.face === other);
+  playingIdx = tracks.indexOf(candidates[0]);
+  updateNP(); isPlaying = true; syncV();
+  toast('翻到 ' + faceName[other]);
+});
+$('#recSearchBtn').addEventListener('click', () => {
+  const v = $('#recSearch').value.trim();
+  if (!v) return;
+  toast('（预览）翻找唱片：' + v);
+});
+$('#recSearch').addEventListener('keydown', e => { if (e.key === 'Enter') $('#recSearchBtn').click(); });
+
+updateNP(); syncV();
+
+renderED();
+</script>
+</body>
+</html>

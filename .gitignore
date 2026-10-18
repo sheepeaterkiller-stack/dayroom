@@ -1,4 +1,4 @@
-# Local Netlify folder
+# Local Netlify & build
 .netlify
 node_modules/
 
@@ -7,3 +7,11 @@ index_original.html
 patch.js
 restore.js
 work.js
+style-old.css
+style-preview.html
+.glm-prompt.txt
+
+# Deploy scripts containing secrets
+deploy.sh
+*.key
+*.pem

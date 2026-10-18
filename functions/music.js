@@ -1,4 +1,4 @@
-// Cloudflare Pages Function — search higequ.com, extract audio URLs
+// Cloudflare Pages Function — Music Search & Audio Source
 export async function onRequest(context) {
   const { request } = context;
   const url = new URL(request.url);
@@ -6,89 +6,115 @@ export async function onRequest(context) {
   const keyword = url.searchParams.get('keyword') || '';
   const rid = url.searchParams.get('rid') || '';
 
-  const UA = 'Mozilla/5.0 (compatible; CloudflareBot/1.0)';
+  const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 
-  async function fetchWithTimeout(url, timeoutMs = 10000) {
+  async function fetchWithTimeout(targetUrl, options = {}, timeoutMs = 8000) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {
-      return await fetch(url, { signal: controller.signal, headers: { 'User-Agent': UA } });
+      return await fetch(targetUrl, {
+        ...options,
+        signal: controller.signal,
+        headers: { 'User-Agent': UA, ...(options.headers || {}) },
+      });
     } finally {
       clearTimeout(timer);
     }
   }
 
+  function cleanText(str) {
+    if (!str) return '';
+    return str
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/\\u([0-9a-fA-F]{4})/g, (_, c) => String.fromCharCode(parseInt(c, 16)))
+      .trim();
+  }
+
   try {
-    // ===== SEARCH =====
+    // ===== 1. SEARCH =====
     if (action === 'search') {
-      if (!keyword) {
-        return new Response(JSON.stringify({ error: 'Missing keyword' }), { status: 400 });
+      const q = keyword.trim();
+      if (!q) {
+        return new Response(JSON.stringify({ error: 'Missing keyword' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        });
       }
 
-      const searchUrl = 'https://higequ.com/s/' + encodeURIComponent(keyword) + '/';
-      console.log('Searching:', searchUrl);
+      const searchUrl = 'https://search.kuwo.cn/r.s?all=' + encodeURIComponent(q) + '&ft=music&itemset=web_2013&client=kt&pn=0&rn=30&rformat=json&encoding=utf8';
       const resp = await fetchWithTimeout(searchUrl);
-      if (!resp.ok) throw new Error('HTTP ' + resp.status);
-      const html = await resp.text();
+      if (!resp.ok) throw new Error('Search request failed: HTTP ' + resp.status);
+      const text = await resp.text();
 
+      const regex = /'ARTIST':'([^']*)'[\s\S]*?'MUSICRID':'(?:MUSIC_)?(\d+)'[\s\S]*?'SONGNAME':'([^']*)'/g;
       const songs = [];
-      const itemRegex = /<div[^>]*class="[^"]*result-item[^"]*"[^>]*data-rid="(\d+)"[^>]*>([\s\S]*?)<\/div>\s*(?=<div[^>]*class="[^"]*result-item|<div[^>]*class="[^"]*pagination|$)/gi;
+      const seenRids = new Set();
+      let m;
+      while ((m = regex.exec(text)) !== null) {
+        const itemRid = m[2];
+        if (seenRids.has(itemRid)) continue;
+        seenRids.add(itemRid);
 
-      let match;
-      while ((match = itemRegex.exec(html)) !== null) {
-        const ridVal = match[1];
-        const block = match[2];
-        const titleMatch = block.match(/<div[^>]*class="[^"]*result-title[^"]*"[^>]*>([^<]+)<\/div>/i);
-        const artistMatch = block.match(/<div[^>]*class="[^"]*result-artist[^"]*"[^>]*>([^<]+)<\/div>/i);
-
-        if (titleMatch) {
-          songs.push({
-            rid: ridVal,
-            name: titleMatch[1].trim(),
-            artist: artistMatch ? artistMatch[1].trim() : '未知歌手',
-          });
-        }
+        songs.push({
+          rid: itemRid,
+          name: cleanText(m[3]) || '未知歌曲',
+          artist: cleanText(m[1]) || '未知歌手',
+        });
       }
 
       return new Response(JSON.stringify(songs), {
         status: 200,
-        headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=300' },
+        headers: {
+          'Content-Type': 'application/json; charset=utf-8',
+          'Cache-Control': 'public, max-age=300',
+        },
       });
     }
 
-    // ===== GET AUDIO URL =====
+    // ===== 2. GET AUDIO URL =====
     if (action === 'url') {
       if (!rid) {
-        return new Response(JSON.stringify({ error: 'Missing rid' }), { status: 400 });
+        return new Response(JSON.stringify({ error: 'Missing rid' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        });
       }
 
-      const playerUrl = 'https://higequ.com/player/' + rid + '/';
-      console.log('Fetching player:', playerUrl);
-      const resp = await fetchWithTimeout(playerUrl);
-      if (!resp.ok) throw new Error('HTTP ' + resp.status);
-      const html = await resp.text();
+      const cleanRid = rid.replace(/^(?:kw_|MUSIC_)/, '');
+      const playUrl = 'https://antiserver.kuwo.cn/anti.s?type=convert_url&rid=' + cleanRid + '&format=mp3&response=url';
+      const resp = await fetchWithTimeout(playUrl);
+      if (!resp.ok) throw new Error('Audio conversion failed: HTTP ' + resp.status);
+      const audioUrl = (await resp.text()).trim();
 
-      // Extract Base64 code: let code = "..." (the audio URL is base64-encoded)
-      const codeMatch = html.match(/let\s+code\s*=\s*"([^"]+)"/);
-      if (!codeMatch || !codeMatch[1]) {
-        return new Response(JSON.stringify({ error: 'No audio code found' }), { status: 404 });
+      if (!audioUrl || !audioUrl.startsWith('http')) {
+        return new Response(JSON.stringify({ error: 'Audio stream unavailable', raw: audioUrl }), {
+          status: 404,
+          headers: { 'Content-Type': 'application/json; charset=utf-8' },
+        });
       }
 
-      const decoded = atob(codeMatch[1]);
-      console.log('Decoded URL:', decoded.substring(0, 80) + '...');
-
-      return new Response(JSON.stringify({ url: decoded }), {
+      return new Response(JSON.stringify({ url: audioUrl }), {
         status: 200,
-        headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=3600' },
+        headers: {
+          'Content-Type': 'application/json; charset=utf-8',
+          'Cache-Control': 'public, max-age=1800',
+        },
       });
     }
 
-    return new Response(JSON.stringify({ error: 'Unknown action' }), { status: 400 });
+    return new Response(JSON.stringify({ error: 'Unknown action' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
   } catch (err) {
-    console.error('Error:', err.message);
     return new Response(JSON.stringify({ error: err.message }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json; charset=utf-8' },
     });
   }
 }
