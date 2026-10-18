@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=1792248500000">
+  <link rel="stylesheet" href="style.css?v=1792251000000">
   <script>
     try {
       if (localStorage.getItem('theme_mode') === 'day') {
@@ -27,6 +27,83 @@
   <img id="bgImage" alt="" />
   <!-- Background Canvas (for animated wallpapers e.g. starfield) -->
   <canvas id="bgCanvas"></canvas>
+
+  <!-- ========== Sound Space (Micro-interactions & Noise Mixer) ========== -->
+  <div class="sound-widget" id="soundWidget">
+    <button class="sound-anchor" id="soundAnchor" title="声音空间 · 白噪音与触觉微动效" aria-label="声音空间">
+      <span class="sound-wave-bars">
+        <span class="sound-bar b1"></span>
+        <span class="sound-bar b2"></span>
+        <span class="sound-bar b3"></span>
+        <span class="sound-bar b4"></span>
+      </span>
+      <span class="sound-status-dot"></span>
+    </button>
+    
+    <!-- Micro Glassmorphism Mixer Drawer -->
+    <div class="sound-drawer" id="soundDrawer" aria-hidden="true">
+      <div class="sd-header">
+        <div class="sd-title-wrap">
+          <span class="sd-icon">🎧</span>
+          <span class="sd-title">声音空间</span>
+          <span class="sd-badge" id="sdStateBadge">静音中</span>
+        </div>
+        <button class="sd-master-toggle" id="sdMasterToggle" title="开启/关闭声音空间">
+          <span class="sd-toggle-knob"></span>
+        </button>
+      </div>
+
+      <div class="sd-toggles-row">
+        <label class="sd-sub-switch" title="鼠标悬停与点击时产生温和的微动机械触觉反馈">
+          <input type="checkbox" id="sdHapticsToggle" checked>
+          <span class="sd-sub-slider"></span>
+          <span class="sd-sub-label">微交互触觉音效</span>
+        </label>
+      </div>
+
+      <div class="sd-tracks">
+        <!-- Track 1: Warm Tide -->
+        <div class="sd-track">
+          <div class="sd-track-info">
+            <span class="sd-track-name">🌊 暖色基底</span>
+            <span class="sd-track-desc">夜雨潮汐 · 11s呼吸起伏</span>
+          </div>
+          <div class="sd-slider-row">
+            <input type="range" class="sd-slider" id="sdTrackTide" min="0" max="100" value="45">
+            <span class="sd-slider-val" id="sdValTide">45%</span>
+          </div>
+        </div>
+
+        <!-- Track 2: Organic Crackle -->
+        <div class="sd-track">
+          <div class="sd-track-info">
+            <span class="sd-track-name">🔥 有机颗粒</span>
+            <span class="sd-track-desc">木柴噼啪 ↔ 窗外细雨</span>
+          </div>
+          <div class="sd-slider-row">
+            <input type="range" class="sd-slider" id="sdTrackCrackle" min="0" max="100" value="30">
+            <span class="sd-slider-val" id="sdValCrackle">30%</span>
+          </div>
+        </div>
+
+        <!-- Track 3: Ambient Drone -->
+        <div class="sd-track">
+          <div class="sd-track-info">
+            <span class="sd-track-name">🌌 漂移垫音</span>
+            <span class="sd-track-desc">太空舱 · 深度心流</span>
+          </div>
+          <div class="sd-slider-row">
+            <input type="range" class="sd-slider" id="sdTrackDrone" min="0" max="100" value="25">
+            <span class="sd-slider-val" id="sdValDrone">25%</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sd-footer">
+        <span class="sd-room-indicator" id="sdRoomIndicator">🚪 离开标签页将自动虚掩房门（隔壁房间效应）</span>
+      </div>
+    </div>
+  </div>
 
   <!-- ========== Jelly Theme Toggle (Day / Night) ========== -->
   <button class="theme-toggle" id="themeToggle" title="切换白天/黑夜模式" aria-label="切换白天/黑夜模式">
@@ -9028,5 +9105,7 @@ v1.0 — 基于 AI写作助手 v5.3 色情化改造。删除商业网文方法�
   <!-- ========== Live2D 看板娘 (waifu) ========== -->
   <script src="waifu/autoload.js"></script>
 
+  <!-- ========== Sound Space Audio Engine ========== -->
+  <script src="sound.js"></script>
 </body>
 </html>
