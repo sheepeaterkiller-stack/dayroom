@@ -3871,17 +3871,18 @@
       position: absolute;
       top: 50px;
       right: 0;
-      width: 290px;
-      background: rgba(18, 22, 28, 0.94);
-      backdrop-filter: blur(24px);
-      -webkit-backdrop-filter: blur(24px);
+      width: 430px;
+      max-width: 92vw;
+      background: rgba(15, 19, 26, 0.96);
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
       border: 1px solid rgba(255, 255, 255, 0.12);
-      border-radius: 18px;
-      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+      border-radius: 20px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.06) inset;
       padding: 16px 18px;
       opacity: 0;
       visibility: hidden;
-      transform: translateY(-8px) scale(0.96);
+      transform: translateY(-8px) scale(0.97);
       transform-origin: top right;
       transition: opacity 0.24s cubic-bezier(0.16, 1, 0.3, 1),
                   transform 0.24s cubic-bezier(0.16, 1, 0.3, 1),
@@ -3910,31 +3911,43 @@
     .sd-title-wrap {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
     }
 
     .sd-icon {
-      font-size: 1.15rem;
+      font-size: 1.25rem;
+    }
+
+    .sd-titles {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
     }
 
     .sd-title {
       font-size: 0.92rem;
       font-weight: 600;
-      color: #f1f5f9;
+      color: #f8fafc;
       letter-spacing: 0.3px;
     }
 
+    .sd-subtitle {
+      font-size: 0.66rem;
+      color: #64748b;
+      font-weight: 400;
+    }
+
     .sd-badge {
-      font-size: 0.68rem;
+      font-size: 0.66rem;
       padding: 2px 7px;
       border-radius: 10px;
       background: rgba(255, 255, 255, 0.08);
       color: #94a3b8;
       font-weight: 500;
+      margin-left: 4px;
       transition: all 0.25s ease;
     }
 
-    .sound-drawer .sound-anchor.active ~ .sound-drawer .sd-badge,
     .sound-widget.active .sd-badge {
       background: rgba(16, 185, 129, 0.15);
       color: #34d399;
@@ -3952,6 +3965,7 @@
       padding: 2px;
       transition: all 0.25s ease;
       outline: none;
+      flex-shrink: 0;
     }
 
     .sd-master-toggle .sd-toggle-knob {
@@ -3974,10 +3988,318 @@
       transform: translateX(20px);
     }
 
-    /* Haptics Switch Row */
-    .sd-toggles-row {
-      padding: 10px 0;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    /* ========== Acoustic Visualizer Panel (Canvas) ========== */
+    .sd-visual-panel {
+      margin: 12px 0 10px;
+      background: #090c10;
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      border-radius: 12px;
+      padding: 10px 12px;
+      box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.55);
+    }
+
+    .sd-visual-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+      line-height: 1.3;
+    }
+
+    .sd-visual-title {
+      font-size: 0.68rem;
+      color: #94a3b8;
+      font-weight: 500;
+      letter-spacing: 0.2px;
+    }
+
+    .sd-visual-rate {
+      font-size: 0.62rem;
+      color: #475569;
+      font-family: monospace;
+    }
+
+    .sd-canvas-wrap {
+      width: 100%;
+      height: 145px;
+      position: relative;
+      overflow: hidden;
+      border-radius: 6px;
+      background: #07090d;
+    }
+
+    #sdScopeCanvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* ========== Presets / Recommended Recipes ========== */
+    .sd-presets-panel {
+      margin: 10px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .sd-presets-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.72rem;
+      color: #cbd5e1;
+      font-weight: 600;
+    }
+
+    .sd-presets-hint {
+      font-size: 0.65rem;
+      color: #64748b;
+      font-weight: 400;
+    }
+
+    .sd-presets-list {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .sd-preset-pill {
+      padding: 4px 10px;
+      font-size: 0.72rem;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.05);
+      color: #cbd5e1;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-family: inherit;
+      user-select: none;
+      outline: none;
+    }
+
+    .sd-preset-pill:hover {
+      background: rgba(255, 255, 255, 0.12);
+      color: #ffffff;
+      border-color: rgba(255, 255, 255, 0.22);
+      transform: translateY(-1px);
+    }
+
+    .sd-preset-pill.active {
+      background: rgba(99, 102, 241, 0.25);
+      border-color: #6366f1;
+      color: #a5b4fc;
+      box-shadow: 0 0 10px rgba(99, 102, 241, 0.3);
+      font-weight: 500;
+    }
+
+    .sd-p-icon {
+      font-size: 0.8rem;
+    }
+
+    /* ========== 3 Tracks Mixers ========== */
+    .sd-tracks {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 8px 0;
+    }
+
+    .sd-track {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      border-radius: 10px;
+      padding: 8px 10px;
+      transition: background 0.2s ease;
+    }
+
+    .sd-track:hover {
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .sd-track-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .sd-track-main {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .sd-track-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .dot-tide {
+      background: #38bdf8;
+      box-shadow: 0 0 6px rgba(56, 189, 248, 0.5);
+    }
+    .dot-crackle {
+      background: #34d399;
+      box-shadow: 0 0 6px rgba(52, 211, 153, 0.5);
+    }
+    .dot-drone {
+      background: #fbbf24;
+      box-shadow: 0 0 6px rgba(251, 191, 36, 0.5);
+    }
+
+    .sd-track-name {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #f1f5f9;
+    }
+
+    .sd-track-tag {
+      font-size: 0.65rem;
+      color: #64748b;
+      font-weight: 400;
+    }
+
+    .sd-track-desc {
+      font-size: 0.66rem;
+      color: #64748b;
+      line-height: 1.35;
+    }
+
+    .sd-slider-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 2px;
+    }
+
+    .sd-slider {
+      flex: 1;
+      -webkit-appearance: none;
+      appearance: none;
+      height: 5px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 3px;
+      outline: none;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    .sd-slider:hover {
+      background: rgba(255, 255, 255, 0.18);
+    }
+
+    .sd-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #ffffff;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+      transition: transform 0.15s ease, background 0.15s ease;
+    }
+
+    .sd-slider.slider-tide::-webkit-slider-thumb:hover {
+      background: #38bdf8;
+      transform: scale(1.25);
+    }
+    .sd-slider.slider-crackle::-webkit-slider-thumb:hover {
+      background: #34d399;
+      transform: scale(1.25);
+    }
+    .sd-slider.slider-drone::-webkit-slider-thumb:hover {
+      background: #fbbf24;
+      transform: scale(1.25);
+    }
+
+    .sd-slider::-moz-range-thumb {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #ffffff;
+      cursor: pointer;
+      border: none;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+    }
+
+    .sd-slider-val {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: #94a3b8;
+      width: 38px;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* ========== Interactive Experiment Action Dock ========== */
+    .sd-actions-dock {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 0 8px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      flex-wrap: wrap;
+    }
+
+    .sd-action-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.06);
+      color: #e2e8f0;
+      font-size: 0.72rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      font-family: inherit;
+      user-select: none;
+      outline: none;
+    }
+
+    .sd-action-btn:hover {
+      background: rgba(255, 255, 255, 0.13);
+      border-color: rgba(255, 255, 255, 0.22);
+      color: #ffffff;
+      transform: translateY(-1px);
+    }
+
+    .sd-action-btn:active {
+      transform: scale(0.97);
+    }
+
+    .sd-action-btn.active {
+      background: rgba(245, 158, 11, 0.2);
+      border-color: #f59e0b;
+      color: #fbbf24;
+      box-shadow: 0 0 10px rgba(245, 158, 11, 0.25);
+    }
+
+    .sd-ab-icon {
+      font-size: 0.82rem;
+    }
+
+    .sd-transition-label {
+      font-size: 0.65rem;
+      color: #64748b;
+      margin-left: auto;
+      font-family: monospace;
+    }
+
+    /* ========== Footer & Haptics ========== */
+    .sd-footer {
+      padding-top: 10px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
     }
 
     .sd-sub-switch {
@@ -3985,7 +4307,7 @@
       align-items: center;
       gap: 10px;
       cursor: pointer;
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       color: #cbd5e1;
       user-select: none;
     }
@@ -4026,116 +4348,13 @@
     }
 
     .sd-sub-label {
-      font-size: 0.78rem;
+      font-size: 0.72rem;
       color: #94a3b8;
       transition: color 0.2s ease;
     }
 
     .sd-sub-switch:hover .sd-sub-label {
       color: #f1f5f9;
-    }
-
-    /* 3 Tracks */
-    .sd-tracks {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      padding: 12px 0;
-    }
-
-    .sd-track {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .sd-track-info {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-    }
-
-    .sd-track-name {
-      font-size: 0.82rem;
-      font-weight: 500;
-      color: #e2e8f0;
-    }
-
-    .sd-track-desc {
-      font-size: 0.68rem;
-      color: #64748b;
-    }
-
-    .sd-slider-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .sd-slider {
-      flex: 1;
-      -webkit-appearance: none;
-      appearance: none;
-      height: 5px;
-      background: rgba(255, 255, 255, 0.12);
-      border-radius: 3px;
-      outline: none;
-      cursor: pointer;
-      transition: background 0.2s ease;
-    }
-
-    .sd-slider:hover {
-      background: rgba(255, 255, 255, 0.2);
-    }
-
-    .sd-slider::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      appearance: none;
-      width: 14px;
-      height: 14px;
-      border-radius: 50%;
-      background: #ffffff;
-      cursor: pointer;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
-      transition: transform 0.15s ease, background 0.15s ease;
-    }
-
-    .sd-slider::-webkit-slider-thumb:hover {
-      transform: scale(1.25);
-      background: #38bdf8;
-    }
-
-    .sd-slider::-moz-range-thumb {
-      width: 14px;
-      height: 14px;
-      border-radius: 50%;
-      background: #ffffff;
-      cursor: pointer;
-      border: none;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
-    }
-
-    .sd-slider-val {
-      font-size: 0.72rem;
-      font-weight: 500;
-      color: #94a3b8;
-      width: 34px;
-      text-align: right;
-      font-variant-numeric: tabular-nums;
-    }
-
-    /* Footer / Room Indicator */
-    .sd-footer {
-      padding-top: 10px;
-      border-top: 1px solid rgba(255, 255, 255, 0.06);
-    }
-
-    .sd-room-indicator {
-      font-size: 0.68rem;
-      color: #64748b;
-      display: block;
-      line-height: 1.4;
-      text-align: center;
     }
 
     /* ========== Day Mode Overrides for Sound Space ========== */
@@ -4164,60 +4383,130 @@
     }
 
     [data-theme="day"] .sound-drawer {
-      background: rgba(255, 255, 255, 0.96);
-      border-color: rgba(0, 0, 0, 0.08);
-      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.03) inset;
+      background: rgba(255, 255, 255, 0.98);
+      border-color: rgba(0, 0, 0, 0.1);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.14), 0 0 0 1px rgba(0, 0, 0, 0.03) inset;
       color: #1e293b;
     }
 
     [data-theme="day"] .sd-header {
-      border-bottom-color: rgba(0, 0, 0, 0.06);
+      border-bottom-color: rgba(0, 0, 0, 0.08);
     }
 
     [data-theme="day"] .sd-title {
       color: #0f172a;
     }
 
-    [data-theme="day"] .sd-badge {
-      background: rgba(0, 0, 0, 0.05);
+    [data-theme="day"] .sd-subtitle {
       color: #64748b;
     }
 
-    [data-theme="day"] .sd-master-toggle {
-      background: rgba(0, 0, 0, 0.1);
-      border-color: rgba(0, 0, 0, 0.15);
+    [data-theme="day"] .sd-badge {
+      background: rgba(0, 0, 0, 0.06);
+      color: #475569;
     }
 
-    [data-theme="day"] .sd-toggles-row {
-      border-bottom-color: rgba(0, 0, 0, 0.05);
+    [data-theme="day"] .sd-visual-panel {
+      background: #f1f5f9;
+      border-color: rgba(0, 0, 0, 0.1);
+      box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.06);
     }
 
-    [data-theme="day"] .sd-sub-slider {
-      background: rgba(0, 0, 0, 0.12);
+    [data-theme="day"] .sd-visual-title {
+      color: #475569;
     }
 
-    [data-theme="day"] .sd-track-name {
+    [data-theme="day"] .sd-canvas-wrap {
+      background: #e2e8f0;
+    }
+
+    [data-theme="day"] .sd-presets-title {
       color: #1e293b;
     }
 
+    [data-theme="day"] .sd-presets-hint {
+      color: #64748b;
+    }
+
+    [data-theme="day"] .sd-preset-pill {
+      background: #ffffff;
+      border-color: rgba(0, 0, 0, 0.12);
+      color: #334155;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    }
+
+    [data-theme="day"] .sd-preset-pill:hover {
+      background: #f8fafc;
+      border-color: rgba(0, 0, 0, 0.2);
+      color: #0f172a;
+    }
+
+    [data-theme="day"] .sd-preset-pill.active {
+      background: rgba(99, 102, 241, 0.15);
+      border-color: #6366f1;
+      color: #4f46e5;
+    }
+
+    [data-theme="day"] .sd-track {
+      background: #f8fafc;
+      border-color: rgba(0, 0, 0, 0.06);
+    }
+
+    [data-theme="day"] .sd-track:hover {
+      background: #f1f5f9;
+    }
+
+    [data-theme="day"] .sd-track-name {
+      color: #0f172a;
+    }
+
+    [data-theme="day"] .sd-track-desc {
+      color: #64748b;
+    }
+
     [data-theme="day"] .sd-slider {
-      background: rgba(0, 0, 0, 0.08);
+      background: rgba(0, 0, 0, 0.1);
     }
 
     [data-theme="day"] .sd-slider:hover {
-      background: rgba(0, 0, 0, 0.14);
+      background: rgba(0, 0, 0, 0.16);
     }
 
     [data-theme="day"] .sd-slider::-webkit-slider-thumb {
       background: #1e293b;
     }
 
-    [data-theme="day"] .sd-slider::-webkit-slider-thumb:hover {
-      background: #6366f1;
+    [data-theme="day"] .sd-actions-dock {
+      border-top-color: rgba(0, 0, 0, 0.08);
+    }
+
+    [data-theme="day"] .sd-action-btn {
+      background: #f1f5f9;
+      border-color: rgba(0, 0, 0, 0.12);
+      color: #1e293b;
+    }
+
+    [data-theme="day"] .sd-action-btn:hover {
+      background: #e2e8f0;
+      color: #0f172a;
+    }
+
+    [data-theme="day"] .sd-action-btn.active {
+      background: rgba(245, 158, 11, 0.15);
+      border-color: #f59e0b;
+      color: #b45309;
     }
 
     [data-theme="day"] .sd-footer {
-      border-top-color: rgba(0, 0, 0, 0.05);
+      border-top-color: rgba(0, 0, 0, 0.08);
+    }
+
+    [data-theme="day"] .sd-sub-slider {
+      background: rgba(0, 0, 0, 0.15);
+    }
+
+    [data-theme="day"] .sd-sub-label {
+      color: #475569;
     }
 
     /* Mobile: hide sound-widget on narrow screens */

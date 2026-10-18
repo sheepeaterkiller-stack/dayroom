@@ -17,12 +17,16 @@
   let audioCtx = null;
   let isPoweredOn = false;
   let hapticsEnabled = true;
-  let isMuffled = false; // "隔壁房间"状态
+  let isMuffled = false; // "隔壁房间"失焦状态
+  let isManualMuffled = false; // "隔壁房间"手动体验状态
+  let targetCutoff = 18000;
+  let visualCutoff = 18000;
+  let isDrawerOpen = false;
 
   // 轨道音量 (0 ~ 1)
-  let volTide = 0.45;
-  let volCrackle = 0.30;
-  let volDrone = 0.25;
+  let volTide = 0.50;
+  let volCrackle = 0.15;
+  let volDrone = 0.35;
 
   // Web Audio 节点引用
   let masterGain = null;
@@ -36,6 +40,11 @@
   let crackleTimer = null;
   let droneNodes = null;
   let visualAnimId = null;
+  let scopeAnimId = null;
+
+  // 示波器粒子与波纹池
+  const scopeParticles = [];
+  const scopeRipples = [];
 
   // 节流与微随机缓存
   let lastHoverTime = 0;
@@ -244,6 +253,32 @@
     } catch (e) {}
   }
 
+  // ========== 示波器粒子与波纹生成辅助 ==========
+  function addScopeParticle(x, y, color) {
+    if (scopeParticles.length > 30) scopeParticles.shift();
+    scopeParticles.push({
+      x: x !== undefined ? x : (80 + Math.random() * 240),
+      y: y !== undefined ? y : (25 + Math.random() * 25),
+      vx: (Math.random() - 0.5) * 0.9,
+      vy: -0.3 - Math.random() * 0.7,
+      radius: 2 + Math.random() * 2.5,
+      alpha: 1.0,
+      decay: 0.015 + Math.random() * 0.02,
+      color: color || '#fbbf24'
+    });
+  }
+
+  function addScopeRipple(x, y) {
+    if (scopeRipples.length > 8) scopeRipples.shift();
+    scopeRipples.push({
+      x: x || 200,
+      y: y || 42,
+      r: 3,
+      maxR: 45,
+      alpha: 1.0
+    });
+  }
+
   // ========== 第二层声场：三轨程序化白噪音混音台 ==========
 
   // 轨道 1：暖色基底 (Warm Tide) — 布朗噪音 + 11s 周期 LFO 低通摇曳
@@ -319,6 +354,17 @@
       const centerFreq = isRainMode ? 2400 : 1350;
       filter.frequency.setTargetAtTime(centerFreq, now, 0.05);
       filter.Q.setTargetAtTime(isRainMode ? 3.5 : 8.0, now, 0.05);
+
+      if (isDrawerOpen) {
+        const pCount = Math.min(3, Math.ceil(density / 6));
+        for (let k = 0; k < pCount; k++) {
+          addScopeParticle(
+            40 + Math.random() * 320,
+            24 + Math.random() * 26,
+            isRainMode ? '#38bdf8' : (Math.random() > 0.4 ? '#fbbf24' : '#34d399')
+          );
+        }
+      }
 
       for (let i = 0; i < density; i++) {
         const offset = Math.random() * windowDuration;
@@ -406,14 +452,16 @@
     masterGain.gain.setValueAtTime(1.0, ctx.currentTime);
 
     // 2. "隔壁房间"低通滤波器 (Master Muffle Filter)
+    const effectiveMuffled = isMuffled || isManualMuffled;
+    targetCutoff = effectiveMuffled ? 360 : 18000;
     masterMuffleFilter = ctx.createBiquadFilter();
     masterMuffleFilter.type = 'lowpass';
-    masterMuffleFilter.frequency.setValueAtTime(isMuffled ? 360 : 18000, ctx.currentTime);
+    masterMuffleFilter.frequency.setValueAtTime(targetCutoff, ctx.currentTime);
     masterMuffleFilter.Q.setValueAtTime(0.8, ctx.currentTime);
 
-    // 3. 实时分析器 (用于微动效与视觉共生)
+    // 3. 实时分析器 (用于微动效与示波器/频谱绘制)
     masterAnalyser = ctx.createAnalyser();
-    masterAnalyser.fftSize = 64;
+    masterAnalyser.fftSize = 128; // 64 frequency bins, 128 time-domain samples
     masterAnalyser.smoothingTimeConstant = 0.82;
 
     // 4. 混音台母线与微交互母线
@@ -443,6 +491,11 @@
 
     // 启动波形微动效循环
     startWaveAnimation();
+
+    // 若当前抽屉正展开，立即启动 Canvas 示波器渲染
+    if (isDrawerOpen) {
+      startScopeVisualizer();
+    }
   }
 
   function stopAudioEngine() {
@@ -463,32 +516,382 @@
       cancelAnimationFrame(visualAnimId);
       visualAnimId = null;
     }
+    stopScopeVisualizer();
     if (audioCtx && audioCtx.state !== 'closed') {
       try { audioCtx.suspend(); } catch (e) {}
     }
   }
 
-  // ========== 第三层声场：空间联觉与“隔壁房间”效应 ==========
+  // ========== 程序化纯声学水滴 (Acoustic Water Droplet) ==========
+  function playWaterDroplet() {
+    if (!isPoweredOn) {
+      togglePower();
+    }
+    try {
+      const ctx = getContext();
+      const now = ctx.currentTime;
+
+      // 下潜扫频正弦粒子
+      const osc = ctx.createOscillator();
+      const filter = ctx.createBiquadFilter();
+      const gain = ctx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(1750, now);
+      osc.frequency.exponentialRampToValueAtTime(740, now + 0.055);
+
+      filter.type = 'bandpass';
+      filter.frequency.setValueAtTime(1180, now);
+      filter.Q.setValueAtTime(8.5, now);
+
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.linearRampToValueAtTime(0.14, now + 0.005);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.095);
+
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(hapticsGain || masterGain || ctx.destination);
+
+      osc.start(now);
+      osc.stop(now + 0.1);
+
+      // 在示波器 Canvas 激荡水滴波纹与微粒子
+      addScopeRipple(200, 42);
+      addScopeParticle(200, 42, '#38bdf8');
+    } catch (e) {}
+  }
+
+  // ========== "隔壁房间"低通滤波状态控制 ==========
   function handleFocusChange(blurred) {
     if (!isPoweredOn || !masterMuffleFilter || !audioCtx) return;
     isMuffled = blurred;
-    const now = audioCtx.currentTime;
+    updateMuffleState();
+  }
 
-    const roomIndicator = document.getElementById('sdRoomIndicator');
+  function toggleManualMuffle() {
+    if (!isPoweredOn) togglePower();
+    isManualMuffled = !isManualMuffled;
+    updateMuffleState();
+    playClickHaptic();
+  }
+
+  function updateMuffleState() {
+    if (!masterMuffleFilter || !audioCtx) return;
+    const now = audioCtx.currentTime;
+    const effectiveMuffled = isMuffled || isManualMuffled;
+
+    const muffleBtn = document.getElementById('sdBtnToggleMuffle');
+    const muffleBtnText = document.getElementById('sdMuffleBtnText');
     const badge = document.getElementById('sdStateBadge');
 
-    if (blurred) {
-      // 走出房间，虚掩房门：1.5s 平滑阻尼变闷，削减中高频，保留温暖低频
+    if (effectiveMuffled) {
+      targetCutoff = 360;
       masterMuffleFilter.frequency.cancelScheduledValues(now);
-      masterMuffleFilter.frequency.exponentialRampToValueAtTime(360, now + 1.5);
-      if (roomIndicator) roomIndicator.textContent = '🚪 已进入隔壁房间模式（低频静谧虚掩）';
+      masterMuffleFilter.frequency.setTargetAtTime(360, now, 0.22);
+      if (muffleBtn) muffleBtn.classList.add('active');
+      if (muffleBtnText) muffleBtnText.textContent = '推开房门 (恢复通透)';
       if (badge) badge.textContent = '隔壁房间';
     } else {
-      // 回到房间，推开房门：1.0s 平滑恢复通透全频
+      targetCutoff = 18000;
       masterMuffleFilter.frequency.cancelScheduledValues(now);
-      masterMuffleFilter.frequency.exponentialRampToValueAtTime(18000, now + 1.0);
-      if (roomIndicator) roomIndicator.textContent = '🚪 离开标签页将自动虚掩房门（隔壁房间效应）';
+      masterMuffleFilter.frequency.setTargetAtTime(18000, now, 0.22);
+      if (muffleBtn) muffleBtn.classList.remove('active');
+      if (muffleBtnText) muffleBtnText.textContent = '切换至: 隔壁房间 (切换失焦)';
       if (badge) badge.textContent = isPoweredOn ? '沉浸中' : '静音中';
+    }
+  }
+
+  // ========== 治愈配方预设切换 (Curated Recipes) ==========
+  const PRESETS = {
+    rain: { tide: 0.70, crackle: 0.65, drone: 0.20 },
+    hearth: { tide: 0.35, crackle: 0.45, drone: 0.40 },
+    space: { tide: 0.20, crackle: 0.10, drone: 0.75 },
+    ocean: { tide: 0.85, crackle: 0.20, drone: 0.30 },
+    focus: { tide: 0.50, crackle: 0.15, drone: 0.35 }
+  };
+
+  function applyPreset(name) {
+    const p = PRESETS[name];
+    if (!p) return;
+    if (!isPoweredOn) togglePower();
+
+    volTide = p.tide;
+    volCrackle = p.crackle;
+    volDrone = p.drone;
+
+    localStorage.setItem(STORAGE_KEY_VOL_TIDE, volTide.toString());
+    localStorage.setItem(STORAGE_KEY_VOL_CRACKLE, volCrackle.toString());
+    localStorage.setItem(STORAGE_KEY_VOL_DRONE, volDrone.toString());
+
+    const now = audioCtx ? audioCtx.currentTime : 0;
+    if (tideNodes && audioCtx) {
+      tideNodes.gain.gain.setTargetAtTime(volTide * 0.16, now, 0.22);
+    }
+    if (crackleNodes && audioCtx) {
+      crackleNodes.gain.gain.setTargetAtTime(volCrackle * 0.18, now, 0.22);
+    }
+    if (droneNodes && audioCtx) {
+      droneNodes.gain.gain.setTargetAtTime(volDrone * 0.05, now, 0.22);
+    }
+
+    const sliderTide = document.getElementById('sdTrackTide');
+    const sliderCrackle = document.getElementById('sdTrackCrackle');
+    const sliderDrone = document.getElementById('sdTrackDrone');
+    const valTide = document.getElementById('sdValTide');
+    const valCrackle = document.getElementById('sdValCrackle');
+    const valDrone = document.getElementById('sdValDrone');
+
+    if (sliderTide) sliderTide.value = Math.round(volTide * 100);
+    if (sliderCrackle) sliderCrackle.value = Math.round(volCrackle * 100);
+    if (sliderDrone) sliderDrone.value = Math.round(volDrone * 100);
+
+    if (valTide) valTide.textContent = Math.round(volTide * 100) + '%';
+    if (valCrackle) valCrackle.textContent = Math.round(volCrackle * 100) + '%';
+    if (valDrone) valDrone.textContent = Math.round(volDrone * 100) + '%';
+
+    document.querySelectorAll('.sd-preset-pill').forEach(btn => {
+      btn.classList.toggle('active', btn.getAttribute('data-preset') === name);
+    });
+
+    playClickHaptic();
+  }
+
+  // ========== 专业级声学示波器与对数频谱 Canvas 引擎 ==========
+  function initScopeCanvas() {
+    scopeCanvas = document.getElementById('sdScopeCanvas');
+    if (!scopeCanvas) return;
+    scopeCtx = scopeCanvas.getContext('2d');
+    resizeScopeCanvas();
+    window.addEventListener('resize', resizeScopeCanvas);
+  }
+
+  function resizeScopeCanvas() {
+    if (!scopeCanvas || !scopeCtx) return;
+    const rect = scopeCanvas.getBoundingClientRect();
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const w = rect.width || 390;
+    const h = rect.height || 145;
+    scopeCanvas.width = Math.round(w * dpr);
+    scopeCanvas.height = Math.round(h * dpr);
+    scopeCtx.setTransform(1, 0, 0, 1, 0, 0);
+    scopeCtx.scale(dpr, dpr);
+  }
+
+  function startScopeVisualizer() {
+    if (scopeAnimId) return;
+    const timeData = new Uint8Array(128);
+    const freqData = new Uint8Array(64);
+
+    function drawScope() {
+      if (!isDrawerOpen || !scopeCanvas || !scopeCtx) {
+        scopeAnimId = null;
+        return;
+      }
+
+      const rect = scopeCanvas.getBoundingClientRect();
+      const w = rect.width || 390;
+      const h = rect.height || 145;
+
+      const isDay = document.documentElement.getAttribute('data-theme') === 'day';
+      const bgColor = isDay ? '#e2e8f0' : '#07090d';
+      const textDim = isDay ? '#475569' : '#64748b';
+      const waveColor = isDay ? '#0284c7' : '#38bdf8';
+      const dividerColor = isDay ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.08)';
+
+      const colLow = isDay ? '#0284c7' : '#38bdf8';
+      const colMid = isDay ? '#059669' : '#34d399';
+      const colHigh = isDay ? '#d97706' : '#fbbf24';
+
+      // 1. 清空背景
+      scopeCtx.clearRect(0, 0, w, h);
+      scopeCtx.fillStyle = bgColor;
+      scopeCtx.fillRect(0, 0, w, h);
+
+      // 获取音频数据
+      if (masterAnalyser && isPoweredOn) {
+        masterAnalyser.getByteTimeDomainData(timeData);
+        masterAnalyser.getByteFrequencyData(freqData);
+      } else {
+        timeData.fill(128);
+        freqData.fill(0);
+      }
+
+      // ================= 上半部：时域合成波形 & 有机颗粒 =================
+      scopeCtx.save();
+      scopeCtx.font = '9px Inter, monospace';
+      scopeCtx.fillStyle = textDim;
+      scopeCtx.fillText('时域合成波形 & 有机颗粒 (TIME-DOMAIN WAVEFORM)', 12, 16);
+
+      // 绘制水滴波纹 (Ripples)
+      for (let i = scopeRipples.length - 1; i >= 0; i--) {
+        const rip = scopeRipples[i];
+        scopeCtx.beginPath();
+        scopeCtx.arc(rip.x, rip.y, rip.r, 0, Math.PI * 2);
+        scopeCtx.strokeStyle = isDay 
+          ? `rgba(2, 132, 199, ${rip.alpha * 0.7})` 
+          : `rgba(56, 189, 248, ${rip.alpha * 0.7})`;
+        scopeCtx.lineWidth = 1.4;
+        scopeCtx.stroke();
+        rip.r += 1.3;
+        rip.alpha -= 0.024;
+        if (rip.alpha <= 0.01 || rip.r >= rip.maxR) {
+          scopeRipples.splice(i, 1);
+        }
+      }
+
+      // 绘制有机微颗粒 (Particles)
+      for (let i = scopeParticles.length - 1; i >= 0; i--) {
+        const p = scopeParticles[i];
+        scopeCtx.beginPath();
+        scopeCtx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        scopeCtx.fillStyle = p.color;
+        scopeCtx.globalAlpha = Math.max(0, p.alpha);
+        if (!isDay) {
+          scopeCtx.shadowColor = p.color;
+          scopeCtx.shadowBlur = 5;
+        }
+        scopeCtx.fill();
+        scopeCtx.globalAlpha = 1.0;
+        scopeCtx.shadowBlur = 0;
+
+        p.x += p.vx;
+        p.y += p.vy;
+        p.alpha -= p.decay;
+        if (p.alpha <= 0.01) {
+          scopeParticles.splice(i, 1);
+        }
+      }
+
+      // 绘制时域波形折线
+      scopeCtx.beginPath();
+      const waveCenterY = 44;
+      const waveAmp = isPoweredOn ? 28 : 2;
+      const count = timeData.length;
+      for (let i = 0; i < count; i++) {
+        const x = 12 + (i / (count - 1)) * (w - 24);
+        let norm = (timeData[i] - 128) / 128; // -1 ~ 1
+        if (!isPoweredOn) {
+          norm = Math.sin(i * 0.12 + Date.now() * 0.002) * 0.06;
+        }
+        const y = waveCenterY + norm * waveAmp;
+        if (i === 0) scopeCtx.moveTo(x, y);
+        else scopeCtx.lineTo(x, y);
+      }
+      scopeCtx.strokeStyle = waveColor;
+      scopeCtx.lineWidth = 1.8;
+      if (!isDay && isPoweredOn) {
+        scopeCtx.shadowColor = 'rgba(56, 189, 248, 0.45)';
+        scopeCtx.shadowBlur = 5;
+      }
+      scopeCtx.stroke();
+      scopeCtx.shadowBlur = 0;
+      scopeCtx.restore();
+
+      // ================= 中部虚线分割线 =================
+      scopeCtx.save();
+      scopeCtx.beginPath();
+      scopeCtx.setLineDash([4, 4]);
+      scopeCtx.moveTo(12, 73);
+      scopeCtx.lineTo(w - 12, 73);
+      scopeCtx.strokeStyle = dividerColor;
+      scopeCtx.lineWidth = 1;
+      scopeCtx.stroke();
+      scopeCtx.restore();
+
+      // ================= 下半部：对数频谱能量 & 低通截止包络 =================
+      scopeCtx.save();
+      scopeCtx.font = '9px Inter, monospace';
+      scopeCtx.fillStyle = textDim;
+      scopeCtx.fillText('-- 对数频谱能量 & 低通截止包络 (LOG SPECTRUM) --', 12, 87);
+
+      // 低通截止频率平滑插值追踪
+      visualCutoff += (targetCutoff - visualCutoff) * 0.14;
+
+      // 对数坐标映射 Cutoff 位置: 40Hz ~ 20000Hz
+      const minLog = Math.log10(40);
+      const maxLog = Math.log10(20000);
+      const curLog = Math.log10(Math.max(40, Math.min(20000, visualCutoff)));
+      const normCutoff = (curLog - minLog) / (maxLog - minLog);
+      const cutoffX = Math.round(14 + normCutoff * (w - 28));
+
+      // Cutoff 标注文字
+      scopeCtx.fillStyle = waveColor;
+      const cutoffText = `Cutoff: ${Math.round(visualCutoff).toLocaleString()} Hz`;
+      const textWidth = scopeCtx.measureText(cutoffText).width;
+      const textX = Math.max(12, Math.min(w - textWidth - 12, cutoffX - textWidth - 6));
+      scopeCtx.fillText(cutoffText, textX, 87);
+
+      // Cutoff 垂直指示线 (实线)
+      scopeCtx.beginPath();
+      scopeCtx.moveTo(cutoffX, 90);
+      scopeCtx.lineTo(cutoffX, h - 8);
+      scopeCtx.strokeStyle = waveColor;
+      scopeCtx.lineWidth = 1.5;
+      scopeCtx.stroke();
+
+      // Cutoff 衰减斜率曲线 (虚线)
+      scopeCtx.beginPath();
+      scopeCtx.setLineDash([3, 3]);
+      scopeCtx.moveTo(cutoffX, 92);
+      const endSlopeX = Math.min(w - 12, cutoffX + (w - cutoffX) * 0.85);
+      scopeCtx.quadraticCurveTo(cutoffX + 16, 96, endSlopeX, h - 10);
+      scopeCtx.strokeStyle = waveColor;
+      scopeCtx.lineWidth = 1.2;
+      scopeCtx.stroke();
+      scopeCtx.setLineDash([]);
+
+      // 32 根对数柱状频谱 (三色分区)
+      const numBars = 32;
+      const barGap = 2;
+      const barWidth = Math.max(2, (w - 24 - (numBars - 1) * barGap) / numBars);
+
+      for (let b = 0; b < numBars; b++) {
+        const bx = 12 + b * (barWidth + barGap);
+        // 对数取样频率 bin
+        const binIndex = Math.min(63, Math.floor(Math.pow(b / (numBars - 1), 1.5) * 63));
+        const rawVal = freqData[binIndex] || 0; // 0 ~ 255
+
+        // 超过 Cutoff 的高频柱进行物理衰减压制
+        let attenuation = 1.0;
+        if (bx > cutoffX) {
+          const dist = bx - cutoffX;
+          attenuation = Math.max(0.04, Math.pow(0.5, dist / 20));
+        }
+
+        const barH = isPoweredOn 
+          ? Math.max(2, (rawVal / 255) * 44 * attenuation)
+          : (2 + Math.sin(b * 0.4 + Date.now() * 0.003) * 1.5);
+
+        const by = h - 8 - barH;
+
+        // 颜色分区: 0~17 蓝, 18~24 绿, 25~31 黄/橙
+        let barColor = colLow;
+        if (b >= 25) barColor = colHigh;
+        else if (b >= 18) barColor = colMid;
+
+        scopeCtx.fillStyle = barColor;
+        scopeCtx.beginPath();
+        const r = Math.min(barWidth / 2, 1.5);
+        if (scopeCtx.roundRect) {
+          scopeCtx.roundRect(bx, by, barWidth, barH, [r, r, 0, 0]);
+        } else {
+          scopeCtx.rect(bx, by, barWidth, barH);
+        }
+        scopeCtx.fill();
+      }
+
+      scopeCtx.restore();
+
+      scopeAnimId = requestAnimationFrame(drawScope);
+    }
+
+    scopeAnimId = requestAnimationFrame(drawScope);
+  }
+
+  function stopScopeVisualizer() {
+    if (scopeAnimId) {
+      cancelAnimationFrame(scopeAnimId);
+      scopeAnimId = null;
     }
   }
 
@@ -538,20 +941,32 @@
     const valCrackle = document.getElementById('sdValCrackle');
     const valDrone = document.getElementById('sdValDrone');
 
+    const btnMuffle = document.getElementById('sdBtnToggleMuffle');
+    const btnWaterDrop = document.getElementById('sdBtnWaterDrop');
+
+    initScopeCanvas();
+
     // 抽屉展开与延时自动收起计时器
     let closeTimer = null;
 
     function openDrawer() {
       clearTimeout(closeTimer);
-      drawer.classList.add('open');
-      drawer.setAttribute('aria-hidden', 'false');
+      if (!isDrawerOpen) {
+        isDrawerOpen = true;
+        drawer.classList.add('open');
+        drawer.setAttribute('aria-hidden', 'false');
+        resizeScopeCanvas();
+        startScopeVisualizer();
+      }
     }
 
     function closeDrawerDelayed() {
       clearTimeout(closeTimer);
       closeTimer = setTimeout(() => {
+        isDrawerOpen = false;
         drawer.classList.remove('open');
         drawer.setAttribute('aria-hidden', 'true');
+        stopScopeVisualizer();
       }, 360);
     }
 
@@ -572,8 +987,10 @@
 
       document.addEventListener('click', (e) => {
         if (!drawer.contains(e.target) && !anchor.contains(e.target)) {
+          isDrawerOpen = false;
           drawer.classList.remove('open');
           drawer.setAttribute('aria-hidden', 'true');
+          stopScopeVisualizer();
         }
       });
     }
@@ -581,7 +998,7 @@
     function updateUIState() {
       if (anchor) anchor.classList.toggle('active', isPoweredOn);
       if (masterToggle) masterToggle.classList.toggle('active', isPoweredOn);
-      if (badge) badge.textContent = isPoweredOn ? (isMuffled ? '隔壁房间' : '沉浸中') : '静音中';
+      updateMuffleState();
       if (valTide) valTide.textContent = Math.round(volTide * 100) + '%';
       if (valCrackle) valCrackle.textContent = Math.round(volCrackle * 100) + '%';
       if (valDrone) valDrone.textContent = Math.round(volDrone * 100) + '%';
@@ -615,6 +1032,35 @@
       });
     }
 
+    // 交互实验按钮
+    if (btnMuffle) {
+      btnMuffle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleManualMuffle();
+      });
+    }
+
+    if (btnWaterDrop) {
+      btnWaterDrop.addEventListener('click', (e) => {
+        e.stopPropagation();
+        playWaterDroplet();
+      });
+    }
+
+    // 预设配方列表事件
+    const presetsList = document.getElementById('sdPresetsList');
+    if (presetsList) {
+      presetsList.addEventListener('click', (e) => {
+        const pill = e.target.closest('.sd-preset-pill');
+        if (!pill) return;
+        e.stopPropagation();
+        const presetName = pill.getAttribute('data-preset');
+        if (presetName) {
+          applyPreset(presetName);
+        }
+      });
+    }
+
     // 滑块监听
     if (sliderTide) {
       sliderTide.value = Math.round(volTide * 100);
@@ -625,6 +1071,7 @@
         if (tideNodes && audioCtx) {
           tideNodes.gain.gain.setTargetAtTime(volTide * 0.16, audioCtx.currentTime, 0.05);
         }
+        document.querySelectorAll('.sd-preset-pill').forEach(b => b.classList.remove('active'));
       });
     }
 
@@ -637,6 +1084,7 @@
         if (crackleNodes && audioCtx) {
           crackleNodes.gain.gain.setTargetAtTime(volCrackle * 0.18, audioCtx.currentTime, 0.05);
         }
+        document.querySelectorAll('.sd-preset-pill').forEach(b => b.classList.remove('active'));
       });
     }
 
@@ -649,6 +1097,7 @@
         if (droneNodes && audioCtx) {
           droneNodes.gain.gain.setTargetAtTime(volDrone * 0.05, audioCtx.currentTime, 0.05);
         }
+        document.querySelectorAll('.sd-preset-pill').forEach(b => b.classList.remove('active'));
       });
     }
 
@@ -673,7 +1122,7 @@
     document.addEventListener('mouseover', (e) => {
       const target = e.target;
       if (!target || !target.closest) return;
-      const el = target.closest('button, a, .contact-item, [role="button"], input[type="range"], .music-tab, .quick-btn, .persona-item, .preset-card, .rc-card, .rc-top-btn, span[data-tooltip]');
+      const el = target.closest('button, a, .contact-item, [role="button"], input[type="range"], .music-tab, .quick-btn, .persona-item, .preset-card, .rc-card, .rc-top-btn, span[data-tooltip], .sd-preset-pill, .sd-action-btn');
       if (el) {
         playHoverParticle();
       }
@@ -683,7 +1132,7 @@
     document.addEventListener('mousedown', (e) => {
       const target = e.target;
       if (!target || !target.closest) return;
-      const el = target.closest('button, a, .contact-item, [role="button"], input[type="range"], .music-tab, .quick-btn, .rc-top-btn');
+      const el = target.closest('button, a, .contact-item, [role="button"], input[type="range"], .music-tab, .quick-btn, .rc-top-btn, .sd-preset-pill, .sd-action-btn');
       if (el) {
         playClickHaptic();
       }
@@ -706,7 +1155,6 @@
     });
 
     window.addEventListener('blur', () => {
-      // 延时校验，避免页面内部 focus 切换引发误判
       setTimeout(() => {
         if (!document.hasFocus()) handleFocusChange(true);
       }, 120);
@@ -734,6 +1182,9 @@
     powerOff: () => { if (isPoweredOn) { isPoweredOn = false; stopAudioEngine(); } },
     playHover: playHoverParticle,
     playClick: playClickHaptic,
-    playCurtain: playAcousticCurtain
+    playCurtain: playAcousticCurtain,
+    playWaterDrop: playWaterDroplet,
+    applyPreset: applyPreset,
+    toggleMuffle: toggleManualMuffle
   };
 })();

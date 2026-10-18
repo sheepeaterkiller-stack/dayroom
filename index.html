@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=1792251000000">
+  <link rel="stylesheet" href="style.css?v=1792255000000">
   <script>
     try {
       if (localStorage.getItem('theme_mode') === 'day') {
@@ -40,12 +40,16 @@
       <span class="sound-status-dot"></span>
     </button>
     
-    <!-- Micro Glassmorphism Mixer Drawer -->
+    <!-- Micro Glassmorphism Mixer Drawer (Expanded Sound Console) -->
     <div class="sound-drawer" id="soundDrawer" aria-hidden="true">
+      <!-- 1. Header -->
       <div class="sd-header">
         <div class="sd-title-wrap">
           <span class="sd-icon">🎧</span>
-          <span class="sd-title">声音空间</span>
+          <div class="sd-titles">
+            <span class="sd-title">声音空间 · 程序化声学台</span>
+            <span class="sd-subtitle">100% 浏览器原生滤波合成 · 零外部音频</span>
+          </div>
           <span class="sd-badge" id="sdStateBadge">静音中</span>
         </div>
         <button class="sd-master-toggle" id="sdMasterToggle" title="开启/关闭声音空间">
@@ -53,54 +57,113 @@
         </button>
       </div>
 
-      <div class="sd-toggles-row">
-        <label class="sd-sub-switch" title="鼠标悬停与点击时产生温和的微动机械触觉反馈">
-          <input type="checkbox" id="sdHapticsToggle" checked>
-          <span class="sd-sub-slider"></span>
-          <span class="sd-sub-label">微交互触觉音效</span>
-        </label>
+      <!-- 2. Acoustic Visualizer Canvas (Time-Domain & Log Spectrum) -->
+      <div class="sd-visual-panel">
+        <div class="sd-visual-header">
+          <span class="sd-visual-title">3轨实时音色调制与隔壁房间低通滤波(Low-Pass Filter)衰减模拟</span>
+          <span class="sd-visual-rate">48kHz / 32-bit Float</span>
+        </div>
+        <div class="sd-canvas-wrap">
+          <canvas id="sdScopeCanvas" width="400" height="150"></canvas>
+        </div>
       </div>
 
+      <!-- 3. Recommended Recipes / Presets -->
+      <div class="sd-presets-panel">
+        <div class="sd-presets-title">
+          <span>治愈配方推荐</span>
+          <span class="sd-presets-hint">一键平滑变奏 (τ = 220ms)</span>
+        </div>
+        <div class="sd-presets-list" id="sdPresetsList">
+          <button class="sd-preset-pill" data-preset="rain" data-tide="70" data-crackle="65" data-drone="20" title="潮汐 70% · 颗粒 65% · 垫音 20%">
+            <span class="sd-p-icon">🌧️</span> 深夜雨窗
+          </button>
+          <button class="sd-preset-pill" data-preset="hearth" data-tide="35" data-crackle="45" data-drone="40" title="潮汐 35% · 颗粒 45% · 垫音 40%">
+            <span class="sd-p-icon">🪵</span> 壁炉夜话
+          </button>
+          <button class="sd-preset-pill" data-preset="space" data-tide="20" data-crackle="10" data-drone="75" title="潮汐 20% · 颗粒 10% · 垫音 75%">
+            <span class="sd-p-icon">🚀</span> 太空漫游
+          </button>
+          <button class="sd-preset-pill" data-preset="ocean" data-tide="85" data-crackle="20" data-drone="30" title="潮汐 85% · 颗粒 20% · 垫音 30%">
+            <span class="sd-p-icon">🌊</span> 海岸退潮
+          </button>
+          <button class="sd-preset-pill" data-preset="focus" data-tide="50" data-crackle="15" data-drone="35" title="潮汐 50% · 颗粒 15% · 垫音 35%">
+            <span class="sd-p-icon">☕</span> 极简专注
+          </button>
+        </div>
+      </div>
+
+      <!-- 4. 3-Track Mixer with Color Accents & Explanations -->
       <div class="sd-tracks">
         <!-- Track 1: Warm Tide -->
-        <div class="sd-track">
+        <div class="sd-track tide">
           <div class="sd-track-info">
-            <span class="sd-track-name">🌊 暖色基底</span>
-            <span class="sd-track-desc">夜雨潮汐 · 11s呼吸起伏</span>
+            <div class="sd-track-main">
+              <span class="sd-track-dot dot-tide"></span>
+              <span class="sd-track-name">暖色基底 Tide</span>
+              <span class="sd-track-tag">布朗噪音 · 11.5s呼吸</span>
+            </div>
+            <span class="sd-slider-val" id="sdValTide">50%</span>
           </div>
           <div class="sd-slider-row">
-            <input type="range" class="sd-slider" id="sdTrackTide" min="0" max="100" value="45">
-            <span class="sd-slider-val" id="sdValTide">45%</span>
+            <input type="range" class="sd-slider slider-tide" id="sdTrackTide" min="0" max="100" value="50">
           </div>
+          <div class="sd-track-desc">多级积分滤波将高频压为醇厚布朗噪音，LFO超低频周期起伏，掩蔽中高频杂音抚平焦虑。</div>
         </div>
 
         <!-- Track 2: Organic Crackle -->
-        <div class="sd-track">
+        <div class="sd-track crackle">
           <div class="sd-track-info">
-            <span class="sd-track-name">🔥 有机颗粒</span>
-            <span class="sd-track-desc">木柴噼啪 ↔ 窗外细雨</span>
+            <div class="sd-track-main">
+              <span class="sd-track-dot dot-crackle"></span>
+              <span class="sd-track-name">有机颗粒 Crackle</span>
+              <span class="sd-track-tag">泊松分布 · 柴火 ↔ 雨滴</span>
+            </div>
+            <span class="sd-slider-val" id="sdValCrackle">15%</span>
           </div>
           <div class="sd-slider-row">
-            <input type="range" class="sd-slider" id="sdTrackCrackle" min="0" max="100" value="30">
-            <span class="sd-slider-val" id="sdValCrackle">30%</span>
+            <input type="range" class="sd-slider slider-crackle" id="sdTrackCrackle" min="0" max="100" value="15">
           </div>
+          <div class="sd-track-desc">泊松随机脉冲与高谐振带通滤波。左推（低频）为篝火木柴噼啪，右推（高密）为窗外细雨。</div>
         </div>
 
         <!-- Track 3: Ambient Drone -->
-        <div class="sd-track">
+        <div class="sd-track drone">
           <div class="sd-track-info">
-            <span class="sd-track-name">🌌 漂移垫音</span>
-            <span class="sd-track-desc">太空舱 · 深度心流</span>
+            <div class="sd-track-main">
+              <span class="sd-track-dot dot-drone"></span>
+              <span class="sd-track-name">漂移垫音 Drone</span>
+              <span class="sd-track-tag">大七度微偏音 · 空间心流</span>
+            </div>
+            <span class="sd-slider-val" id="sdValDrone">35%</span>
           </div>
           <div class="sd-slider-row">
-            <input type="range" class="sd-slider" id="sdTrackDrone" min="0" max="100" value="25">
-            <span class="sd-slider-val" id="sdValDrone">25%</span>
+            <input type="range" class="sd-slider slider-drone" id="sdTrackDrone" min="0" max="100" value="35">
           </div>
+          <div class="sd-track-desc">三组微调微失谐正弦波（D2/A2/C#3 悬留和弦），通过长尾延迟与低通滤波充盈空间。</div>
         </div>
       </div>
 
+      <!-- 5. Interactive Experiment Action Bar (matches user screenshot) -->
+      <div class="sd-actions-dock">
+        <button class="sd-action-btn" id="sdBtnToggleMuffle" title="切换虚掩房门与开门高频通透效果">
+          <span class="sd-ab-icon">🚪</span>
+          <span class="sd-ab-text" id="sdMuffleBtnText">切换至: 隔壁房间 (切换失焦)</span>
+        </button>
+        <button class="sd-action-btn" id="sdBtnWaterDrop" title="程序化物理合成纯净水滴声并激荡波纹">
+          <span class="sd-ab-icon">💧</span>
+          <span class="sd-ab-text">激发声学水滴波纹</span>
+        </button>
+        <span class="sd-transition-label">平滑过渡 τ = 220ms</span>
+      </div>
+
+      <!-- 6. Footer & Haptics toggle -->
       <div class="sd-footer">
-        <span class="sd-room-indicator" id="sdRoomIndicator">🚪 离开标签页将自动虚掩房门（隔壁房间效应）</span>
+        <label class="sd-sub-switch" title="鼠标悬停与点击时产生温和的微动机械触觉反馈">
+          <input type="checkbox" id="sdHapticsToggle" checked>
+          <span class="sd-sub-slider"></span>
+          <span class="sd-sub-label">微交互触觉音效（±4% 粒子音高随机 + 双阶段微动按压）</span>
+        </label>
       </div>
     </div>
   </div>
