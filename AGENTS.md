@@ -240,3 +240,12 @@ The test: Every changed line should trace directly to the user's request.
     5. `asteroids`（🎮 摸鱼游戏）：升级为现代手柄图标，轻快提示语 + 全屏贪吃蛇摸鱼小游戏；
     6. `quit`（✕ 宠物休息）：温和晚安/打盹道别语，平滑淡出隐藏并激活屏幕左下角召唤按钮 `#waifu-toggle`。
   - **视觉胶囊 Dock 重构（Glassmorphism）**：`#waifu-tool` 从原本散落图标升级为半透明悬浮毛玻璃胶囊（`backdrop-filter: blur(14px)`、圆角 `22px`、微光边框与浮起阴影），每个按钮具有微缩放反馈、专属悬浮配色及纯 CSS 极简气泡 Tooltip（`left: calc(100% + 10px)` 向右展开避免遮挡萌宠），且已完美适配白天模式（`[data-theme="day"]`）。
+- **GitHub README 全面重构与仓库安全推送（2026-10-18 晚）**：
+  - **文档现代化重构**：
+    - 彻底清除过时的待办事项（JSON Blob/functions/api.js）说明，重塑为 **AI 对话创作 · 角色卡工作台 v2 · 酷我全网音乐 · Live2D 桌面萌宠 · 开发者工具箱 · 动态氛围壁纸** 六合一功能全景架构；
+    - 更新 4 大原生角色（周图 💡、小说助理 📖、AI写作助手 🖋️、TODO 🔥）及角色卡模型路由矩阵；
+    - 按照用户要求，移除长篇小说展示板块（《欲痕大陆：七罪之源》）及目录树中 `novel/` 引用，使文档更加聚焦纯粹的站点工具属性与系统架构；
+    - 补充全局快捷键体系、目录结构与 Cloudflare Pages 环境变量密钥（`DEEPSEEK_API_KEY`、`GEMINI_API_KEY`、`CHAT_ADMIN_KEY` 等）配置指南。
+  - **凭证安全防护与仓库同步**：
+    - 排查发现本地 `deploy.sh` 含有明文 Cloudflare 部署凭据，及时将其及临时文件（`style-old.css` 等）加入 `.gitignore`，杜绝密钥泄露；
+    - 将完整 Live2D 萌宠系统、预置角色卡、酷我音乐引擎及新 README 纳入版本控制，提交并成功推送到 GitHub 远程仓库 `sheepeaterkiller-stack/dayroom` 的 `master` 分支（`72c3ba3a`）。
