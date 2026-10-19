@@ -41,6 +41,15 @@ When your changes create orphans:
 - Don't remove pre-existing dead code unless asked.
 
 The test: Every changed line should trace directly to the user's request.
+## 项目记忆（2026-10-19 · 氛围工坊 Moodist 整合与旧音乐栏彻底清理）
+- **彻底删除旧音乐栏**：移除原右侧 `#musicDrawer`、`#musicToggle`、Bilibili iframe 嵌入、Kuwo/higequ 搜索点歌播放器、播放列表、一言底栏、Canvas 音频可视化 `#centerVisualizer`，以及后端接口 `functions/music.js`。
+- **全面整合开源 Moodist 氛围工坊**：
+  - 核心风格：严格遵从 Moodist 极致包豪斯极简黑白灰工业风（无花里胡哨配色、45° 斜线条纹 52px 扁平图标方块、激活反色高对比黑白视觉、平滑圆点音量轨、`~ 波动` 动态潮汐波动按键）；
+  - 89 种纯净声音全覆盖：包含自然 (12)、雨声 (8)、动物 (16)、城市 (7)、场所 (16)、出行 (6)、物件 (16)、噪音 (3)、双耳脑波节拍 (5)，音频流直连 `moodist.mvze.net` 全球 Cloudflare CDN（CORS 开放），仓库零 MP3 体积负担；
+  - 声音引擎 (`moodist-engine.js`)：基于 Howler.js 实现多轨并发循环播放、Swell 潮汐 10 秒正弦 LFO 音量呼吸律动、15-90 分钟倒计时睡眠关机（临近结束 3 秒平滑淡出）、6 款精选混音预设与自定义配方存取；
+  - 交互舞台 (`moodist-stage`)：点击右侧 `🌲 氛围` 悬浮钮，主界面平滑左滑（`transform: translateX(-12%) scale(0.98)` + 模糊虚化），氛围工坊全屏滑入；全屏半透明磨砂玻璃 (`background: rgba(10, 12, 16, 0.68); backdrop-filter: blur(16px)`) 完美透显底层的「引力星云」星空粒子动态流动，下拉滚屏沉浸感拉满；
+  - 贴心内置：4-7-8 深度呼吸减压法引导圆环（吸气 4s · 屏息 7s · 呼气 8s）。
+
 ## 项目记忆（2026-08-01）
 
 - dayroom 的 AI写作助手（id `zhangya`）前端发消息必须带 `personaName: p.name`；`functions/chat.js` 按 `personaName === 'AI写作助手'` 使用 `env.ZHANGYA_MODEL || 'deepseek-chat'`，其他角色默认 `env.DEEPSEEK_MODEL || 'deepseek-v4-flash'`。2026-08-01 曾踩坑：前端漏传 personaName + 后端中文被写坏成 `'AI????'`，导致该角色实际仍走 flash；已修复并部署 `db6f7621`。不要把这个角色切回 flash：flash 会在实际生成露骨场景时静默拦截（finish_reason=length、content 为空）。
@@ -68,7 +77,7 @@ The test: Every changed line should trace directly to the user's request.
 ### 站点结构与模块位置（改 UI 前先看这里）
 项目 `Desktop\tod` → Cloudflare Pages 项目 `dayroom` → https://dayroom-50g.pages.dev。index.html 约 7160 行，四个默认角色：周图 💡 `default`、小说助理 📖 `novelist`、AI写作助手 🖋️ `zhangya`、TODO 🔥 `todo`。
 
-- **左侧「工具」抽屉**：2026-08-09 原「待办事项」功能整体删除，换成 toolbox365.cn 导航目录。225 个工具 / 11 分类（全部·文本开发·生活·财务·图片·PDF·音视频·中文·CSS·益智·导航，各带数量），数据内嵌常量 `TOOL_DATA`（短键 `{h,n,d,i,c}`），点击新标签打开 `https://www.toolbox365.cn/tools/<slug>/`。⚠️ 待办与音乐抽屉**共用** `.drawer-overlay` 遮罩和开合逻辑（overlay 点击 / ESC / `closeMusicDrawer()`），删改其中一个必须同步改另一个，否则音乐抽屉报错。
+- **左侧「工具」抽屉**：2026-08-09 原「待办事项」功能整体删除，换成 toolbox365.cn 导航目录。225 个工具 / 11 分类（全部·文本开发·生活·财务·图片·PDF·音视频·中文·CSS·益智·导航，各带数量），数据内嵌常量 `TOOL_DATA`（短键 `{h,n,d,i,c}`），点击新标签打开 `https://www.toolbox365.cn/tools/<slug>/`。使用 `.drawer-overlay` 遮罩与 ESC 快捷关闭。
 - **中间 AI 聊天窗**：打开时若停在非周图角色，快捷按钮（天气/运势/笑话/时间）必须隐藏——`initChat()` 里点过 `renderMessages()` 后要补一行 `updateQuickButtons()`，否则刷新后残留。
 - **右侧音乐抽屉**：放松频道 = Bilibili iframe 嵌入（Lo-fi/钢琴/雨声），搜索点歌 = higequ.com 代理提音频 URL → `<audio>`；播放列表 localStorage，空格播放/暂停、↑↓ 音量，Canvas 频谱（Bilibili 模式用模拟波形）。
 - **壁纸系统**：IndexedDB 存用户上传（图片/视频，上限 100MB），5 个预设，上传自动生成缩略图。

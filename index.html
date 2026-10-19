@@ -3,10 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dayroom — 工具×AI×音乐</title>
+  <title>Dayroom — 工具×AI×氛围工坊</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="moodist.css?v=1792402511247">
   <link rel="stylesheet" href="style.css?v=1792402511247">
   <script>
     try {
@@ -271,11 +272,6 @@
     </div>
   </div>
 
-  <!-- ========== Center Visualizer ========== -->
-  <div class="center-visualizer" id="centerVisualizer">
-    <canvas id="vizCanvas"></canvas>
-  </div>
-
   <!-- ========== Main Content Area ========== -->
   <div class="main-content">
 
@@ -341,129 +337,71 @@
   </div>
   <!-- /Main Content Area -->
 
-  <!-- ========== Music Toggle (Right Edge) ========== -->
-  <button class="music-toggle" id="musicToggle" title="音乐播放器">🎵 音乐</button>
+  <!-- ========== Moodist Toggle (Right Edge) ========== -->
+  <button class="moodist-toggle" id="moodistToggle" title="氛围工坊 (Moodist)">
+    <span>🌲 氛围</span>
+    <span class="moodist-badge" id="moodistBadge">0</span>
+  </button>
 
-  <!-- ========== Music Drawer ========== -->
-  <div class="music-drawer" id="musicDrawer">
-    <button class="music-close" id="musicClose" title="关闭">✕</button>
-    <div class="music-drawer-inner">
-      <div class="music-player">
-      <!-- Mode Toggle -->
-      <div class="mode-toggle-bar">
-        <button class="mode-toggle-btn active" data-mode="channel">📻 放松频道</button>
-        <button class="mode-toggle-btn" data-mode="search">🔍 搜索点歌</button>
-      </div>
-
-      <!-- ====== Channel Section ====== -->
-      <div class="channel-section" id="channelSection">
-        <div class="player-header">
-          <div class="player-title">🎵 放松音乐</div>
-          <div class="now-playing" id="nowPlaying">准备开始…</div>
-        </div>
-
-        <!-- Category Tabs -->
-        <div class="music-tabs" id="musicTabs">
-          <button class="music-tab active" data-cat="lofi">🎵 Lo-fi</button>
-          <button class="music-tab" data-cat="piano">🎹 钢琴</button>
-          <button class="music-tab" data-cat="rain">🌧️ 雨声</button>
-          <button class="music-tab" data-cat="ambient">🌌 氛围</button>
-        </div>
-
-        <!-- Controls -->
-        <div class="player-controls">
-          <div class="play-btn-group">
-            <button class="btn-step" id="btnPrevStream" title="上一首">⏮</button>
-            <button class="btn-play" id="btnPlay" title="播放">▶</button>
-            <button class="btn-step" id="btnNextStream" title="下一首">⏭</button>
-          </div>
-          <div class="volume-section">
-            <span class="volume-icon" id="volumeIcon" title="静音/恢复音量">🔊</span>
-            <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="40" title="调节音量">
-          </div>
-        </div>
-
-        <!-- Bilibili Player -->
-        <div class="bili-container video-off" id="biliContainer">
-          <iframe id="biliFrame" src=""
-                  allow="autoplay"
-                  allowfullscreen="true"
-                  style="display:none;">
-          </iframe>
-          <div class="bili-loading" id="biliLoading">🎵 选择一个分类开始播放…</div>
-
-          <!-- Audio-only mini bar (shown when video is off) -->
-          <div class="audio-mini-bar">
-            <div class="audio-mini-cover">🎵</div>
-            <div class="audio-mini-info">
-              <div class="audio-mini-title" id="miniTitle">选择一个分类开始播放</div>
-              <div class="audio-mini-sub" id="miniSub">纯音频 · 节省流量</div>
-            </div>
-          </div>
-          <!-- Video toggle button (visible in both modes) -->
-          <button class="btn-video-toggle" id="btnVideoToggle" title="开启画面">📺 看画面</button>
+  <!-- ========== Moodist Stage (Full Screen Slide Workshop) ========== -->
+  <div class="moodist-stage" id="moodistStage">
+    <!-- Top Sticky Control Bar -->
+    <header class="moodist-topbar">
+      <div class="moodist-topbar-left">
+        <button class="moodist-back-btn" id="moodistBackBtn" title="返回对话界面">← 返回对话</button>
+        <div class="moodist-brand">
+          <span class="moodist-title">氛围工坊</span>
+          <span class="moodist-count-tag" id="moodistCountTag">就绪</span>
         </div>
       </div>
 
-      <!-- ====== Search Section ====== -->
-      <div class="search-section" id="searchSection">
-        <div class="search-input-wrap">
-          <div class="search-input-box">
-            <input type="text" id="searchInput"
-                   placeholder="搜索歌曲、歌手…"
-                   autocomplete="off"
-                   maxlength="100">
-            <button class="search-clear-btn" id="searchClearBtn" title="清空搜索" style="display:none;">✕</button>
-          </div>
-          <button class="btn-search" id="btnSearch">🔍 搜索</button>
-        </div>
-        <div id="searchResults">
-          <div class="search-status">💡 输入关键词搜索歌曲</div>
-        </div>
-        <!-- Custom audio player for search results -->
-        <div class="search-player" id="searchPlayer">
-          <div class="sp-cover" id="spCover">🎵</div>
-          <div class="sp-center">
-            <div class="sp-name" id="spName">选择一首歌曲</div>
-            <div class="sp-artist" id="spArtist"></div>
-            <div class="sp-progress-wrap">
-              <span class="sp-time" id="spCur">0:00</span>
-              <input type="range" class="sp-progress" id="spProgress" min="0" max="100" value="0">
-              <span class="sp-time" id="spDur">0:00</span>
-            </div>
-          </div>
-          <div class="sp-controls">
-            <button class="sp-step" id="spPrev" title="上一首">⏮</button>
-            <button class="sp-play" id="spPlay" title="播放">▶</button>
-            <button class="sp-step" id="spNext" title="下一首">⏭</button>
-          </div>
-        </div>
-        <!-- Volume control for search mode -->
-        <div class="sp-volume-row">
-          <span class="volume-icon" id="spVolumeIcon" title="静音/恢复音量">🔊</span>
-          <input type="range" class="volume-slider" id="spVolumeSlider" min="0" max="100" value="40" title="调节音量">
+      <div class="moodist-topbar-center" id="moodistPresetsBar">
+        <!-- Preset chips populated dynamically -->
+      </div>
+
+      <div class="moodist-topbar-right">
+        <button class="moodist-action-btn" id="moodistShuffleBtn" title="随机混音推荐">🎲 灵感漫游</button>
+        <button class="moodist-action-btn" id="moodistMasterPlayBtn" title="播放/暂停全部">▶ 播放</button>
+        <select class="moodist-action-btn" id="moodistTimerSelect" title="定时关闭">
+          <option value="0">⏱ 倒计时</option>
+          <option value="15">15 分钟</option>
+          <option value="30">30 分钟</option>
+          <option value="45">45 分钟</option>
+          <option value="60">60 分钟</option>
+          <option value="90">90 分钟</option>
+        </select>
+        <button class="moodist-action-btn" id="moodistBreathBtn" title="4-7-8 呼吸减压引导">🌬 呼吸</button>
+        <button class="moodist-action-btn" id="moodistClearBtn" title="清空所有声音">🗑 清空</button>
+        <div class="moodist-master-vol" title="主音量">
+          <span class="moodist-vol-icon" id="moodistMuteBtn">🔊</span>
+          <input type="range" class="moodist-range-slider" id="moodistMasterVolSlider" min="0" max="100" value="80">
         </div>
       </div>
-      <!-- ====== Playlist Section ====== -->
-      <div class="playlist-section" id="playlistSection">
-        <div class="playlist-header">
-          <span class="playlist-title">📋 播放列表</span>
-          <div class="playlist-controls">
-            <button class="playlist-mode-btn" id="playlistModeBtn" title="切换循环模式">🔁 列表循环</button>
-            <button class="playlist-clear-btn" id="playlistClearBtn" title="清空播放列表">🗑️ 清空</button>
-          </div>
-        </div>
-        <div id="playlistContent">
-          <div class="playlist-status">💡 搜索歌曲后点击「+」添加到播放列表</div>
-        </div>
+    </header>
+
+    <!-- Category Pill Navigation Bar -->
+    <nav class="moodist-cat-bar" id="moodistCatBar">
+      <button class="moodist-cat-chip active" data-cat="all">全部</button>
+      <!-- Category chips populated dynamically -->
+    </nav>
+
+    <!-- Sound Catalog Scrolling Container -->
+    <main class="moodist-catalog" id="moodistCatalog">
+      <!-- Categories and Sound cards populated dynamically -->
+    </main>
+  </div>
+
+  <!-- 4-7-8 Breathing Modal -->
+  <div class="moodist-modal-overlay" id="moodistBreathModal">
+    <div class="moodist-modal">
+      <button class="moodist-modal-close" id="moodistBreathClose">✕</button>
+      <div style="font-size:16px;font-weight:600;margin-bottom:4px;color:#fff;">4-7-8 呼吸减压法</div>
+      <div style="font-size:12px;color:#a1a1aa;text-align:center;">跟随圆圈节奏，吸气 4 秒 · 屏息 7 秒 · 呼气 8 秒</div>
+      <div class="moodist-breath-circle" id="breathCircle">
+        <div class="moodist-breath-action" id="breathAction">准备</div>
+        <div class="moodist-breath-time" id="breathTime">3</div>
       </div>
-    </div>
-
-    <!-- Hitokoto 一言（音乐面板底部） -->
-    <div class="hitokoto-bar" id="hitokotoBar" title="点一下换一句"></div>
-
-    <!-- Hidden Audio Player for Search Results (kept for compatibility) -->
-    <audio id="audioPlayer" preload="none" style="display:none;"></audio>
+      <button class="moodist-action-btn" id="breathToggleBtn" style="width:120px;height:36px;font-size:13px;">开始练习</button>
     </div>
   </div>
 
@@ -703,936 +641,6 @@
           : '当前角色暂无对话';
       }
 
-      // ==================== Center Visualizer (Canvas + Web Audio) ====================
-      const vizContainer = document.getElementById('centerVisualizer');
-      const vizCanvas = document.getElementById('vizCanvas');
-      const vizCtx = vizCanvas.getContext('2d');
-      let vizAnimId = null;
-      let audioCtx = null;
-      let analyser = null;
-      let vizActive = false; // true when anything is playing
-
-      function setupCanvas() {
-        const rect = vizContainer.getBoundingClientRect();
-        vizCanvas.width = rect.width * devicePixelRatio;
-        vizCanvas.height = rect.height * devicePixelRatio;
-        vizCtx.scale(devicePixelRatio, devicePixelRatio);
-      }
-      setupCanvas();
-      window.addEventListener('resize', setupCanvas);
-
-      // Draw idle flat line
-      function drawIdleLine() {
-        const W = vizContainer.clientWidth;
-        const H = vizContainer.clientHeight;
-        vizCtx.clearRect(0, 0, W, H);
-        vizCtx.strokeStyle = 'rgba(108,92,231,0.45)';
-        vizCtx.lineWidth = 4;
-        vizCtx.lineCap = 'round';
-        vizCtx.beginPath();
-        vizCtx.moveTo(0, H / 2);
-        vizCtx.lineTo(W, H / 2);
-        vizCtx.stroke();
-      }
-      drawIdleLine();
-
-      // ==================== Mode Toggle ====================
-      let playerMode = 'channel'; // 'channel' | 'search'
-      const channelSection = document.getElementById('channelSection');
-      const searchSection = document.getElementById('searchSection');
-      const searchInput = document.getElementById('searchInput');
-      const searchClearBtn = document.getElementById('searchClearBtn');
-      const btnSearch = document.getElementById('btnSearch');
-      const searchResults = document.getElementById('searchResults');
-      const audioPlayer = document.getElementById('audioPlayer');
-      let currentSongId = null;
-      let searchTimeout = null;
-
-      function stopSearchAudio() {
-        if (audioPlayer && !audioPlayer.paused) {
-          audioPlayer.pause();
-        }
-        if (typeof spSetPlaying === 'function') {
-          spSetPlaying(false);
-        }
-        if (typeof renderPlaylist === 'function') {
-          renderPlaylist();
-        }
-      }
-
-      function stopChannelAudio() {
-        if (isPlaying && typeof pause === 'function') {
-          pause();
-        }
-      }
-
-      // Mode toggle buttons
-      document.querySelectorAll('.mode-toggle-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const mode = btn.dataset.mode;
-          if (mode === playerMode) return;
-
-          playerMode = mode;
-          document.querySelectorAll('.mode-toggle-btn').forEach(b =>
-            b.classList.toggle('active', b.dataset.mode === mode));
-
-          if (mode === 'channel') {
-            channelSection.classList.remove('hidden');
-            searchSection.classList.remove('visible');
-            stopSearchAudio();
-          } else {
-            channelSection.classList.add('hidden');
-            searchSection.classList.add('visible');
-            stopChannelAudio();
-            searchInput.focus();
-          }
-        });
-      });
-
-      // ==================== Playlist System ====================
-      const LS_KEY_PLAYLIST = "dayroom_playlist";
-      const LS_KEY_PLAYMODE = "dayroom_playmode";
-      let playlist = [];
-      let playMode = "sequential"; // sequential | single | shuffle
-
-      const PLAY_MODES = [
-        { mode: "sequential", label: "🔁 列表循环" },
-        { mode: "single", label: "🔂 单曲循环" },
-        { mode: "shuffle", label: "🔀 随机播放" }
-      ];
-
-      function updatePlayModeBtn() {
-        const cur = PLAY_MODES.find(m => m.mode === playMode) || PLAY_MODES[0];
-        const btn = document.getElementById("playlistModeBtn");
-        if (btn) btn.textContent = cur.label;
-      }
-
-      function loadPlaylist() {
-        try { var saved = localStorage.getItem(LS_KEY_PLAYLIST); if (saved) playlist = JSON.parse(saved); } catch(e) {}
-        try { saved = localStorage.getItem(LS_KEY_PLAYMODE); if (saved) playMode = saved; } catch(e) {}
-        updatePlayModeBtn();
-      }
-
-      function savePlaylist() {
-        try { localStorage.setItem(LS_KEY_PLAYLIST, JSON.stringify(playlist)); } catch(e) {}
-        renderPlaylist();
-      }
-
-      function isInPlaylist(rid) {
-        return playlist.some(function(s){ return String(s.rid) === String(rid); });
-      }
-
-      function addToPlaylist(song) {
-        if (isInPlaylist(song.rid)) return;
-        playlist.push({ rid: String(song.rid), name: song.name, artist: song.artist });
-        savePlaylist();
-      }
-
-      function removeFromPlaylist(rid) {
-        playlist = playlist.filter(function(s){ return String(s.rid) !== String(rid); });
-        savePlaylist();
-        if (searchResults) {
-          const match = searchResults.querySelector('.song-item[data-rid="' + rid + '"] .btn-add-playlist');
-          if (match) {
-            match.classList.remove('added');
-            match.textContent = '+';
-            match.title = '添加到播放列表';
-          }
-        }
-      }
-
-      function clearPlaylist() {
-        playlist = [];
-        savePlaylist();
-        if (searchResults) {
-          searchResults.querySelectorAll('.btn-add-playlist').forEach(btn => {
-            btn.classList.remove('added');
-            btn.textContent = '+';
-            btn.title = '添加到播放列表';
-          });
-        }
-      }
-
-      function renderPlaylist() {
-        var c = document.getElementById("playlistContent");
-        if (!c) return;
-        if (playlist.length === 0) {
-          c.innerHTML = '<div class="playlist-status">💡 搜索歌曲后点击「+」添加到播放列表</div>';
-          return;
-        }
-        var h = '<ul class="playlist-items">';
-        for (var pi = 0; pi < playlist.length; pi++) {
-          var song = playlist[pi];
-          var isCurrent = String(song.rid) === String(currentSongId);
-          var isPlayingNow = isCurrent && !audioPlayer.paused;
-          h += '<li class="playlist-item' + (isCurrent ? ' playing' : '') + '"';
-          h += ' data-rid="' + hEscape(song.rid) + '"';
-          h += ' data-name="' + hEscape(song.name) + '"';
-          h += ' data-artist="' + hEscape(song.artist) + '">';
-          h += '<span class="playlist-idx">' + (pi + 1) + '</span>';
-          h += '<div class="playlist-info">';
-          h += '<div class="playlist-name">' + hEscape(song.name) + '</div>';
-          h += '<div class="playlist-artist">' + hEscape(song.artist) + '</div>';
-          h += '</div>';
-          h += '<button class="playlist-play-btn' + (isPlayingNow ? ' is-playing' : '') + '" title="' + (isPlayingNow ? '暂停' : '播放') + '">' + (isPlayingNow ? '⏸' : '▶') + '</button>';
-          h += '<button class="playlist-remove-btn" title="从列表移除">✕</button>';
-          h += '</li>';
-        }
-        h += '</ul>';
-        c.innerHTML = h;
-      }
-
-      function playSongFromPlaylist(song) {
-        stopChannelAudio();
-        currentSongId = String(song.rid);
-        document.getElementById("nowPlaying").textContent = song.name + " — " + song.artist;
-        spName.textContent = song.name;
-        spArtist.textContent = song.artist;
-        spCover.textContent = "🎵";
-        spPlayer.classList.add("show");
-        spProgress.value = 0;
-        spCur.textContent = "0:00";
-        spDur.textContent = "—";
-        spSetPlaying(false);
-        searchResults.querySelectorAll(".song-item").forEach(function(el){ el.classList.remove("playing"); });
-        var match = searchResults.querySelector('.song-item[data-rid="' + song.rid + '"]');
-        if (match) match.classList.add("playing");
-        renderPlaylist();
-
-        fetch(MUSIC_PROXY + "?action=url&rid=" + song.rid)
-          .then(function(r){ return r.json(); })
-          .then(function(data){
-            if (!data.url) throw new Error("No URL");
-            audioPlayer.src = data.url;
-            audioPlayer.play().catch(function(e){
-              console.warn("自动播放被拦截:", e.message);
-              spArtist.textContent = "👆 请点击右侧播放按钮";
-            });
-          }).catch(function(err){
-            console.error("获取播放链接失败:", err.message);
-            spArtist.textContent = "播放失败，请重试";
-          });
-      }
-
-      function toggleSongInPlaylist(song) {
-        if (String(song.rid) === String(currentSongId) && audioPlayer.src) {
-          if (audioPlayer.paused) {
-            stopChannelAudio();
-            audioPlayer.play().catch(function(e){ console.warn("播放失败:", e.message); });
-          } else {
-            audioPlayer.pause();
-          }
-          return;
-        }
-        playSongFromPlaylist(song);
-      }
-
-      function playNextInPlaylist() {
-        if (playlist.length === 0) return;
-        var currentIdx = -1;
-        for (var pi = 0; pi < playlist.length; pi++) {
-          if (String(playlist[pi].rid) === String(currentSongId)) { currentIdx = pi; break; }
-        }
-        var nextIdx = 0;
-        if (playMode === "shuffle") {
-          nextIdx = Math.floor(Math.random() * playlist.length);
-        } else {
-          nextIdx = (currentIdx + 1) % playlist.length;
-          if (currentIdx < 0) nextIdx = 0;
-        }
-        var nextSong = playlist[nextIdx];
-        if (nextSong) playSongFromPlaylist(nextSong);
-      }
-
-      function playPrevInPlaylist() {
-        if (playlist.length === 0) return;
-        var currentIdx = -1;
-        for (var pi = 0; pi < playlist.length; pi++) {
-          if (String(playlist[pi].rid) === String(currentSongId)) { currentIdx = pi; break; }
-        }
-        var prevIdx = 0;
-        if (playMode === "shuffle") {
-          prevIdx = Math.floor(Math.random() * playlist.length);
-        } else {
-          prevIdx = (currentIdx - 1 + playlist.length) % playlist.length;
-          if (currentIdx < 0) prevIdx = playlist.length - 1;
-        }
-        var prevSong = playlist[prevIdx];
-        if (prevSong) playSongFromPlaylist(prevSong);
-      }
-
-      // Init playlist
-      loadPlaylist();
-
-      // Playlist event delegation
-      document.addEventListener("click", function(e) {
-        var item = e.target.closest(".playlist-item");
-        if (!item) return;
-        var rid = item.dataset.rid;
-        var name = item.dataset.name;
-        var artist = item.dataset.artist;
-        if (e.target.closest(".playlist-remove-btn")) { removeFromPlaylist(rid); return; }
-        if (e.target.closest(".playlist-play-btn") || e.target === item || item.contains(e.target)) {
-          toggleSongInPlaylist({ rid: rid, name: name, artist: artist });
-        }
-      });
-
-      // Playlist mode toggle (3 modes)
-      var playlistModeBtn = document.getElementById("playlistModeBtn");
-      playlistModeBtn.addEventListener("click", function() {
-        var idx = 0;
-        for (var i = 0; i < PLAY_MODES.length; i++) {
-          if (PLAY_MODES[i].mode === playMode) { idx = i; break; }
-        }
-        idx = (idx + 1) % PLAY_MODES.length;
-        playMode = PLAY_MODES[idx].mode;
-        updatePlayModeBtn();
-        try { localStorage.setItem(LS_KEY_PLAYMODE, playMode); } catch(e) {}
-      });
-
-      // Clear playlist
-      document.getElementById("playlistClearBtn").addEventListener("click", function() {
-        if (playlist.length === 0) return;
-        if (confirm("确定清空播放列表吗？")) { clearPlaylist(); }
-      });
-
-      // ==================== Music Search ====================
-      // Music search via Function → higequ.com
-      const MUSIC_PROXY = '/music';
-
-      async function searchSongs(keyword) {
-        try {
-          const url = `${MUSIC_PROXY}?action=search&keyword=${encodeURIComponent(keyword)}`;
-          console.log('🔍 搜索:', url);
-          const resp = await fetch(url);
-          if (!resp.ok) throw new Error('HTTP ' + resp.status);
-          const data = await resp.json();
-          console.log('📦 结果:', Array.isArray(data) ? data.length + '首' : data);
-          return Array.isArray(data) ? data : [];
-        } catch (e) {
-          console.error('❌ 搜索失败:', e.message);
-          return [];
-        }
-      }
-
-      // Inline safe HTML escaping
-      function hEscape(str) {
-        return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-      }
-
-      function renderSearchResults(songs) {
-        if (!songs || songs.length === 0) {
-          searchResults.innerHTML = '<div class="search-status">😕 没有找到相关歌曲<br><small>试试其他关键词</small></div>';
-          return;
-        }
-
-        searchResults.innerHTML = `
-          <ul class="search-results">
-            ${songs.map((song) => {
-              const name = hEscape(song.name || song.title || '未知歌曲');
-              const artist = hEscape(song.artist || song.author || '未知歌手');
-              const rid = song.rid || song.id || '';
-              const isActive = (rid && String(rid) === String(currentSongId)) ? ' playing' : '';
-              const inList = isInPlaylist(rid);
-              const btnClass = inList ? 'btn-add-playlist added' : 'btn-add-playlist';
-              const btnText = inList ? '✓' : '+';
-              const btnTitle = inList ? '从播放列表移除' : '添加到播放列表';
-
-              return `
-                <li class="song-item${isActive}"
-                    data-rid="${rid}"
-                    data-name="${name}"
-                    data-artist="${artist}">
-                  <span style="width:40px;height:40px;border-radius:6px;background:rgba(255,255,255,0.05);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1rem;">🎵</span>
-                  <div class="song-info">
-                    <div class="song-name">${name}</div>
-                    <div class="song-artist">${artist}</div>
-                  </div>
-                  <button class="${btnClass}" title="${btnTitle}">${btnText}</button>
-                </li>`;
-            }).join('')}
-          </ul>`;
-      }
-
-      // Clear search button
-      if (searchClearBtn) {
-        searchClearBtn.addEventListener('click', () => {
-          searchInput.value = '';
-          searchClearBtn.style.display = 'none';
-          searchResults.innerHTML = '<div class="search-status">💡 输入关键词搜索歌曲</div>';
-          searchInput.focus();
-        });
-      }
-
-      // Debounced search as user types
-      searchInput.addEventListener('input', () => {
-        clearTimeout(searchTimeout);
-        const keyword = searchInput.value.trim();
-        if (searchClearBtn) {
-          searchClearBtn.style.display = searchInput.value.length > 0 ? 'flex' : 'none';
-        }
-        if (!keyword) {
-          searchResults.innerHTML = '<div class="search-status">💡 输入关键词搜索歌曲</div>';
-          return;
-        }
-        searchTimeout = setTimeout(async () => {
-          searchResults.innerHTML = '<div class="search-status">🔍 搜索中…</div>';
-          const songs = await searchSongs(keyword);
-          if (songs.length > 0) {
-            try {
-              renderSearchResults(songs);
-            } catch (re) {
-              console.error('❌ 渲染错误:', re.message);
-              searchResults.innerHTML = '<div class="search-status">⚠️ 渲染出错: ' + re.message + '</div>';
-            }
-          } else {
-            searchResults.innerHTML = '<div class="search-status">😕 没有找到相关歌曲<br><small>请尝试其他关键词</small></div>';
-          }
-        }, 400);
-      });
-
-      // Search button click
-      btnSearch.addEventListener('click', async () => {
-        const keyword = searchInput.value.trim();
-        if (!keyword) return;
-        searchResults.innerHTML = '<div class="search-status">🔍 搜索中…</div>';
-        const songs = await searchSongs(keyword);
-        renderSearchResults(songs);
-      });
-
-      // Enter key in search
-      searchInput.addEventListener('keydown', async (e) => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          const keyword = searchInput.value.trim();
-          if (!keyword) return;
-          searchResults.innerHTML = '<div class="search-status">🔍 搜索中…</div>';
-          const songs = await searchSongs(keyword);
-          renderSearchResults(songs);
-        }
-      });
-
-      // ===== Custom Search Audio Player =====
-      const spPlayer = document.getElementById('searchPlayer');
-      const spCover = document.getElementById('spCover');
-      const spName = document.getElementById('spName');
-      const spArtist = document.getElementById('spArtist');
-      const spProgress = document.getElementById('spProgress');
-      const spCur = document.getElementById('spCur');
-      const spDur = document.getElementById('spDur');
-      const spPlay = document.getElementById('spPlay');
-      const spPrev = document.getElementById('spPrev');
-      const spNext = document.getElementById('spNext');
-      let spPlaying = false;
-      let spSeeking = false;
-
-      function fmtTime(s) {
-        if (!isFinite(s) || s < 0) return '0:00';
-        const m = Math.floor(s / 60);
-        return m + ':' + String(Math.floor(s % 60)).padStart(2, '0');
-      }
-
-      function spSetPlaying(p) {
-        spPlaying = p;
-        if (spPlay) {
-          spPlay.textContent = p ? '⏸' : '▶';
-          spPlay.classList.toggle('playing', p);
-        }
-        if (spCover) {
-          spCover.classList.toggle('playing', p);
-        }
-        updateVizState();
-      }
-
-      if (spPrev) spPrev.addEventListener('click', playPrevInPlaylist);
-      if (spNext) spNext.addEventListener('click', playNextInPlaylist);
-
-      if (spPlay) {
-        spPlay.addEventListener('click', () => {
-          if (!audioPlayer.src) {
-            if (playlist.length > 0) {
-              playSongFromPlaylist(playlist[0]);
-            }
-            return;
-          }
-          if (spPlaying) {
-            audioPlayer.pause();
-          } else {
-            stopChannelAudio();
-            audioPlayer.play().catch(function(e){ console.warn("播放失败:", e.message); });
-          }
-        });
-      }
-
-      audioPlayer.addEventListener('timeupdate', () => {
-        if (!spSeeking && audioPlayer.duration) {
-          spProgress.value = (audioPlayer.currentTime / audioPlayer.duration) * 100;
-          spCur.textContent = fmtTime(audioPlayer.currentTime);
-        }
-      });
-      audioPlayer.addEventListener('loadedmetadata', () => {
-        spDur.textContent = fmtTime(audioPlayer.duration);
-      });
-      spProgress.addEventListener('input', () => {
-        spSeeking = true;
-        spCur.textContent = fmtTime((spProgress.value / 100) * (audioPlayer.duration || 0));
-      });
-      spProgress.addEventListener('change', () => {
-        if (audioPlayer.duration) audioPlayer.currentTime = (spProgress.value / 100) * audioPlayer.duration;
-        spSeeking = false;
-      });
-
-      audioPlayer.addEventListener('play', () => {
-        spSetPlaying(true);
-        renderPlaylist();
-      });
-      audioPlayer.addEventListener('pause', () => {
-        spSetPlaying(false);
-        renderPlaylist();
-      });
-      audioPlayer.addEventListener('ended', () => {
-        spSetPlaying(false);
-        spProgress.value = 0;
-        spCur.textContent = '0:00';
-        if (playMode === "single") {
-          audioPlayer.currentTime = 0;
-          audioPlayer.play().catch(function(){});
-        } else {
-          playNextInPlaylist();
-        }
-      });
-
-      // Click on search result → fetch audio URL via Proxy, play in custom player
-      searchResults.addEventListener('click', async (e) => {
-        const songItem = e.target.closest('.song-item');
-        if (!songItem) return;
-
-        // + / ✓ button: toggle add/remove playlist
-        if (e.target.closest('.btn-add-playlist')) {
-          const btn = e.target.closest('.btn-add-playlist');
-          const _rid = songItem.dataset.rid;
-          const _name = songItem.dataset.name;
-          const _artist = songItem.dataset.artist;
-          if (isInPlaylist(_rid)) {
-            removeFromPlaylist(_rid);
-            btn.classList.remove('added');
-            btn.textContent = '+';
-            btn.title = '添加到播放列表';
-          } else {
-            addToPlaylist({ rid: _rid, name: _name, artist: _artist });
-            btn.classList.add('added');
-            btn.textContent = '✓';
-            btn.title = '从播放列表移除';
-          }
-          return;
-        }
-
-        const rid = songItem.dataset.rid;
-        const songName = songItem.dataset.name;
-        const songArtist = songItem.dataset.artist;
-        if (!rid) return;
-
-        // Automatically ensure song is in playlist
-        if (!isInPlaylist(rid)) {
-          addToPlaylist({ rid: rid, name: songName, artist: songArtist });
-          const addBtn = songItem.querySelector('.btn-add-playlist');
-          if (addBtn) {
-            addBtn.classList.add('added');
-            addBtn.textContent = '✓';
-            addBtn.title = '从播放列表移除';
-          }
-        }
-
-        playSongFromPlaylist({ rid: rid, name: songName, artist: songArtist });
-      });
-
-      // ==================== Music Player ====================
-      // Curated Bilibili videos for each category (BV numbers)
-      const STREAMS = {
-        lofi: [
-          { bvid: 'BV1oy411Y7vP', name: 'Positive Study Lofi' },
-          { bvid: 'BV1vK4y1z7LF', name: 'Focus Time Lofi (8小时)' },
-          { bvid: 'BV19w411S7JQ', name: 'Chill Lofi Hip Hop (3小时)' },
-        ],
-        piano: [
-          { bvid: 'BV1qC4y1C7N1', name: '钢琴 + 雨声 放松音乐' },
-          { bvid: 'BV1Hm4y1c7EG', name: '唯美钢琴曲 · 治愈轻音乐' },
-          { bvid: 'BV1uM4y1W7oT', name: '安静钢琴 · 学习冥想' },
-        ],
-        rain: [
-          { bvid: 'BV1LXVd6HErM', name: '柔和雨声 · 白噪音' },
-          { bvid: 'BV1QwftYHEaf', name: '雨声白噪音 · 舒适卧室' },
-          { bvid: 'BV1d6qsBQE3v', name: '432Hz 雨声 (8小时)' },
-        ],
-        ambient: [
-          { bvid: 'BV1vVvCBKER3', name: '太空科幻 Ambient' },
-          { bvid: 'BV14dVi6mEFs', name: '深空漫游 · 冥想氛围' },
-          { bvid: 'BV1SaSfBuEfL', name: '云端边缘 · 空灵氛围' },
-        ],
-      };
-
-      let currentCategory = 'lofi';
-      let currentTrackIdx = 0;
-      let isPlaying = false;
-      let volume = 40;
-      // Track user interaction for autoplay policy
-      let userInteracted = false;
-
-      const btnPlay = document.getElementById('btnPlay');
-      const btnPrevStream = document.getElementById('btnPrevStream');
-      const btnNextStream = document.getElementById('btnNextStream');
-      const volumeSlider = document.getElementById('volumeSlider');
-      const volumeIcon = document.getElementById('volumeIcon');
-      const spVolumeSlider = document.getElementById('spVolumeSlider');
-      const spVolumeIcon = document.getElementById('spVolumeIcon');
-      const nowPlaying = document.getElementById('nowPlaying');
-      const musicTabs = document.getElementById('musicTabs');
-      const biliFrame = document.getElementById('biliFrame');
-      const biliContainer = document.getElementById('biliContainer');
-      const biliLoading = document.getElementById('biliLoading');
-      const btnVideoToggle = document.getElementById('btnVideoToggle');
-      const miniTitle = document.getElementById('miniTitle');
-      const miniSub = document.getElementById('miniSub');
-
-      function cycleStream(delta) {
-        userInteracted = true;
-        const list = STREAMS[currentCategory];
-        currentTrackIdx = (currentTrackIdx + delta + list.length) % list.length;
-        stopSearchAudio();
-        const stream = getCurrentStream();
-        loadStream(stream.bvid, stream.name);
-        setPlayingState(true);
-      }
-
-      if (btnPrevStream) btnPrevStream.addEventListener('click', () => cycleStream(-1));
-      if (btnNextStream) btnNextStream.addEventListener('click', () => cycleStream(1));
-
-      // ==================== Video Toggle ====================
-      let videoOn = false; // default: audio only, save bandwidth
-
-      function setVideoMode(on) {
-        videoOn = on;
-        if (on) {
-          biliContainer.classList.remove('video-off');
-          biliContainer.classList.add('video-on');
-          miniSub.textContent = '正在播放画面';
-        } else {
-          biliContainer.classList.remove('video-on');
-          biliContainer.classList.add('video-off');
-          miniSub.textContent = '纯音频 · 节省流量';
-        }
-        updateVideoToggleBtn();
-      }
-
-      function updateVideoToggleBtn() {
-        if (videoOn) {
-          btnVideoToggle.textContent = '🎧 只听';
-          btnVideoToggle.title = '关闭画面，节省流量';
-          btnVideoToggle.classList.add('floating-close');
-        } else {
-          btnVideoToggle.textContent = '📺 看画面';
-          btnVideoToggle.title = '开启画面';
-          btnVideoToggle.classList.remove('floating-close');
-        }
-      }
-
-      btnVideoToggle.addEventListener('click', () => {
-        const nextState = !videoOn;
-        setVideoMode(nextState);
-        if (nextState && !isPlaying) {
-          play();
-        }
-      });
-
-      // Update mini bar info when changing streams
-      function updateMiniBar(name) {
-        miniTitle.textContent = name || '正在播放…';
-      }
-
-      // Initialize: audio-only mode
-      setVideoMode(false);
-
-      function getCurrentStream() {
-        const list = STREAMS[currentCategory];
-        return list[currentTrackIdx];
-      }
-
-      function getBiliUrl(bvid) {
-        return 'https://player.bilibili.com/player.html'
-          + '?bvid=' + bvid
-          + '&page=1'
-          + '&high_quality=1'
-          + '&autoplay=1'
-          + '&danmaku=0'
-          + '&t=0'
-          + '&volume=' + (volume / 100);
-      }
-
-      function loadStream(bvid, name) {
-        nowPlaying.textContent = name;
-        updateMiniBar(name);
-        biliLoading.textContent = '加载中…';
-        biliLoading.style.display = 'flex';
-        biliFrame.style.display = 'none';
-
-        const url = getBiliUrl(bvid);
-        biliFrame.src = url;
-
-        // Show iframe once loaded
-        biliFrame.onload = function () {
-          biliLoading.style.display = 'none';
-          biliFrame.style.display = 'block';
-        };
-
-        // Fallback: show iframe after timeout even if onload doesn't fire
-        clearTimeout(biliFrame._timeout);
-        biliFrame._timeout = setTimeout(function () {
-          biliLoading.style.display = 'none';
-          biliFrame.style.display = 'block';
-        }, 3000);
-      }
-
-      function play() {
-        stopSearchAudio();
-        const stream = getCurrentStream();
-        loadStream(stream.bvid, stream.name);
-        setPlayingState(true);
-      }
-
-      function pause() {
-        // Stop loading by clearing src
-        biliFrame.src = '';
-        biliFrame.style.display = 'none';
-        biliLoading.style.display = 'flex';
-        biliLoading.textContent = '⏸ 已暂停';
-        setPlayingState(false);
-      }
-
-      function setPlayingState(playing) {
-        isPlaying = playing;
-        if (playing) {
-          btnPlay.textContent = '⏸';
-          btnPlay.classList.add('playing');
-        } else {
-          btnPlay.textContent = '▶';
-          btnPlay.classList.remove('playing');
-        }
-        updateVizState();
-      }
-
-      // ==================== Canvas Visualizer ====================
-      const NUM_BARS = 64;
-      let gainNode = null;
-      // Note: search mode uses <audio> element directly (no Web Audio routing)
-      // to avoid Chrome AudioContext suspend issues. Visualizer uses simulated waveform.
-
-      function updateVizState() {
-        vizActive = isPlaying || spPlaying;
-        vizContainer.classList.toggle('active', vizActive);
-        if (vizActive) {
-          cancelAnimationFrame(vizAnimId);
-          renderViz();
-        } else {
-          cancelAnimationFrame(vizAnimId);
-          drawIdleLine();
-        }
-      }
-
-      function renderViz() {
-        if (!vizActive) { drawIdleLine(); return; }
-
-        const W = vizContainer.clientWidth;
-        const H = vizContainer.clientHeight;
-        const barW = (W / NUM_BARS) * 0.8;
-        const gap = (W / NUM_BARS) * 0.2;
-        vizCtx.clearRect(0, 0, W, H);
-
-        let freqData;
-        if (analyser) {
-          freqData = new Uint8Array(analyser.frequencyBinCount);
-          analyser.getByteFrequencyData(freqData);
-        }
-
-        for (let i = 0; i < NUM_BARS; i++) {
-          let h;
-          if (freqData && i < freqData.length) {
-            h = (freqData[i] / 255) * H * 0.9;
-          } else {
-            // Simulated smooth wave when no real audio data (Bilibili mode)
-            const t = Date.now() / 1000;
-            h = (Math.sin(t * 3 + i * 0.3) * 0.5 + 0.5) * H * 0.3 + Math.random() * 8;
-          }
-          h = Math.max(2, h);
-
-          const x = i * (barW + gap);
-          const y = H - h;
-          const gradient = vizCtx.createLinearGradient(0, H, 0, y);
-          gradient.addColorStop(0, 'rgba(108,92,231,0.7)');
-          gradient.addColorStop(1, 'rgba(108,92,231,0.15)');
-          vizCtx.fillStyle = gradient;
-          vizCtx.beginPath();
-          vizCtx.roundRect(x, y, barW, h, [barW / 2, barW / 2, 0, 0]);
-          vizCtx.fill();
-        }
-
-        vizAnimId = requestAnimationFrame(renderViz);
-      }
-
-      // ==================== Volume ====================
-      function setVolume(val) {
-        volume = val;
-        if (volumeSlider) volumeSlider.value = val;
-        if (spVolumeSlider) spVolumeSlider.value = val;
-        // Search mode: set audio element volume
-        audioPlayer.volume = val / 100;
-        // Search mode: set Web Audio gain node
-        if (gainNode) gainNode.gain.value = val / 100;
-        // Update icon
-        const iconChar = val === 0 ? '🔇' : (val < 33 ? '🔈' : (val < 66 ? '🔉' : '🔊'));
-        if (volumeIcon) volumeIcon.textContent = iconChar;
-        if (spVolumeIcon) spVolumeIcon.textContent = iconChar;
-      }
-
-      // Real-time volume update (search mode & channel mode sliders)
-      volumeSlider.addEventListener('input', () => {
-        setVolume(parseInt(volumeSlider.value));
-      });
-      if (spVolumeSlider) {
-        spVolumeSlider.addEventListener('input', () => {
-          setVolume(parseInt(spVolumeSlider.value));
-        });
-      }
-
-      // On release: reload Bilibili iframe with new volume (channel mode)
-      volumeSlider.addEventListener('change', () => {
-        if (playerMode === 'channel' && isPlaying) {
-          const stream = getCurrentStream();
-          loadStream(stream.bvid, stream.name);
-        }
-      });
-
-      volumeIcon.addEventListener('click', () => {
-        if (volume > 0) {
-          setVolume(0);
-        } else {
-          setVolume(40);
-        }
-        // Reload for channel mode
-        if (playerMode === 'channel' && isPlaying) {
-          const stream = getCurrentStream();
-          loadStream(stream.bvid, stream.name);
-        }
-      });
-      if (spVolumeIcon) {
-        spVolumeIcon.addEventListener('click', () => {
-          if (volume > 0) {
-            setVolume(0);
-          } else {
-            setVolume(40);
-          }
-        });
-      }
-
-      // ==================== Play/Pause ====================
-      btnPlay.addEventListener('click', () => {
-        userInteracted = true;
-
-        // If in search mode, control audio player
-        if (playerMode === 'search') {
-          if (audioPlayer.paused || !audioPlayer.src) {
-            if (currentSongId && audioPlayer.src) {
-              audioPlayer.play();
-            }
-          } else {
-            audioPlayer.pause();
-          }
-          return;
-        }
-
-        // Channel mode: control Bilibili
-        if (isPlaying) {
-          pause();
-        } else {
-          play();
-        }
-      });
-
-      // ==================== Category Switching ====================
-      musicTabs.addEventListener('click', (e) => {
-        const tab = e.target.closest('.music-tab');
-        if (!tab) return;
-
-        userInteracted = true;
-        stopSearchAudio();
-
-        const cat = tab.dataset.cat;
-        if (cat === currentCategory) {
-          // Click same category: cycle to next track
-          const list = STREAMS[cat];
-          currentTrackIdx = (currentTrackIdx + 1) % list.length;
-          const stream = getCurrentStream();
-          loadStream(stream.bvid, stream.name);
-          if (!isPlaying) setPlayingState(true);
-          return;
-        }
-
-        // Switch category
-        currentCategory = cat;
-        currentTrackIdx = 0;
-
-        // Update active tab
-        musicTabs.querySelectorAll('.music-tab').forEach(t => t.classList.remove('active'));
-        tab.classList.add('active');
-
-        const stream = getCurrentStream();
-        loadStream(stream.bvid, stream.name);
-        setPlayingState(true);
-      });
-
-      // ==================== Keyboard Shortcuts ====================
-      document.addEventListener('keydown', (e) => {
-        // Don't trigger shortcuts when user is typing anywhere
-        const tag = e.target.tagName;
-        if (tag === 'INPUT' || tag === 'TEXTAREA' || e.target.isContentEditable) return;
-        if (e.isComposing) return; // IME composition (e.g. Chinese pinyin)
-
-        switch (e.code) {
-          case 'Space':
-            e.preventDefault();
-            userInteracted = true;
-            if (spPlaying) {
-              audioPlayer.pause();
-            } else if (isPlaying) {
-              pause();
-            } else {
-              if (playerMode === 'search') {
-                if (audioPlayer.src) {
-                  stopChannelAudio();
-                  audioPlayer.play().catch(function(e){ console.warn("播放失败:", e.message); });
-                } else if (playlist.length > 0) {
-                  playSongFromPlaylist(playlist[0]);
-                } else {
-                  play();
-                }
-              } else {
-                play();
-              }
-            }
-            break;
-          case 'ArrowUp':
-            e.preventDefault();
-            setVolume(Math.min(100, volume + 10));
-            break;
-          case 'ArrowDown':
-            e.preventDefault();
-            setVolume(Math.max(0, volume - 10));
-            break;
-        }
-      });
-
-      // Initialize volume
-      setVolume(40);
-
       // ==================== Config ====================
       const TOOL_BASE = 'https://www.toolbox365.cn';
 
@@ -1679,40 +687,14 @@ const TOOL_DATA=[{h:'/tools/cn-mirrors/',n:'国内镜像源',d:'pip/npm/Ubuntu/D
       }
 
       toolsToggle.addEventListener('click', openToolsDrawer);
-      drawerOverlay.addEventListener('click', () => { closeToolsDrawer(); closeMusicDrawer(); });
+      drawerOverlay.addEventListener('click', closeToolsDrawer);
       drawerClose.addEventListener('click', closeToolsDrawer);
-
-      // ==================== Music Drawer (Right) ====================
-      const musicToggle = document.getElementById('musicToggle');
-      const musicDrawer = document.getElementById('musicDrawer');
-      const musicClose = document.getElementById('musicClose');
-
-      function openMusicDrawer() {
-        musicDrawer.classList.add('open');
-        drawerOverlay.classList.add('open');
-        musicToggle.style.opacity = '0';
-        musicToggle.style.pointerEvents = 'none';
-      }
-      function closeMusicDrawer() {
-        musicDrawer.classList.remove('open');
-        if (!toolsDrawer.classList.contains('open')) {
-          drawerOverlay.classList.remove('open');
-        }
-        musicToggle.style.opacity = '1';
-        musicToggle.style.pointerEvents = 'auto';
-      }
-
-      musicToggle.addEventListener('click', openMusicDrawer);
-      musicClose.addEventListener('click', closeMusicDrawer);
 
       // ESC key to close drawers
       document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
           if (toolsDrawer && toolsDrawer.classList.contains('open')) {
             closeToolsDrawer();
-          }
-          if (musicDrawer && musicDrawer.classList.contains('open')) {
-            closeMusicDrawer();
           }
         }
       });
@@ -9186,5 +8168,10 @@ v1.0 — 基于 AI写作助手 v5.3 色情化改造。删除商业网文方法�
 
   <!-- ========== Sound Space Audio Engine ========== -->
   <script src="sound.js?v=1792402511247"></script>
+  <!-- ========== Moodist Engine & Data ========== -->
+  <script src="howler.min.js"></script>
+  <script src="moodist-data.js"></script>
+  <script src="moodist-engine.js"></script>
+  <script src="moodist-ui.js"></script>
 </body>
 </html>

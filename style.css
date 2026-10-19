@@ -74,8 +74,8 @@
 
     /* Smooth scene transitions between day & night */
     body, .chat-app, .chat-sidebar, .chat-window, .chat-win-header,
-    .chat-win-input-area, .msg-bubble, .tools-drawer, .music-drawer,
-    .tools-toggle, .music-toggle, .wallpaper-toggle, .res-toggle,
+    .chat-win-input-area, .msg-bubble, .tools-drawer, 
+    .tools-toggle,  .wallpaper-toggle, .res-toggle,
     .wallpaper-panel, .res-panel, .contact-item, .chat-sidebar-search input {
       transition: background-color 0.45s cubic-bezier(0.4, 0, 0.2, 1),
                   border-color 0.45s ease,
@@ -274,11 +274,7 @@
       box-shadow: 0 0 50px rgba(0, 0, 0, 0.12);
     }
     /* Music Drawer Day Mode Overrides */
-    [data-theme="day"] .music-drawer {
-      background: #ffffff;
-      border-left: 1px solid rgba(0, 0, 0, 0.08);
-      box-shadow: -10px 0 40px rgba(0, 0, 0, 0.08);
-    }
+    
     [data-theme="day"] .music-close {
       background: #f1f3f7;
       border: 1px solid rgba(0, 0, 0, 0.08);
@@ -1229,148 +1225,6 @@
       min-height: 100vh;
       padding: 40px;
     }
-
-    /* ========== Music Player (inside right drawer) ========== */
-    .music-drawer {
-      position: fixed;
-      top: 0;
-      right: 0;
-      width: var(--drawer-width);
-      max-width: 90vw;
-      height: 100vh;
-      background: rgba(15,15,18,0.96);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      z-index: 2100;
-      transform: translateX(100%);
-      transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-      display: flex;
-      flex-direction: column;
-      box-shadow: var(--shadow-lg);
-      border-left: 1px solid var(--border);
-      overflow-y: auto;
-    }
-    .music-drawer.open { transform: translateX(0); }
-
-    .music-drawer-inner {
-      flex: 1;
-      overflow-y: auto;
-      padding: 28px 24px 20px;
-    }
-
-    .music-close {
-      position: absolute;
-      top: 14px;
-      right: 14px;
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      border: 1px solid var(--border);
-      background: var(--surface);
-      cursor: pointer;
-      font-size: 1rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: var(--transition);
-      z-index: 10;
-      color: var(--text-secondary);
-    }
-    .music-close:hover {
-      background: rgba(239,68,68,0.15);
-      color: var(--danger);
-      border-color: var(--danger);
-    }
-
-    /* Right edge music toggle */
-    .music-toggle {
-      position: fixed;
-      right: 0;
-      top: 50%;
-      transform: translateY(-50%);
-      z-index: 1100;
-      width: 44px;
-      height: 80px;
-      background: var(--accent);
-      border: none;
-      border-radius: 14px 0 0 14px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 0 20px var(--accent-soft);
-      transition: all 0.25s ease;
-      color: #fff;
-      font-size: 1.1rem;
-      writing-mode: vertical-lr;
-    }
-    .music-toggle:hover {
-      background: var(--accent-hover);
-      box-shadow: 0 0 30px rgba(var(--accent-rgb), 0.5);
-    }
-
-    .player-header {
-      text-align: center;
-      margin-bottom: 24px;
-    }
-
-    .player-header .player-title {
-      font-size: 1.3rem;
-      font-weight: 700;
-      color: rgba(255,255,255,0.9);
-      letter-spacing: -0.3px;
-    }
-
-    .player-header .now-playing {
-      font-size: 0.82rem;
-      color: rgba(255,255,255,0.45);
-      margin-top: 4px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    /* === Category Tabs === */
-    .music-tabs {
-      display: flex;
-      gap: 6px;
-      margin-bottom: 24px;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-
-    .music-tab {
-      padding: 8px 18px;
-      border-radius: 20px;
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      background: transparent;
-      color: rgba(255, 255, 255, 0.55);
-      font-size: 0.82rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.25s ease;
-      white-space: nowrap;
-      font-family: inherit;
-    }
-
-    .music-tab:hover {
-      color: rgba(255, 255, 255, 0.85);
-      border-color: rgba(255, 255, 255, 0.35);
-      background: rgba(255, 255, 255, 0.05);
-    }
-
-    .music-tab.active {
-      background: var(--accent);
-      border-color: var(--accent);
-      color: #fff;
-      box-shadow: 0 4px 16px rgba(var(--accent-rgb), 0.4);
-    }
-
-    /* === Visualizer === */
-    /* ===== Center Visualizer ===== */
-    .center-visualizer { display: none; }
-
-
 
     /* ========== Chat App (Main Center, WeChat Style) ========== */
     .chat-app {
@@ -3655,7 +3509,7 @@
 
     /* ===== Responsive ===== */
     @media (max-width: 600px), (pointer: coarse) {
-      .tools-drawer, .music-drawer {
+      .tools-drawer {
         width: 100%;
         max-width: 100vw;
         border-radius: 0;
