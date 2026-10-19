@@ -7,8 +7,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="moodist.css?v=1792413800000">
-  <link rel="stylesheet" href="style.css?v=1792413800000">
+  <link rel="stylesheet" href="moodist.css?v=1792415800000">
+  <link rel="stylesheet" href="style.css?v=1792415800000">
   <script>
     try {
       if (localStorage.getItem('theme_mode') !== 'night') {
@@ -1000,13 +1000,13 @@ const TOOL_DATA=[{h:'/tools/cn-mirrors/',n:'国内镜像源',d:'pip/npm/Ubuntu/D
         x.fillStyle = '#09090b';
         x.fillRect(0, 0, 160, 100);
         const g1 = x.createRadialGradient(50, 45, 5, 50, 45, 65);
-        g1.addColorStop(0, 'rgba(108, 92, 231, 0.45)');
-        g1.addColorStop(1, 'rgba(108, 92, 231, 0)');
+        g1.addColorStop(0, 'rgba(255, 255, 255, 0.18)');
+        g1.addColorStop(1, 'rgba(255, 255, 255, 0)');
         x.fillStyle = g1;
         x.fillRect(0, 0, 160, 100);
         const g2 = x.createRadialGradient(120, 65, 5, 120, 65, 55);
-        g2.addColorStop(0, 'rgba(0, 210, 255, 0.25)');
-        g2.addColorStop(1, 'rgba(0, 210, 255, 0)');
+        g2.addColorStop(0, 'rgba(255, 255, 255, 0.12)');
+        g2.addColorStop(1, 'rgba(255, 255, 255, 0)');
         x.fillStyle = g2;
         x.fillRect(0, 0, 160, 100);
         const pts = [
@@ -1014,7 +1014,7 @@ const TOOL_DATA=[{h:'/tools/cn-mirrors/',n:'国内镜像源',d:'pip/npm/Ubuntu/D
           { x: 80, y: 30 }, { x: 95, y: 55 }, { x: 125, y: 40 },
           { x: 135, y: 75 }, { x: 70, y: 80 }, { x: 110, y: 70 }
         ];
-        x.strokeStyle = 'rgba(162, 155, 254, 0.35)';
+        x.strokeStyle = 'rgba(255, 255, 255, 0.35)';
         x.lineWidth = 0.8;
         for (let i = 0; i < pts.length; i++) {
           for (let j = i + 1; j < pts.length; j++) {
@@ -1033,7 +1033,7 @@ const TOOL_DATA=[{h:'/tools/cn-mirrors/',n:'国内镜像源',d:'pip/npm/Ubuntu/D
           x.arc(pts[i].x, pts[i].y, 1.4, 0, Math.PI * 2);
           x.fill();
         }
-        x.strokeStyle = 'rgba(162, 155, 254, 0.6)';
+        x.strokeStyle = 'rgba(255, 255, 255, 0.5)';
         x.lineWidth = 1.2;
         x.beginPath();
         x.arc(80, 50, 18, 0, Math.PI * 2);
@@ -1217,8 +1217,8 @@ const TOOL_DATA=[{h:'/tools/cn-mirrors/',n:'国内镜像源',d:'pip/npm/Ubuntu/D
           const b1y = H * 0.35 + Math.cos(t * 0.8) * 35;
           const b1r = Math.min(W, H) * 0.46 + Math.sin(t * 1.1) * 25;
           const g1 = ctx.createRadialGradient(b1x, b1y, 5, b1x, b1y, b1r);
-          g1.addColorStop(0, isDay ? 'rgba(245, 158, 11, 0.07)' : 'rgba(108, 92, 231, 0.065)');
-          g1.addColorStop(1, isDay ? 'rgba(245, 158, 11, 0)' : 'rgba(108, 92, 231, 0)');
+          g1.addColorStop(0, isDay ? 'rgba(245, 158, 11, 0.07)' : 'rgba(255, 255, 255, 0.022)');
+          g1.addColorStop(1, isDay ? 'rgba(245, 158, 11, 0)' : 'rgba(255, 255, 255, 0)');
           ctx.fillStyle = g1;
           ctx.fillRect(0, 0, W, H);
 
@@ -1226,8 +1226,8 @@ const TOOL_DATA=[{h:'/tools/cn-mirrors/',n:'国内镜像源',d:'pip/npm/Ubuntu/D
           const b2y = H * 0.65 + Math.sin(t * 0.9) * 35;
           const b2r = Math.min(W, H) * 0.48 + Math.cos(t * 1.2) * 30;
           const g2 = ctx.createRadialGradient(b2x, b2y, 5, b2x, b2y, b2r);
-          g2.addColorStop(0, isDay ? 'rgba(59, 130, 246, 0.065)' : 'rgba(0, 210, 255, 0.042)');
-          g2.addColorStop(1, isDay ? 'rgba(59, 130, 246, 0)' : 'rgba(0, 210, 255, 0)');
+          g2.addColorStop(0, isDay ? 'rgba(59, 130, 246, 0.065)' : 'rgba(255, 255, 255, 0.015)');
+          g2.addColorStop(1, isDay ? 'rgba(59, 130, 246, 0)' : 'rgba(255, 255, 255, 0)');
           ctx.fillStyle = g2;
           ctx.fillRect(0, 0, W, H);
 
@@ -1235,13 +1235,13 @@ const TOOL_DATA=[{h:'/tools/cn-mirrors/',n:'国内镜像源',d:'pip/npm/Ubuntu/D
           const b3y = H * 0.8 + Math.cos(t * 0.7) * 30;
           const b3r = Math.min(W, H) * 0.38;
           const g3 = ctx.createRadialGradient(b3x, b3y, 5, b3x, b3y, b3r);
-          g3.addColorStop(0, isDay ? 'rgba(99, 102, 241, 0.055)' : 'rgba(162, 155, 254, 0.048)');
-          g3.addColorStop(1, isDay ? 'rgba(99, 102, 241, 0)' : 'rgba(162, 155, 254, 0)');
+          g3.addColorStop(0, isDay ? 'rgba(99, 102, 241, 0.055)' : 'rgba(255, 255, 255, 0.018)');
+          g3.addColorStop(1, isDay ? 'rgba(99, 102, 241, 0)' : 'rgba(255, 255, 255, 0)');
           ctx.fillStyle = g3;
           ctx.fillRect(0, 0, W, H);
 
           // 3. Update & render Ripples (Shockwaves)
-          const rippleColor = isDay ? 'rgba(99, 102, 241, ' : 'rgba(162, 155, 254, ';
+          const rippleColor = isDay ? 'rgba(99, 102, 241, ' : 'rgba(255, 255, 255, ';
           for (let i = ripples.length - 1; i >= 0; i--) {
             const r = ripples[i];
             r.radius += r.speed;
@@ -1358,7 +1358,7 @@ const TOOL_DATA=[{h:'/tools/cn-mirrors/',n:'国内镜像源',d:'pip/npm/Ubuntu/D
             if (isDay) {
               ctx.fillStyle = p.isWhite ? 'rgba(100, 116, 139, ' + alpha.toFixed(3) + ')' : 'rgba(99, 102, 241, ' + alpha.toFixed(3) + ')';
             } else {
-              ctx.fillStyle = p.isWhite ? 'rgba(244, 244, 246, ' + alpha.toFixed(3) + ')' : 'rgba(162, 155, 254, ' + alpha.toFixed(3) + ')';
+              ctx.fillStyle = p.isWhite ? 'rgba(255, 255, 255, ' + alpha.toFixed(3) + ')' : 'rgba(215, 220, 230, ' + (alpha * 0.75).toFixed(3) + ')';
             }
             ctx.beginPath();
             ctx.arc(px, py, p.radius * (1 + p.flash * 0.7), 0, Math.PI * 2);
@@ -1402,9 +1402,9 @@ const TOOL_DATA=[{h:'/tools/cn-mirrors/',n:'国内镜像源',d:'pip/npm/Ubuntu/D
               thickness: H * 0.24,
               speed1: 0.8, freq1: 0.0022, amp1: 42,
               speed2: 0.5, freq2: 0.0045, amp2: 24,
-              cTop: 'rgba(108, 92, 231, 0)',
-              cMid: isDay ? 'rgba(108, 92, 231, 0.16)' : 'rgba(108, 92, 231, 0.28)',
-              cBot: 'rgba(108, 92, 231, 0)'
+              cTop: 'rgba(16, 185, 129, 0)',
+              cMid: isDay ? 'rgba(16, 185, 129, 0.12)' : 'rgba(16, 185, 129, 0.22)',
+              cBot: 'rgba(16, 185, 129, 0)'
             },
             {
               baseY: H * 0.46,
@@ -1412,7 +1412,7 @@ const TOOL_DATA=[{h:'/tools/cn-mirrors/',n:'国内镜像源',d:'pip/npm/Ubuntu/D
               speed1: 0.65, freq1: 0.0018, amp1: 48,
               speed2: 0.85, freq2: 0.0038, amp2: 28,
               cTop: 'rgba(59, 130, 246, 0)',
-              cMid: isDay ? 'rgba(59, 130, 246, 0.14)' : 'rgba(59, 130, 246, 0.24)',
+              cMid: isDay ? 'rgba(59, 130, 246, 0.14)' : 'rgba(59, 130, 246, 0.22)',
               cBot: 'rgba(59, 130, 246, 0)'
             },
             {
@@ -1421,7 +1421,7 @@ const TOOL_DATA=[{h:'/tools/cn-mirrors/',n:'国内镜像源',d:'pip/npm/Ubuntu/D
               speed1: 0.75, freq1: 0.0025, amp1: 44,
               speed2: 0.6, freq2: 0.005, amp2: 22,
               cTop: 'rgba(20, 184, 166, 0)',
-              cMid: isDay ? 'rgba(20, 184, 166, 0.13)' : 'rgba(20, 184, 166, 0.22)',
+              cMid: isDay ? 'rgba(20, 184, 166, 0.13)' : 'rgba(20, 184, 166, 0.20)',
               cBot: 'rgba(20, 184, 166, 0)'
             },
             {
@@ -1429,9 +1429,9 @@ const TOOL_DATA=[{h:'/tools/cn-mirrors/',n:'国内镜像源',d:'pip/npm/Ubuntu/D
               thickness: H * 0.20,
               speed1: 0.5, freq1: 0.003, amp1: 36,
               speed2: 0.7, freq2: 0.004, amp2: 18,
-              cTop: 'rgba(162, 155, 254, 0)',
-              cMid: isDay ? 'rgba(162, 155, 254, 0.12)' : 'rgba(162, 155, 254, 0.18)',
-              cBot: 'rgba(162, 155, 254, 0)'
+              cTop: 'rgba(255, 255, 255, 0)',
+              cMid: isDay ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.14)',
+              cBot: 'rgba(255, 255, 255, 0)'
             }
           ];
 
@@ -1480,7 +1480,7 @@ const TOOL_DATA=[{h:'/tools/cn-mirrors/',n:'国内镜像源',d:'pip/npm/Ubuntu/D
           // Localized ethereal light bloom around mouse
           if (mouseEffective) {
             const glow = ctx.createRadialGradient(mouse.x, mouse.y, 0, mouse.x, mouse.y, 160);
-            glow.addColorStop(0, isDay ? 'rgba(108, 92, 231, 0.12)' : 'rgba(162, 155, 254, 0.15)');
+            glow.addColorStop(0, isDay ? 'rgba(16, 185, 129, 0.10)' : 'rgba(255, 255, 255, 0.12)');
             glow.addColorStop(0.5, isDay ? 'rgba(59, 130, 246, 0.05)' : 'rgba(20, 184, 166, 0.06)');
             glow.addColorStop(1, isDay ? 'rgba(244, 245, 248, 0)' : 'rgba(9, 9, 11, 0)');
             ctx.fillStyle = glow;
@@ -1500,7 +1500,7 @@ const TOOL_DATA=[{h:'/tools/cn-mirrors/',n:'国内镜像源',d:'pip/npm/Ubuntu/D
             const alpha = (isDay ? 0.35 : 0.22) + 0.38 * (0.5 + 0.5 * Math.sin(t * 2 + m.phase));
             ctx.fillStyle = m.isTeal
               ? (isDay ? 'rgba(13, 148, 136, ' + (alpha * 0.8).toFixed(3) + ')' : 'rgba(20, 184, 166, ' + alpha.toFixed(3) + ')')
-              : (isDay ? 'rgba(124, 58, 237, ' + (alpha * 0.7).toFixed(3) + ')' : 'rgba(162, 155, 254, ' + alpha.toFixed(3) + ')');
+              : (isDay ? 'rgba(100, 116, 139, ' + (alpha * 0.7).toFixed(3) + ')' : 'rgba(255, 255, 255, ' + (alpha * 0.75).toFixed(3) + ')');
             ctx.beginPath();
             ctx.arc(m.x, m.y, m.radius, 0, Math.PI * 2);
             ctx.fill();

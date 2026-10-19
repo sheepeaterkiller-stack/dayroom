@@ -12,16 +12,17 @@
   z-index: 1100;
   width: 44px;
   height: 80px;
-  background: var(--accent);
-  border: none;
+  background: #18181b;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-right: none;
   border-radius: 14px 0 0 14px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 0 20px var(--accent-soft);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
   transition: all 0.25s ease;
-  color: #fff;
+  color: #f4f4f5;
   font-size: 1.1rem;
   writing-mode: vertical-lr;
   letter-spacing: 2px;
@@ -29,8 +30,10 @@
 
 .moodist-toggle:hover {
   width: 52px;
-  background: var(--accent-hover);
-  box-shadow: -4px 0 30px rgba(var(--accent-rgb), 0.6);
+  background: #27272a;
+  border-color: rgba(255, 255, 255, 0.25);
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.6);
+  color: #ffffff;
 }
 
 .moodist-toggle .toggle-text {
