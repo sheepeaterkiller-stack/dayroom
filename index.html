@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=1792333049016">
+  <link rel="stylesheet" href="style.css?v=1792400088152">
   <script>
     try {
       if (localStorage.getItem('theme_mode') === 'day') {
@@ -64,7 +64,17 @@
           <span class="sd-visual-rate">48kHz / 32-bit Float</span>
         </div>
         <div class="sd-canvas-wrap">
-          <canvas id="sdScopeCanvas" width="400" height="150"></canvas>
+          <canvas id="sdScopeCanvas" width="740" height="240"></canvas>
+          <div class="sd-canvas-overlay-labels">
+            <div class="sd-label-row">
+              <span>TIME DOMAIN // 实时合成时域波形 + 有机脉冲粒子</span>
+              <span id="sdLfoReadout">LFO 潮汐调制: 0.087 Hz</span>
+            </div>
+            <div class="sd-label-row">
+              <span>FREQUENCY SPECTRUM // 64频段能量分布与低通滤波滚降包络</span>
+              <span id="sdCutoffReadout">Filter Cutoff: 18,000 Hz</span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -164,6 +174,9 @@
           <span class="sd-sub-slider"></span>
           <span class="sd-sub-label">微交互触觉音效（±4% 粒子音高随机 + 双阶段微动按压）</span>
         </label>
+        <div class="sd-footer-hints">
+          <span class="sd-key-badge" title="按键盘 M 键可一键紧急静音或开启声音">快捷键 [M] 一键静音 / 唤醒</span>
+        </div>
       </div>
     </div>
   </div>
@@ -9169,6 +9182,6 @@ v1.0 — 基于 AI写作助手 v5.3 色情化改造。删除商业网文方法�
   <script src="waifu/autoload.js"></script>
 
   <!-- ========== Sound Space Audio Engine ========== -->
-  <script src="sound.js?v=1792333049016"></script>
+  <script src="sound.js?v=1792400088152"></script>
 </body>
 </html>

@@ -43,6 +43,7 @@
   let scopeAnimId = null;
   let scopeCanvas = null;
   let scopeCtx = null;
+  let wavePhase = 0;
 
   // 示波器粒子与波纹池
   const scopeParticles = [];
@@ -257,13 +258,16 @@
 
   // ========== 示波器粒子与波纹生成辅助 ==========
   function addScopeParticle(x, y, color) {
-    if (scopeParticles.length > 30) scopeParticles.shift();
+    if (scopeParticles.length > 40) scopeParticles.shift();
+    const w = (scopeCanvas && scopeCanvas.clientWidth) ? scopeCanvas.clientWidth : 740;
+    const h = (scopeCanvas && scopeCanvas.clientHeight) ? scopeCanvas.clientHeight : 240;
+    const midY = h * 0.46;
     scopeParticles.push({
-      x: x !== undefined ? x : (80 + Math.random() * 240),
-      y: y !== undefined ? y : (25 + Math.random() * 25),
-      vx: (Math.random() - 0.5) * 0.9,
-      vy: -0.3 - Math.random() * 0.7,
-      radius: 2 + Math.random() * 2.5,
+      x: x !== undefined ? x : (Math.random() * w),
+      y: y !== undefined ? y : (midY * 0.5 + (Math.random() - 0.5) * 50),
+      vx: (Math.random() - 0.5) * 1.0,
+      vy: -0.2 - Math.random() * 0.6,
+      radius: 1.8 + Math.random() * 2.5,
       alpha: 1.0,
       decay: 0.015 + Math.random() * 0.02,
       color: color || '#fbbf24'
@@ -272,11 +276,14 @@
 
   function addScopeRipple(x, y) {
     if (scopeRipples.length > 8) scopeRipples.shift();
+    const w = (scopeCanvas && scopeCanvas.clientWidth) ? scopeCanvas.clientWidth : 740;
+    const h = (scopeCanvas && scopeCanvas.clientHeight) ? scopeCanvas.clientHeight : 240;
+    const midY = h * 0.46;
     scopeRipples.push({
-      x: x || 200,
-      y: y || 42,
+      x: x !== undefined ? x : ((0.2 + Math.random() * 0.6) * w),
+      y: y !== undefined ? y : (midY * 0.52),
       r: 3,
-      maxR: 45,
+      maxR: 55,
       alpha: 1.0
     });
   }
@@ -361,8 +368,8 @@
         const pCount = Math.min(3, Math.ceil(density / 6));
         for (let k = 0; k < pCount; k++) {
           addScopeParticle(
-            40 + Math.random() * 320,
-            24 + Math.random() * 26,
+            undefined,
+            undefined,
             isRainMode ? '#38bdf8' : (Math.random() > 0.4 ? '#fbbf24' : '#34d399')
           );
         }
@@ -463,7 +470,7 @@
 
     // 3. 实时分析器 (用于微动效与示波器/频谱绘制)
     masterAnalyser = ctx.createAnalyser();
-    masterAnalyser.fftSize = 128; // 64 frequency bins, 128 time-domain samples
+    masterAnalyser.fftSize = 1024; // 512 frequency bins, 1024 time-domain samples
     masterAnalyser.smoothingTimeConstant = 0.82;
 
     // 4. 混音台母线与微交互母线
@@ -558,8 +565,8 @@
       osc.stop(now + 0.1);
 
       // 在示波器 Canvas 激荡水滴波纹与微粒子
-      addScopeRipple(200, 42);
-      addScopeParticle(200, 42, '#38bdf8');
+      addScopeRipple();
+      addScopeParticle(undefined, undefined, '#38bdf8');
     } catch (e) {}
   }
 
@@ -669,10 +676,9 @@
 
   function resizeScopeCanvas() {
     if (!scopeCanvas || !scopeCtx) return;
-    const rect = scopeCanvas.getBoundingClientRect();
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const w = rect.width || 390;
-    const h = rect.height || 145;
+    const w = scopeCanvas.clientWidth || 740;
+    const h = scopeCanvas.clientHeight || 240;
     scopeCanvas.width = Math.round(w * dpr);
     scopeCanvas.height = Math.round(h * dpr);
     scopeCtx.setTransform(1, 0, 0, 1, 0, 0);
@@ -681,8 +687,11 @@
 
   function startScopeVisualizer() {
     if (scopeAnimId) return;
-    const timeData = new Uint8Array(128);
-    const freqData = new Uint8Array(64);
+    const timeData = new Uint8Array(1024);
+    const freqData = new Uint8Array(512);
+
+    const lfoReadoutEl = document.getElementById('sdLfoReadout');
+    const cutoffReadoutEl = document.getElementById('sdCutoffReadout');
 
     function drawScope() {
       if (!isDrawerOpen || !scopeCanvas || !scopeCtx) {
@@ -690,26 +699,44 @@
         return;
       }
 
-      const rect = scopeCanvas.getBoundingClientRect();
-      const w = rect.width || 390;
-      const h = rect.height || 145;
+      // 动态比对分辨率以防缩放/过渡期间像素失真与拉伸模糊
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const w = scopeCanvas.clientWidth || 740;
+      const h = scopeCanvas.clientHeight || 240;
+      const expectedW = Math.round(w * dpr);
+      const expectedH = Math.round(h * dpr);
+
+      if (scopeCanvas.width !== expectedW || scopeCanvas.height !== expectedH) {
+        scopeCanvas.width = expectedW;
+        scopeCanvas.height = expectedH;
+        scopeCtx.setTransform(1, 0, 0, 1, 0, 0);
+        scopeCtx.scale(dpr, dpr);
+      }
 
       const isDay = document.documentElement.getAttribute('data-theme') === 'day';
       const bgColor = isDay ? '#e2e8f0' : '#07090d';
-      const textDim = isDay ? '#475569' : '#64748b';
       const waveColor = isDay ? '#0284c7' : '#38bdf8';
       const dividerColor = isDay ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.08)';
 
-      const colLow = isDay ? '#0284c7' : '#38bdf8';
-      const colMid = isDay ? '#059669' : '#34d399';
-      const colHigh = isDay ? '#d97706' : '#fbbf24';
+      const midY = h * 0.46; // 上下动态分界中轴线
 
-      // 1. 清空背景
+      // 1. 清空画布
       scopeCtx.clearRect(0, 0, w, h);
       scopeCtx.fillStyle = bgColor;
       scopeCtx.fillRect(0, 0, w, h);
 
-      // 获取音频数据
+      // 2. 截止频率平滑插值与文字更新
+      visualCutoff += (targetCutoff - visualCutoff) * 0.12;
+      if (cutoffReadoutEl) {
+        cutoffReadoutEl.textContent = `Filter Cutoff: ${Math.round(visualCutoff).toLocaleString()} Hz`;
+      }
+      if (lfoReadoutEl) {
+        lfoReadoutEl.textContent = isPoweredOn 
+          ? `LFO 潮汐调制: 0.087 Hz (呼吸 ${volTide > 0 ? Math.round(volTide * 100) + '%' : '静音'})`
+          : 'LFO 潮汐调制: 待机挂起';
+      }
+
+      // 获取实时音频数据
       if (masterAnalyser && isPoweredOn) {
         masterAnalyser.getByteTimeDomainData(timeData);
         masterAnalyser.getByteFrequencyData(freqData);
@@ -718,30 +745,35 @@
         freqData.fill(0);
       }
 
-      // ================= 上半部：时域合成波形 & 有机颗粒 =================
+      // ================= 中轴参考分界线 =================
       scopeCtx.save();
-      scopeCtx.font = '9px Inter, monospace';
-      scopeCtx.fillStyle = textDim;
-      scopeCtx.fillText('时域合成波形 & 有机颗粒 (TIME-DOMAIN WAVEFORM)', 12, 16);
+      scopeCtx.strokeStyle = dividerColor;
+      scopeCtx.lineWidth = 1;
+      scopeCtx.beginPath();
+      scopeCtx.moveTo(0, midY);
+      scopeCtx.lineTo(w, midY);
+      scopeCtx.stroke();
+      scopeCtx.restore();
 
-      // 绘制水滴波纹 (Ripples)
+      // ================= 1. 上半部：水滴波纹 (Ripples) =================
+      scopeCtx.save();
       for (let i = scopeRipples.length - 1; i >= 0; i--) {
         const rip = scopeRipples[i];
         scopeCtx.beginPath();
         scopeCtx.arc(rip.x, rip.y, rip.r, 0, Math.PI * 2);
         scopeCtx.strokeStyle = isDay 
-          ? `rgba(2, 132, 199, ${rip.alpha * 0.7})` 
-          : `rgba(56, 189, 248, ${rip.alpha * 0.7})`;
-        scopeCtx.lineWidth = 1.4;
+          ? `rgba(2, 132, 199, ${rip.alpha * 0.75})` 
+          : `rgba(56, 189, 248, ${rip.alpha * 0.85})`;
+        scopeCtx.lineWidth = 1.5;
         scopeCtx.stroke();
-        rip.r += 1.3;
+        rip.r += 1.8;
         rip.alpha -= 0.024;
         if (rip.alpha <= 0.01 || rip.r >= rip.maxR) {
           scopeRipples.splice(i, 1);
         }
       }
 
-      // 绘制有机微颗粒 (Particles)
+      // ================= 2. 上半部：有机微颗粒 (Crackle Particles) =================
       for (let i = scopeParticles.length - 1; i >= 0; i--) {
         const p = scopeParticles[i];
         scopeCtx.beginPath();
@@ -750,7 +782,7 @@
         scopeCtx.globalAlpha = Math.max(0, p.alpha);
         if (!isDay) {
           scopeCtx.shadowColor = p.color;
-          scopeCtx.shadowBlur = 5;
+          scopeCtx.shadowBlur = 6;
         }
         scopeCtx.fill();
         scopeCtx.globalAlpha = 1.0;
@@ -763,117 +795,98 @@
           scopeParticles.splice(i, 1);
         }
       }
+      scopeCtx.restore();
 
-      // 绘制时域波形折线
+      // ================= 3. 上半部：时域合成波形 (256采样 + 流体潮汐波) =================
+      scopeCtx.save();
       scopeCtx.beginPath();
-      const waveCenterY = 44;
-      const waveAmp = isPoweredOn ? 28 : 2;
-      const count = timeData.length;
-      for (let i = 0; i < count; i++) {
-        const x = 12 + (i / (count - 1)) * (w - 24);
-        let norm = (timeData[i] - 128) / 128; // -1 ~ 1
-        if (!isPoweredOn) {
-          norm = Math.sin(i * 0.12 + Date.now() * 0.002) * 0.06;
+      const numWavePoints = 256;
+      const sliceWidth = w / (numWavePoints - 1);
+      wavePhase += isPoweredOn ? 0.024 : 0.008;
+
+      for (let i = 0; i < numWavePoints; i++) {
+        const sampleIdx = Math.floor((i / numWavePoints) * (timeData.length - 1));
+        let yOffset = 0;
+        if (isPoweredOn) {
+          const v = (timeData[sampleIdx] - 128) / 128.0;
+          const fluidWave = Math.sin(i * 0.045 + wavePhase) * (volTide * 18);
+          yOffset = v * 38 + fluidWave;
+        } else {
+          yOffset = Math.sin(i * 0.035 + wavePhase) * 2.5;
         }
-        const y = waveCenterY + norm * waveAmp;
+
+        const y = midY * 0.52 + yOffset;
+        const x = i * sliceWidth;
         if (i === 0) scopeCtx.moveTo(x, y);
         else scopeCtx.lineTo(x, y);
       }
-      scopeCtx.strokeStyle = waveColor;
-      scopeCtx.lineWidth = 1.8;
+
+      scopeCtx.strokeStyle = isPoweredOn
+        ? (isMuffled || isManualMuffled ? (isDay ? '#d97706' : '#f59e0b') : waveColor)
+        : (isDay ? 'rgba(71, 85, 105, 0.35)' : 'rgba(100, 116, 139, 0.35)');
+      scopeCtx.lineWidth = 2;
       if (!isDay && isPoweredOn) {
-        scopeCtx.shadowColor = 'rgba(56, 189, 248, 0.45)';
-        scopeCtx.shadowBlur = 5;
+        scopeCtx.shadowColor = isMuffled || isManualMuffled ? 'rgba(245, 158, 11, 0.45)' : 'rgba(56, 189, 248, 0.45)';
+        scopeCtx.shadowBlur = 6;
       }
       scopeCtx.stroke();
       scopeCtx.shadowBlur = 0;
       scopeCtx.restore();
 
-      // ================= 中部虚线分割线 =================
+      // ================= 4. 下半部：64 根对数频谱柱 (Log Spectrum) =================
       scopeCtx.save();
-      scopeCtx.beginPath();
-      scopeCtx.setLineDash([4, 4]);
-      scopeCtx.moveTo(12, 73);
-      scopeCtx.lineTo(w - 12, 73);
-      scopeCtx.strokeStyle = dividerColor;
-      scopeCtx.lineWidth = 1;
-      scopeCtx.stroke();
-      scopeCtx.restore();
-
-      // ================= 下半部：对数频谱能量 & 低通截止包络 =================
-      scopeCtx.save();
-      scopeCtx.font = '9px Inter, monospace';
-      scopeCtx.fillStyle = textDim;
-      scopeCtx.fillText('-- 对数频谱能量 & 低通截止包络 (LOG SPECTRUM) --', 12, 87);
-
-      // 低通截止频率平滑插值追踪
-      visualCutoff += (targetCutoff - visualCutoff) * 0.14;
-
-      // 对数坐标映射 Cutoff 位置: 40Hz ~ 20000Hz
-      const minLog = Math.log10(40);
-      const maxLog = Math.log10(20000);
-      const curLog = Math.log10(Math.max(40, Math.min(20000, visualCutoff)));
-      const normCutoff = (curLog - minLog) / (maxLog - minLog);
-      const cutoffX = Math.round(14 + normCutoff * (w - 28));
-
-      // Cutoff 标注文字
-      scopeCtx.fillStyle = waveColor;
-      const cutoffText = `Cutoff: ${Math.round(visualCutoff).toLocaleString()} Hz`;
-      const textWidth = scopeCtx.measureText(cutoffText).width;
-      const textX = Math.max(12, Math.min(w - textWidth - 12, cutoffX - textWidth - 6));
-      scopeCtx.fillText(cutoffText, textX, 87);
-
-      // Cutoff 垂直指示线 (实线)
-      scopeCtx.beginPath();
-      scopeCtx.moveTo(cutoffX, 90);
-      scopeCtx.lineTo(cutoffX, h - 8);
-      scopeCtx.strokeStyle = waveColor;
-      scopeCtx.lineWidth = 1.5;
-      scopeCtx.stroke();
-
-      // Cutoff 衰减斜率曲线 (虚线)
-      scopeCtx.beginPath();
-      scopeCtx.setLineDash([3, 3]);
-      scopeCtx.moveTo(cutoffX, 92);
-      const endSlopeX = Math.min(w - 12, cutoffX + (w - cutoffX) * 0.85);
-      scopeCtx.quadraticCurveTo(cutoffX + 16, 96, endSlopeX, h - 10);
-      scopeCtx.strokeStyle = waveColor;
-      scopeCtx.lineWidth = 1.2;
-      scopeCtx.stroke();
-      scopeCtx.setLineDash([]);
-
-      // 32 根对数柱状频谱 (三色分区)
-      const numBars = 32;
+      const specTop = midY + 12;
+      const specHeight = h - specTop - 18;
+      const numBars = 64;
       const barGap = 2;
-      const barWidth = Math.max(2, (w - 24 - (numBars - 1) * barGap) / numBars);
+      const barWidth = Math.max(2, (w - (numBars - 1) * barGap) / numBars);
+
+      // 计算 Cutoff 对数映射 X 坐标: 20Hz ~ 20000Hz
+      const minLog = Math.log10(20);
+      const maxLog = Math.log10(20000);
+      const curLog = Math.log10(Math.max(20, Math.min(20000, visualCutoff)));
+      const cutoffRatio = (curLog - minLog) / (maxLog - minLog);
+      const cutoffX = cutoffRatio * w;
 
       for (let b = 0; b < numBars; b++) {
-        const bx = 12 + b * (barWidth + barGap);
-        // 对数取样频率 bin
-        const binIndex = Math.min(63, Math.floor(Math.pow(b / (numBars - 1), 1.5) * 63));
-        const rawVal = freqData[binIndex] || 0; // 0 ~ 255
-
-        // 超过 Cutoff 的高频柱进行物理衰减压制
-        let attenuation = 1.0;
-        if (bx > cutoffX) {
-          const dist = bx - cutoffX;
-          attenuation = Math.max(0.04, Math.pow(0.5, dist / 20));
+        let mag = 0;
+        if (isPoweredOn && masterAnalyser) {
+          // 对数映射频段取样
+          const binIdx = Math.min(
+            freqData.length - 1,
+            Math.floor(Math.pow(b / numBars, 1.7) * (freqData.length * 0.75))
+          );
+          mag = (freqData[binIdx] || 0) / 255.0;
         }
 
-        const barH = isPoweredOn 
-          ? Math.max(2, (rawVal / 255) * 44 * attenuation)
-          : (2 + Math.sin(b * 0.4 + Date.now() * 0.003) * 1.5);
+        const bx = b * (barWidth + barGap);
 
-        const by = h - 8 - barH;
+        // 超过 Cutoff 的高频柱进行物理滚降压制
+        let attenuation = 1.0;
+        if (bx > cutoffX) {
+          const dist = (bx - cutoffX) / (w * 0.18);
+          attenuation = Math.max(0.04, Math.pow(0.5, dist * 2.2));
+        }
 
-        // 颜色分区: 0~17 蓝, 18~24 绿, 25~31 黄/橙
-        let barColor = colLow;
-        if (b >= 25) barColor = colHigh;
-        else if (b >= 18) barColor = colMid;
+        const barH = isPoweredOn
+          ? Math.max(2, mag * specHeight * attenuation)
+          : (2 + Math.sin(b * 0.35 + Date.now() * 0.003) * 1.5);
+
+        const by = h - 10 - barH;
+
+        // 颜色渐变: 0~25 蓝, 26~44 绿, 45~63 黄/金
+        let barColor = isDay ? '#0284c7' : '#38bdf8';
+        if (isMuffled || isManualMuffled) {
+          barColor = isDay ? '#d97706' : '#f59e0b';
+        } else if (b >= 45) {
+          barColor = isDay ? '#d97706' : '#fbbf24';
+        } else if (b >= 26) {
+          barColor = isDay ? '#059669' : '#34d399';
+        }
 
         scopeCtx.fillStyle = barColor;
         scopeCtx.beginPath();
-        const r = Math.min(barWidth / 2, 1.5);
+        const r = Math.min(barWidth / 2, 2);
         if (scopeCtx.roundRect) {
           scopeCtx.roundRect(bx, by, barWidth, barH, [r, r, 0, 0]);
         } else {
@@ -881,6 +894,34 @@
         }
         scopeCtx.fill();
       }
+
+      // ================= 5. 下半部：低通滤波器滚降包络虚线 (Filter Roll-off Envelope) =================
+      scopeCtx.beginPath();
+      for (let px = 0; px <= w; px += 4) {
+        let atten = 0;
+        if (px > cutoffX) {
+          const dist = (px - cutoffX) / (w * 0.18);
+          atten = Math.min(1, dist * dist);
+        }
+        const ey = specTop + 14 + atten * (specHeight - 16);
+        if (px === 0) scopeCtx.moveTo(px, ey);
+        else scopeCtx.lineTo(px, ey);
+      }
+      scopeCtx.strokeStyle = (isMuffled || isManualMuffled) 
+        ? (isDay ? '#d97706' : '#f59e0b') 
+        : (isDay ? 'rgba(71, 85, 105, 0.45)' : 'rgba(226, 232, 240, 0.45)');
+      scopeCtx.lineWidth = 1.8;
+      scopeCtx.setLineDash([5, 4]);
+      scopeCtx.stroke();
+      scopeCtx.setLineDash([]);
+
+      // Cutoff 垂直指示线 (在 cutoffX 处向下)
+      scopeCtx.beginPath();
+      scopeCtx.moveTo(cutoffX, specTop);
+      scopeCtx.lineTo(cutoffX, h - 8);
+      scopeCtx.strokeStyle = (isMuffled || isManualMuffled) ? '#f59e0b' : waveColor;
+      scopeCtx.lineWidth = 1.5;
+      scopeCtx.stroke();
 
       scopeCtx.restore();
 
@@ -996,6 +1037,18 @@
           drawer.classList.remove('open');
           drawer.setAttribute('aria-hidden', 'true');
           stopScopeVisualizer();
+        }
+      });
+
+      // 键盘快捷键 [M] 一键紧急静音 / 唤醒
+      window.addEventListener('keydown', (e) => {
+        const tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : '';
+        if (tag === 'input' || tag === 'textarea' || (e.target && e.target.isContentEditable)) return;
+        if (e.key.toLowerCase() === 'm' && !e.ctrlKey && !e.altKey && !e.metaKey) {
+          togglePower();
+          if (isPoweredOn && !isDrawerOpen) {
+            openDrawer();
+          }
         }
       });
     }

@@ -290,3 +290,14 @@ The test: Every changed line should trace directly to the user's request.
     - 在 `waifu/waifu-tips.json` 的 `mouseover` 列表中注入声音空间全套组件响应：入口胶囊 `#soundAnchor`、总电源 `#sdMasterToggle`、实时示波器 `#sdScopeCanvas`、治愈配方推荐 `.sd-presets-panel`、暖色基底 `.sd-track.tide`、有机颗粒 `.sd-track.crackle`、漂移垫音 `.sd-track.drone`、隔壁房间 `#sdBtnToggleMuffle`、水滴波纹 `#sdBtnWaterDrop`、微交互触觉 `#sdHapticsToggle` 及面板背景 `.sound-drawer`；
     - 遵循“具体组件在前、通用面板在后”的选择器顺序，当鼠标停留于声音空间任一旋钮或卡片时，看板娘萌宠即刻以轻快、治愈的语气向访客解读声学原理与心流状态；并在 `click` 列表中覆盖水滴激荡、配方切换与虚掩房门等动作的即时反馈；
     - 在 `waifu/waifu-tips.js` 导出全局 `window.showWaifuMessage = i;` 接口，支持程序化主动调用。
+- **声音空间宽画幅重构与可视化 Bug 全面修复（2026-10-19）**：
+  - **可视化 Bug 根因与修复**：
+    - 时域波形扁平僵硬：`masterAnalyser.fftSize` 从 128 提升至 1024（采样时长从 2.6ms 拓宽到 21.3ms），并将时域采样与 LFO 潮汐正弦呼吸（`fluidWave = Math.sin(i * 0.045 + wavePhase) * (volTide * 18)`）动态融汇，波形随着潮水与颗粒自然起伏呼吸；
+    - 动画期间分辨率失真：改用 `clientWidth` / `clientHeight` 并在渲染循环中动态比对与校正内部物理像素分辨率（含 `devicePixelRatio`），解决 CSS `transform: scale(0.97)` 缓动展开期间因尺寸错位导致的画布模糊拉伸；
+    - 坐标硬编码与文字遮挡：清除旧代码中的固定坐标，时域波形、火星粒子与水波扩散全部按动态宽高（`w` 和 `midY = h * 0.46`）百分比分布；上/下层标签抽离为高对比度微型 HTML 状态浮层（`TIME DOMAIN`、`LFO 潮汐调制: 0.087 Hz`、`FREQUENCY SPECTRUM`、`Filter Cutoff: 18,000 Hz`）；
+    - 频谱与低通滚降包络：频谱升级为 64 根精细对数映射柱，并绘制平滑的低通滤波器滚降虚线包络曲线（Filter Roll-off Envelope），直观呈现“隔壁房间”虚掩门时的高频削减过程。
+  - **显示空间宽画幅现代化重构（780px 工作台）**：
+    - 面板宽度从原本拥挤狭窄的 `430px` 拓展至 **`780px`**（`max-width: calc(100vw - 160px)`）；
+    - 画布高度从 `145px` 提升到 **`240px`**，呈现两倍纵深的宽画幅示波视效；
+    - 三轨混音台由单列上下堆叠重构为 **横向 3 列卡片式栅格**（`grid-template-columns: repeat(3, 1fr)`），每轨独立卡片、色彩主题、滑块与解释说明；
+    - 底部操作底座增加键盘快捷键 `[M]` 一键紧急静音/唤醒监听（智能避开输入框编辑态）。
