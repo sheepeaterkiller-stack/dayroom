@@ -6316,7 +6316,20 @@ v1.0 — 基于 AI写作助手 v5.3 色情化改造。删除商业网文方法�
       function loadData() {
         try {
           var raw = localStorage.getItem('chat_histories_v2');
-          if (raw) chatHistories = JSON.parse(raw);
+          if (raw) {
+            chatHistories = JSON.parse(raw) || {};
+            // Sanitize histories to prevent runtime exceptions on broken messages
+            Object.keys(chatHistories).forEach(function(pid) {
+              if (Array.isArray(chatHistories[pid])) {
+                chatHistories[pid].forEach(function(m) {
+                  if (m && typeof m.content !== 'string') m.content = (m.content != null ? String(m.content) : '');
+                  if (m && m.reasoning && typeof m.reasoning !== 'string') m.reasoning = String(m.reasoning);
+                });
+              } else {
+                chatHistories[pid] = [];
+              }
+            });
+          }
         } catch (e) { chatHistories = {}; }
         try {
           activePersonaId = localStorage.getItem('chat_active_persona') || 'default';
@@ -6546,7 +6559,8 @@ v1.0 — 基于 AI写作助手 v5.3 色情化改造。删除商业网文方法�
           var lastMsg = '';
           if (history.length > 0) {
             var last = history[history.length - 1];
-            lastMsg = (last.role === 'assistant' ? '' : '你: ') + last.content.slice(0, 30);
+            var txt = (last && last.content != null) ? String(last.content) : '';
+            lastMsg = (last && last.role === 'assistant' ? '' : '你: ') + txt.slice(0, 30);
           }
           html += '<div class="contact-item' + (isActive ? ' active' : '') + '" data-persona="' + dp.id + '">';
           html += '<div class="contact-avatar">' + dp.avatar + '<span class="online-dot"></span></div>';
@@ -6563,7 +6577,8 @@ v1.0 — 基于 AI写作助手 v5.3 色情化改造。删除商业网文方法�
           var lastMsg = '';
           if (history.length > 0) {
             var last = history[history.length - 1];
-            lastMsg = (last.role === 'assistant' ? '' : '你: ') + last.content.slice(0, 30);
+            var txt = (last && last.content != null) ? String(last.content) : '';
+            lastMsg = (last && last.role === 'assistant' ? '' : '你: ') + txt.slice(0, 30);
           }
           html += '<div class="contact-item' + (isActive ? ' active' : '') + '" data-persona="' + p.id + '">';
           html += '<div class="contact-avatar">' + hEscape(p.avatar) + '<span class="online-dot"></span></div>';
@@ -6591,13 +6606,15 @@ v1.0 — 基于 AI写作助手 v5.3 色情化改造。删除商业网文方法�
       // ---- Render Chat Messages ----
       function renderMessages() {
         var history = getHistory(activePersonaId);
-        if (history.length === 0) {
+        if (!Array.isArray(history) || history.length === 0) {
           chatWinMessages.innerHTML = '<div class="chat-empty"><div class="empty-icon">💬</div><div class="empty-text">开始聊天吧~</div></div>';
         } else {
           chatWinMessages.innerHTML = history.map(function(h, i) {
+            if (!h) return '';
+            var contentStr = (h.content != null) ? String(h.content) : '';
             if (h.role === 'system' || h.isSummary) {
               // 摘要等信息，显示为系统提示（区别于用户/bot消息）
-              var formatted = h.content
+              var formatted = contentStr
                 .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
                 .replace(/\*\*(.+?)\*\*/g, '<span class="highlight">$1</span>')
                 .replace(/^【之前的对话摘要，请记住这段上下文】/, '');
@@ -6605,8 +6622,8 @@ v1.0 — 基于 AI写作助手 v5.3 色情化改造。删除商业网文方法�
             }
             var type = h.role === 'assistant' ? 'bot' : 'user';
             var p = getPersonaInfo(activePersonaId);
-            var avatar = hEscape(type === 'bot' ? p.avatar : '👤');
-            var formatted = h.content
+            var avatar = hEscape(type === 'bot' ? (p && p.avatar ? p.avatar : '🤖') : '👤');
+            var formatted = contentStr
               .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
               .replace(/\*\*(.+?)\*\*/g, '<span class="highlight">$1</span>');
             var fileHtml = h.file ? fileCardHtml(h.file, true) : '';
@@ -6639,10 +6656,10 @@ v1.0 — 基于 AI写作助手 v5.3 色情化改造。删除商业网文方法�
       function addMessageToHistory(role, content, file, reasoning) {
         var ts = Date.now();
         var history = getHistory(activePersonaId);
-        var msg = { role: role, content: content, timestamp: ts };
+        var msg = { role: role, content: content != null ? String(content) : '', timestamp: ts };
         if (file && role === 'user') msg.file = fileToHistory(file);
         // 思考内容持久化(刷新后仍在), 后端只读 role/content, 不会发给 DeepSeek
-        if (reasoning && role === 'assistant') msg.reasoning = reasoning;
+        if (reasoning && role === 'assistant') msg.reasoning = String(reasoning);
         history.push(msg);
         var limit = chatUnlocked ? 300 : 100;
         if (history.length > limit) chatHistories[activePersonaId] = history.slice(-limit);
@@ -6654,7 +6671,7 @@ v1.0 — 基于 AI写作助手 v5.3 色情化改造。删除商业网文方法�
       // 思考过程折叠块 — appendMessage 和 renderMessages 共用, text 为空返回空串
       function reasoningBlockHtml(text) {
         if (!text) return '';
-        var f = text
+        var f = String(text)
           .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
           .replace(/\*\*(.+?)\*\*/g, '<span class="highlight">$1</span>');
         return '<div class="msg-reasoning"><button class="reasoning-toggle" type="button">🤔 思考过程 <span class="reasoning-arrow">▸</span></button><div class="reasoning-content">' + f + '</div></div>';
@@ -6664,8 +6681,9 @@ v1.0 — 基于 AI写作助手 v5.3 色情化改造。删除商业网文方法�
         var empty = chatWinMessages.querySelector('.chat-empty');
         if (empty) empty.remove();
         var p = getPersonaInfo(activePersonaId);
-        var avatar = hEscape(type === 'bot' ? p.avatar : '👤');
-        var formatted = text
+        var avatar = hEscape(type === 'bot' ? (p && p.avatar ? p.avatar : '🤖') : '👤');
+        var safeText = (text != null ? String(text) : '');
+        var formatted = safeText
           .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
           .replace(/\*\*(.+?)\*\*/g, '<span class="highlight">$1</span>');
         var actionsHtml = type === 'bot'
@@ -6681,9 +6699,9 @@ v1.0 — 基于 AI写作助手 v5.3 色情化改造。删除商业网文方法�
           var isImage = file.type && file.type.startsWith('image/');
           if (isImage) {
             var dataUrl = 'data:' + file.type + ';base64,' + file.data;
-            fileHtml = '<img class="msg-image-preview" src="' + dataUrl + '" alt="' + hEscape(file.name) + '" title="点击查看大图" onclick="var w=window.open(\'\');w.document.write(\'<img src=\\\'' + dataUrl + '\\\' style=max-width:100vw;max-height:100vh;object-fit:contain;cursor:zoom-out;background:#000 onclick=window.close()>\')">';
+            fileHtml = '<img class="msg-image-preview" src="' + dataUrl + '" alt="' + hEscape(file.name || '图片') + '" title="点击查看大图" onclick="var w=window.open(\'\');w.document.write(\'<img src=\\\'' + dataUrl + '\\\' style=max-width:100vw;max-height:100vh;object-fit:contain;cursor:zoom-out;background:#000 onclick=window.close()>\')">';
           } else {
-            fileHtml = '<div class="msg-file-card"><span class="file-icon">' + getFileIcon(file.name, file.type) + '</span><div class="file-info"><div class="file-name">' + file.name.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div><div class="file-size">' + formatFileSize(file.size) + '</div></div></div>';
+            fileHtml = '<div class="msg-file-card"><span class="file-icon">' + getFileIcon(file.name, file.type) + '</span><div class="file-info"><div class="file-name">' + (file.name || '附件').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div><div class="file-size">' + formatFileSize(file.size || 0) + '</div></div></div>';
           }
         }
 
@@ -6708,20 +6726,30 @@ v1.0 — 基于 AI写作助手 v5.3 色情化改造。删除商业网文方法�
       function switchPersona(id) {
         selectMode = false;
         selectedIndices = {};
-        chatSelectBar.classList.remove('show');
+        if (chatSelectBar) chatSelectBar.classList.remove('show');
         activePersonaId = id;
         saveActivePersona();
         var p = getPersonaInfo(id);
-        chatWinAvatar.textContent = p.avatar;
-        chatWinName.textContent = p.name;
+        if (p) {
+          if (chatWinAvatar) chatWinAvatar.textContent = p.avatar || '🤖';
+          if (chatWinName) chatWinName.textContent = p.name || 'AI助手';
+        }
         updateQuickButtons();
-        renderMessages();
-        renderContacts();
+        try {
+          renderMessages();
+        } catch (err) {
+          console.error('renderMessages failed in switchPersona:', err);
+        }
+        try {
+          renderContacts();
+        } catch (err) {
+          console.error('renderContacts failed in switchPersona:', err);
+        }
         if (isMobile) {
           chatWindow.classList.add('show');
           if (window.updateThemeTogglePosition) window.updateThemeTogglePosition();
         }
-        chatWinInput.focus();
+        if (chatWinInput) chatWinInput.focus();
         resetArchiveFor(id);
       }
 
@@ -6944,26 +6972,29 @@ v1.0 — 基于 AI写作助手 v5.3 色情化改造。删除商业网文方法�
       // ---- Send Message to DeepSeek ----
       async function sendMessage(text) {
         if (waitingForReply) return;
-        if (!pendingFile && !text.trim()) return;
-        waitingForReply = true;
-        var userMsg = text.trim();
+        var userMsg = (text || '').trim();
         var file = pendingFile;
+        if (!file && !userMsg) return;
+
+        waitingForReply = true;
         clearFilePreview();
 
-        appendMessage('user', userMsg, file);
-        addMessageToHistory('user', userMsg, file);
-        chatWinInput.value = '';
-        chatWinInput.style.height = 'auto';
-        chatWinInput.focus();
-
-        // Hide quick buttons after first message (default assistant only)
-        if (activePersonaId === 'default' && getHistory('default').length > 1) {
-          chatWinQuick.style.display = 'none';
-        }
-
-        showTyping(true);
-
         try {
+          appendMessage('user', userMsg, file);
+          addMessageToHistory('user', userMsg, file);
+          if (chatWinInput) {
+            chatWinInput.value = '';
+            chatWinInput.style.height = 'auto';
+            chatWinInput.focus();
+          }
+
+          // Hide quick buttons after first message (default assistant only)
+          if (activePersonaId === 'default' && getHistory('default').length > 1) {
+            chatWinQuick.style.display = 'none';
+          }
+
+          showTyping(true);
+
           var p = getPersonaInfo(activePersonaId);
           var history = getHistory(activePersonaId);
           var pastHistory = history.slice(0, -1);
@@ -6996,10 +7027,10 @@ v1.0 — 基于 AI写作助手 v5.3 色情化改造。删除商业网文方法�
           clearTimeout(sendTimeout);
           if (!resp.ok) throw new Error('HTTP ' + resp.status);
           var data = await resp.json();
-          var reply = data.reply || '唔...我不太明白 😅';
+          var reply = (data && data.reply != null && String(data.reply).trim()) ? String(data.reply) : '唔...我不太明白 😅';
           showTyping(false);
-          appendMessage('bot', reply, null, data.reasoning);
-          addMessageToHistory('assistant', reply, null, data.reasoning);
+          appendMessage('bot', reply, null, data ? data.reasoning : undefined);
+          addMessageToHistory('assistant', reply, null, data ? data.reasoning : undefined);
         } catch (e) {
           console.error('Chat error:', e);
           showTyping(false);
@@ -7012,13 +7043,18 @@ v1.0 — 基于 AI写作助手 v5.3 色情化改造。删除商业网文方法�
           } else {
             fb = '唔…出了点问题，请稍后再试 😅';
           }
-          appendMessage('bot', fb);
-          addMessageToHistory('assistant', fb);
-        }
-
-          renderContacts();
+          try {
+            appendMessage('bot', fb);
+            addMessageToHistory('assistant', fb);
+          } catch (appErr) {
+            console.error('Failed to append error message:', appErr);
+          }
+        } finally {
           waitingForReply = false;
-
+          try {
+            renderContacts();
+          } catch (rcErr) {}
+        }
       }
 
       function getLocalFallback(msg) {
