@@ -525,14 +525,25 @@
       border: 1px solid rgba(0, 0, 0, 0.08);
     }
     [data-theme="day"] .tools-toggle,
-    [data-theme="day"] .music-toggle,
+    [data-theme="day"] .moodist-toggle,
     [data-theme="day"] .wallpaper-toggle,
     [data-theme="day"] .res-toggle,
     [data-theme="day"] .rc-toggle {
       background: rgba(255, 255, 255, 0.88);
-      border-color: rgba(0, 0, 0, 0.1);
+      border: 1px solid rgba(0, 0, 0, 0.1);
       color: #1d1d1f;
       box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+    }
+    [data-theme="day"] .tools-toggle {
+      border-left: none;
+    }
+    [data-theme="day"] .moodist-toggle {
+      border-right: none;
+    }
+    [data-theme="day"] .tools-toggle:hover,
+    [data-theme="day"] .moodist-toggle:hover {
+      background: rgba(255, 255, 255, 0.98);
+      color: #000;
     }
     [data-theme="day"] .wallpaper-panel,
     [data-theme="day"] .res-panel {
@@ -2453,7 +2464,7 @@
     @media (max-width: 700px), (pointer: coarse) {
       /* Hide all non-chat tools, rolecards, wallpaper, music, drawers and desktop-only buttons */
       .tools-toggle,
-      .music-toggle,
+      .moodist-toggle,
       .wallpaper-toggle,
       .res-toggle,
       .rc-toggle,

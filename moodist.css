@@ -3,37 +3,45 @@
    1:1 Authentic Reproduction from remvze/moodist
    ======================================================== */
 
-/* Toggle Button (Right Edge) */
+/* Toggle Button (Right Edge) - Exact Symmetrical Mirror of .tools-toggle */
 .moodist-toggle {
   position: fixed;
   right: 0;
   top: 50%;
   transform: translateY(-50%);
-  background: var(--surface, #1e1e24);
-  color: var(--text, #f4f4f5);
-  border: 1px solid var(--border, rgba(255, 255, 255, 0.15));
-  border-right: none;
-  border-radius: 8px 0 0 8px;
-  padding: 12px 10px;
+  z-index: 1100;
+  width: 44px;
+  height: 80px;
+  background: var(--accent);
+  border: none;
+  border-radius: 14px 0 0 14px;
   cursor: pointer;
-  z-index: 1050;
-  font-size: 13px;
-  font-weight: 500;
   display: flex;
   align-items: center;
-  gap: 6px;
-  writing-mode: vertical-rl;
+  justify-content: center;
+  box-shadow: 0 0 20px var(--accent-soft);
+  transition: all 0.25s ease;
+  color: #fff;
+  font-size: 1.1rem;
+  writing-mode: vertical-lr;
   letter-spacing: 2px;
-  box-shadow: -4px 0 16px rgba(0, 0, 0, 0.25);
-  transition: all 0.2s ease;
 }
 
 .moodist-toggle:hover {
-  background: var(--surface-hover, #282830);
-  transform: translateY(-50%) translateX(-2px);
+  width: 52px;
+  background: var(--accent-hover);
+  box-shadow: -4px 0 30px rgba(var(--accent-rgb), 0.6);
+}
+
+.moodist-toggle .toggle-text {
+  font-weight: 700;
+  font-size: 0.85rem;
 }
 
 .moodist-toggle .moodist-badge {
+  position: absolute;
+  top: 6px;
+  left: 6px;
   writing-mode: horizontal-tb;
   font-size: 10px;
   background: #111827;
@@ -225,6 +233,33 @@ body.moodist-open .moodist-stage {
   max-width: 960px;
   margin: 0 auto;
   width: 100%;
+}
+
+/* ==================== Moodist Hero Section ==================== */
+.moodist-hero {
+  max-width: 960px;
+  margin: 0 auto 50px auto;
+  padding: 16px 0 0 0;
+  text-align: left;
+}
+
+.moodist-hero-title {
+  font-size: 34px;
+  font-weight: 700;
+  color: var(--m-fg);
+  line-height: 1.35;
+  letter-spacing: -0.5px;
+  margin: 0 0 10px 0;
+  font-family: inherit;
+}
+
+.moodist-hero-sub {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--m-subtle);
+  margin: 0;
+  letter-spacing: 0.3px;
+  line-height: 1.6;
 }
 
 /* ==================== Category Section (Official Moodist) ==================== */
@@ -677,5 +712,16 @@ body.moodist-open .moodist-stage {
   .moodist-dock-circle {
     width: 42px;
     height: 42px;
+  }
+  .moodist-hero {
+    margin-bottom: 32px;
+    padding-top: 8px;
+  }
+  .moodist-hero-title {
+    font-size: 24px;
+    line-height: 1.3;
+  }
+  .moodist-hero-sub {
+    font-size: 13px;
   }
 }
