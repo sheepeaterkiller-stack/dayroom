@@ -1,48 +1,43 @@
 /* ========================================================
-   Moodist Ambient Workshop Styles (Pure Minimalist Bauhaus)
-   dayroom 氛围工坊 - 极致简约黑白灰工业风
+   Moodist Official Bauhaus Ambient Workshop
+   1:1 Authentic Reproduction from remvze/moodist
    ======================================================== */
 
-/* Right Edge Toggle Button (replacing old music-toggle) */
+/* Toggle Button (Right Edge) */
 .moodist-toggle {
   position: fixed;
   right: 0;
   top: 50%;
   transform: translateY(-50%);
-  background: rgba(22, 24, 29, 0.85);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  color: #e4e4e7;
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: var(--surface, #1e1e24);
+  color: var(--text, #f4f4f5);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.15));
   border-right: none;
   border-radius: 8px 0 0 8px;
-  padding: 10px 12px;
+  padding: 12px 10px;
   cursor: pointer;
-  z-index: 95;
+  z-index: 1050;
   font-size: 13px;
   font-weight: 500;
   display: flex;
   align-items: center;
   gap: 6px;
   writing-mode: vertical-rl;
-  text-orientation: mixed;
   letter-spacing: 2px;
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.3);
+  box-shadow: -4px 0 16px rgba(0, 0, 0, 0.25);
+  transition: all 0.2s ease;
 }
 
 .moodist-toggle:hover {
-  background: rgba(35, 38, 46, 0.95);
-  color: #ffffff;
-  border-color: rgba(255, 255, 255, 0.3);
+  background: var(--surface-hover, #282830);
   transform: translateY(-50%) translateX(-2px);
 }
 
 .moodist-toggle .moodist-badge {
   writing-mode: horizontal-tb;
   font-size: 10px;
-  background: #ffffff;
-  color: #121316;
+  background: #111827;
+  color: #ffffff;
   border-radius: 10px;
   padding: 1px 5px;
   font-weight: 700;
@@ -54,35 +49,69 @@
   display: inline-block;
 }
 
-/* Smooth Left-Slide Transition on Main Content */
-.main-content {
-  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease, filter 0.4s ease;
+/* ========================================================
+   Stage Isolation: Hide all distracting site elements!
+   ======================================================== */
+body.moodist-open {
+  overflow: hidden !important;
 }
 
-body.moodist-open .main-content {
-  transform: translateX(-12%) scale(0.98);
-  opacity: 0.35;
-  filter: blur(3px);
-  pointer-events: none;
+body.moodist-open .res-toggle,
+body.moodist-open #resToggle,
+body.moodist-open .tools-toggle,
+body.moodist-open #toolsToggle,
+body.moodist-open .wallpaper-toggle,
+body.moodist-open #wallpaperToggle,
+body.moodist-open #themeToggle,
+body.moodist-open #waifu,
+body.moodist-open .waifu,
+body.moodist-open .main-content,
+body.moodist-open .chat-app,
+body.moodist-open .sound-widget,
+body.moodist-open .footer-note {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
 }
 
-/* Moodist Stage (Full Screen Left-Slide Workshop) */
+/* Stage Container (Pure White in Day Mode / Pure Black in Dark Mode) */
 .moodist-stage {
+  --m-bg: #09090b;
+  --m-fg: #f4f4f5;
+  --m-surface: #121215;
+  --m-surface-hover: #1c1c21;
+  --m-border: #27272a;
+  --m-border-strong: #3f3f46;
+  --m-subtle: #a1a1aa;
+  --m-inv-bg: #fafafa;
+  --m-inv-fg: #09090b;
+
   position: fixed;
   inset: 0;
-  z-index: 100;
+  z-index: 3500;
+  background-color: var(--m-bg);
+  color: var(--m-fg);
   display: flex;
   flex-direction: column;
-  background: rgba(10, 12, 16, 0.68);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  color: #f4f4f5;
   transform: translateX(100%);
   opacity: 0;
   pointer-events: none;
-  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s ease;
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
   overflow: hidden;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Day Mode Theme Overrides (Authentic Pure White Moodist) */
+[data-theme="day"] .moodist-stage {
+  --m-bg: #ffffff;
+  --m-fg: #111827;
+  --m-surface: #ffffff;
+  --m-surface-hover: #f9fafb;
+  --m-border: #e5e7eb;
+  --m-border-strong: #d1d5db;
+  --m-subtle: #6b7280;
+  --m-inv-bg: #111827;
+  --m-inv-fg: #ffffff;
 }
 
 body.moodist-open .moodist-stage {
@@ -91,577 +120,562 @@ body.moodist-open .moodist-stage {
   pointer-events: auto;
 }
 
-/* Top Sticky Control Bar */
+/* ==================== Top Minimalist Header ==================== */
 .moodist-topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 28px;
-  background: rgba(18, 20, 24, 0.82);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  z-index: 10;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
-.moodist-topbar-left {
-  display: flex;
-  align-items: center;
-  gap: 14px;
+  padding: 16px 28px;
+  background-color: var(--m-bg);
+  border-bottom: 1px solid var(--m-border);
+  z-index: 20;
+  flex-shrink: 0;
 }
 
 .moodist-back-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 4px;
-  color: #e4e4e7;
+  gap: 8px;
+  padding: 7px 14px;
+  background-color: var(--m-surface);
+  border: 1px solid var(--m-border-strong);
+  border-radius: 6px;
+  color: var(--m-fg);
   font-size: 13px;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.18s ease;
 }
 
 .moodist-back-btn:hover {
-  background: rgba(255, 255, 255, 0.12);
-  color: #ffffff;
-  border-color: rgba(255, 255, 255, 0.25);
+  background-color: var(--m-surface-hover);
+  border-color: var(--m-fg);
 }
 
-.moodist-brand {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-}
-
-.moodist-title {
-  font-size: 16px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  color: #ffffff;
-}
-
-.moodist-count-tag {
-  font-size: 11px;
-  padding: 2px 7px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
-  color: #a1a1aa;
-}
-
-/* Presets & Controls */
 .moodist-topbar-center {
+  flex: 1;
   display: flex;
-  align-items: center;
-  gap: 8px;
+  justify-content: center;
   overflow-x: auto;
-  max-width: 480px;
   scrollbar-width: none;
+  padding: 0 16px;
 }
 
 .moodist-topbar-center::-webkit-scrollbar {
   display: none;
 }
 
-.moodist-preset-chip {
-  padding: 5px 11px;
-  font-size: 12px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
-  color: #d4d4d8;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: all 0.2s ease;
-}
-
-.moodist-preset-chip:hover {
-  background: rgba(255, 255, 255, 0.12);
-  color: #ffffff;
-  border-color: rgba(255, 255, 255, 0.25);
-}
-
-.moodist-preset-chip.active {
-  background: #ffffff;
-  color: #121316;
-  border-color: #ffffff;
-  font-weight: 600;
-}
-
-.moodist-topbar-right {
+/* Category Text Nav */
+.moodist-cat-nav {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 4px;
 }
 
-.moodist-action-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  height: 32px;
-  padding: 0 10px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
-  color: #d4d4d8;
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.moodist-action-btn:hover {
-  background: rgba(255, 255, 255, 0.12);
-  color: #ffffff;
-  border-color: rgba(255, 255, 255, 0.22);
-}
-
-.moodist-action-btn.active {
-  background: #ffffff;
-  color: #121316;
-  border-color: #ffffff;
-  font-weight: 600;
-}
-
-/* Master Volume Slider */
-.moodist-master-vol {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 0 8px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 4px;
-  height: 32px;
-}
-
-.moodist-vol-icon {
-  font-size: 14px;
-  cursor: pointer;
-  opacity: 0.8;
-}
-
-.moodist-vol-icon:hover {
-  opacity: 1;
-}
-
-.moodist-range-slider {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 70px;
-  height: 4px;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 2px;
-  outline: none;
-  cursor: pointer;
-}
-
-.moodist-range-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 12px;
-  height: 12px;
-  background: #ffffff;
-  border-radius: 50%;
-  cursor: pointer;
-  transition: transform 0.15s ease;
-}
-
-.moodist-range-slider::-webkit-slider-thumb:hover {
-  transform: scale(1.2);
-}
-
-/* Category Filter Bar */
-.moodist-cat-bar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 28px;
-  background: rgba(14, 16, 20, 0.7);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.moodist-cat-bar::-webkit-scrollbar {
-  display: none;
-}
-
-.moodist-cat-chip {
-  padding: 4px 10px;
-  font-size: 12px;
+.moodist-cat-link {
+  padding: 5px 12px;
+  font-size: 13px;
+  color: var(--m-subtle);
   background: transparent;
-  border: 1px solid transparent;
+  border: none;
   border-radius: 4px;
-  color: #a1a1aa;
   cursor: pointer;
   white-space: nowrap;
-  transition: all 0.18s ease;
-  display: flex;
-  align-items: center;
-  gap: 5px;
+  transition: color 0.18s ease, background-color 0.18s ease;
 }
 
-.moodist-cat-chip:hover {
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.05);
+.moodist-cat-link:hover {
+  color: var(--m-fg);
+  background-color: var(--m-surface-hover);
 }
 
-.moodist-cat-chip.active {
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.18);
-  font-weight: 500;
+.moodist-cat-link.active {
+  color: var(--m-fg);
+  font-weight: 600;
+  background-color: var(--m-surface-hover);
 }
 
-/* Sound Catalog Area */
-.moodist-catalog {
+.moodist-status-pill {
+  font-size: 12px;
+  color: var(--m-subtle);
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--m-border);
+}
+
+/* ==================== Scrolling Catalog Area ==================== */
+.moodist-catalog-wrapper {
   flex: 1;
   overflow-y: auto;
-  padding: 24px 28px 100px;
+  padding: 40px 24px 140px;
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+  scrollbar-color: var(--m-border-strong) transparent;
 }
 
-.moodist-catalog::-webkit-scrollbar {
+.moodist-catalog-wrapper::-webkit-scrollbar {
   width: 6px;
 }
 
-.moodist-catalog::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
+.moodist-catalog-wrapper::-webkit-scrollbar-thumb {
+  background-color: var(--m-border-strong);
   border-radius: 3px;
 }
 
-/* Category Section */
-.moodist-cat-section {
-  margin-bottom: 36px;
+.moodist-catalog {
+  max-width: 960px;
+  margin: 0 auto;
+  width: 100%;
 }
 
-.moodist-cat-header {
+/* ==================== Category Section (Official Moodist) ==================== */
+.moodist-category-section {
+  scroll-margin-top: 30px;
+  margin-bottom: 60px;
+}
+
+/* Vertical 75px Gradient Line */
+.moodist-cat-tail {
+  width: 1px;
+  height: 75px;
+  background: linear-gradient(transparent, var(--m-border-strong));
+  margin: 0 auto;
+}
+
+/* 45px Category Circle Badge */
+.moodist-cat-badge {
   display: flex;
-  align-items: baseline;
-  gap: 8px;
-  margin-bottom: 14px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  padding-bottom: 8px;
+  align-items: center;
+  justify-content: center;
+  width: 45px;
+  height: 45px;
+  margin: 0 auto 16px;
+  background-color: var(--m-surface);
+  border: 1px solid var(--m-border-strong);
+  border-radius: 50%;
+  color: var(--m-fg);
+  font-size: 19px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
-.moodist-cat-header-title {
-  font-size: 15px;
+.moodist-cat-badge svg {
+  width: 1.1em;
+  height: 1.1em;
+}
+
+/* Serif Category Title */
+.moodist-cat-title {
+  font-family: "Noto Serif SC", "Georgia", "Songti SC", "Times New Roman", serif;
+  font-size: 26px;
   font-weight: 600;
-  color: #ffffff;
+  text-align: center;
+  color: var(--m-fg);
+  margin: 0 0 24px 0;
   letter-spacing: 0.5px;
 }
 
-.moodist-cat-header-sub {
-  font-size: 12px;
-  color: #71717a;
+.moodist-cat-subtitle {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--m-subtle);
+  margin-left: 8px;
   text-transform: uppercase;
   letter-spacing: 1px;
 }
 
-/* Sound Grid */
-.moodist-grid {
+/* ==================== 3-Column Sounds Grid ==================== */
+.moodist-sounds-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
 }
 
-/* ========================================================
-   Moodist Signature Sound Card (Bauhaus Industrial Style)
-   ======================================================== */
-.moodist-card {
-  text-align: left;
-  cursor: pointer;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(20, 22, 27, 0.6);
-  border-radius: 0; /* Bauhaus straight corners */
-  grid-template-columns: 52px minmax(0, 1fr);
-  min-height: 92px;
-  padding: 0;
-  transition: color 0.18s, background-color 0.18s, border-color 0.18s;
-  display: grid;
-  position: relative;
-  user-select: none;
+@media (max-width: 820px) {
+  .moodist-sounds-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
-.moodist-card:hover {
-  background: rgba(26, 29, 36, 0.75);
-  border-color: rgba(255, 255, 255, 0.2);
+@media (max-width: 540px) {
+  .moodist-sounds-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Sound Card (Bauhaus Industrial) */
+.moodist-sound-card {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  min-height: 90px;
+  background-color: var(--m-surface);
+  border: 1px solid var(--m-border);
+  border-radius: 0; /* Bauhaus clean straight edge */
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.18s ease, background-color 0.18s ease;
+  user-select: none;
+  position: relative;
+}
+
+.moodist-sound-card:hover {
+  border-color: var(--m-border-strong);
+  background-color: var(--m-surface-hover);
 }
 
 /* Card Left 52px Square with 45° Hatching Lines */
-.moodist-card-icon {
+.moodist-card-icon-box {
   width: 52px;
   height: 100%;
-  min-height: 90px;
-  font-size: 18px;
-  color: #828794;
-  background-color: transparent;
-  background-image: repeating-linear-gradient(135deg, transparent 0, transparent 5px, rgba(255, 255, 255, 0.08) 5px, rgba(255, 255, 255, 0.08) 6px);
-  border-right: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 0;
-  grid-column: 1;
-  justify-content: center;
-  align-items: center;
-  transition: color 0.18s, background-color 0.18s, border-color 0.18s;
+  min-height: 88px;
   display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--m-subtle);
+  font-size: 18px;
+  background-image: repeating-linear-gradient(135deg, transparent 0, transparent 5px, var(--m-border) 5px, var(--m-border) 6px);
+  border-right: 1px solid var(--m-border);
+  transition: all 0.18s ease;
 }
 
-.moodist-card-icon svg {
+.moodist-card-icon-box svg {
   width: 1.15em;
   height: 1.15em;
 }
 
-/* Active State (Inverted Monochrome Bauhaus) */
-.moodist-card.active {
-  background-color: rgba(30, 33, 40, 0.9);
-  border-color: #e4e4e7;
+/* Inverted High-Contrast Active State */
+.moodist-sound-card.active {
+  background-color: var(--m-surface);
+  border-color: var(--m-inv-bg);
 }
 
-.moodist-card.active .moodist-card-icon {
-  color: #121316;
-  background-color: #f4f4f5;
-  border-right-color: #e4e4e7;
-  background-image: none; /* Striped pattern vanishes when active! */
+.moodist-sound-card.active .moodist-card-icon-box {
+  background-image: none;
+  background-color: var(--m-inv-bg);
+  color: var(--m-inv-fg);
+  border-right-color: var(--m-inv-bg);
 }
 
-/* Card Content Area */
-.moodist-card-content {
+/* Card Body */
+.moodist-card-body {
+  display: flex;
   flex-direction: column;
-  grid-column: 2;
   justify-content: center;
   gap: 8px;
-  min-width: 0;
   padding: 10px 14px;
-  display: flex;
+  min-width: 0;
 }
 
-.moodist-card-heading {
+.moodist-card-title-row {
+  display: flex;
+  align-items: baseline;
   justify-content: space-between;
-  align-items: center;
-  gap: 4px;
+  gap: 6px;
   min-width: 0;
-  display: flex;
 }
 
-.moodist-card-label {
-  min-width: 0;
-  font-size: 13.5px;
+.moodist-card-name {
+  font-size: 14px;
   font-weight: 600;
-  line-height: 1.3;
-  color: #e4e4e7;
+  color: var(--m-fg);
   display: flex;
   align-items: baseline;
   gap: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.moodist-card-sublabel {
+.moodist-card-subname {
   font-size: 11px;
   font-weight: 400;
-  color: #71717a;
+  color: var(--m-subtle);
 }
 
-.moodist-card.active .moodist-card-label {
-  color: #ffffff;
-}
-
-/* Card Controls (Slider + Swell Button) */
+/* Volume Slider & Wave Button */
 .moodist-card-controls {
+  display: flex;
   align-items: center;
   gap: 8px;
   min-width: 0;
-  display: flex;
-  opacity: 0.35;
+  opacity: 0.25;
   transition: opacity 0.18s ease;
 }
 
-.moodist-card.active .moodist-card-controls {
+.moodist-sound-card.active .moodist-card-controls {
   opacity: 1;
 }
 
-/* Track Volume Slider */
-.moodist-card-slider {
+.moodist-sound-slider {
   -webkit-appearance: none;
   appearance: none;
   width: 100%;
-  height: 4px;
-  background: rgba(255, 255, 255, 0.15);
+  height: 3px;
+  background: var(--m-border-strong);
   border-radius: 2px;
   outline: none;
   cursor: pointer;
   flex: 1;
 }
 
-.moodist-card-slider::-webkit-slider-thumb {
+.moodist-sound-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
   width: 12px;
   height: 12px;
-  background: #ffffff;
+  background: var(--m-inv-bg);
   border-radius: 50%;
   cursor: pointer;
-  transition: transform 0.15s ease;
+  transition: transform 0.12s ease;
 }
 
-.moodist-card-slider::-webkit-slider-thumb:hover {
+.moodist-sound-slider::-webkit-slider-thumb:hover {
   transform: scale(1.25);
 }
 
-/* Swell (Wave Oscillation) Button */
-.moodist-swell-btn {
+.moodist-swell-toggle {
+  font-size: 11px;
   height: 22px;
-  font-size: 10.5px;
-  color: #a1a1aa;
-  cursor: pointer;
-  background-color: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 3px;
-  flex: none;
-  justify-content: center;
-  align-items: center;
-  gap: 3px;
   padding: 0 6px;
+  border-radius: 3px;
+  border: 1px solid var(--m-border-strong);
+  background: transparent;
+  color: var(--m-subtle);
+  cursor: pointer;
+  flex: none;
+  transition: all 0.18s ease;
   line-height: 1;
-  transition: color 0.18s, background-color 0.18s, border-color 0.18s;
-  display: inline-flex;
-  user-select: none;
 }
 
-.moodist-swell-btn:hover {
-  color: #ffffff;
-  border-color: rgba(255, 255, 255, 0.3);
+.moodist-swell-toggle:hover {
+  border-color: var(--m-fg);
+  color: var(--m-fg);
 }
 
-.moodist-swell-btn.active {
-  color: #121316;
-  background-color: #f4f4f5;
-  border-color: #ffffff;
+.moodist-swell-toggle.active {
+  background: var(--m-inv-bg);
+  color: var(--m-inv-fg);
+  border-color: var(--m-inv-bg);
   font-weight: 600;
 }
 
-/* ========================================================
-   4-7-8 Breathing Guide Modal
-   ======================================================== */
-.moodist-modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.75);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  z-index: 150;
+/* Show More / Show Less Capsule Button */
+.moodist-show-more-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.25s ease;
+  width: max-content;
+  height: 35px;
+  padding: 0 20px;
+  margin: 22px auto 0;
+  font-size: 13px;
+  color: var(--m-subtle);
+  cursor: pointer;
+  background-color: var(--m-surface);
+  border: 1px solid var(--m-border-strong);
+  border-radius: 50px;
+  transition: all 0.18s ease;
 }
 
-.moodist-modal-overlay.open {
-  opacity: 1;
+.moodist-show-more-btn:hover {
+  color: var(--m-fg);
+  background-color: var(--m-surface-hover);
+  border-color: var(--m-fg);
+}
+
+.moodist-sound-card.hidden-item {
+  display: none !important;
+}
+
+/* ==================== Moodist Signature Floating Dock ==================== */
+.moodist-dock-container {
+  position: fixed;
+  bottom: 28px;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  padding: 0 28px;
+}
+
+.moodist-dock-center {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   pointer-events: auto;
 }
 
-.moodist-modal {
-  width: 90%;
-  max-width: 420px;
-  background: #181a20;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 8px;
-  padding: 24px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  position: relative;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
-}
-
-.moodist-modal-close {
+.moodist-dock-right {
   position: absolute;
-  top: 14px;
-  right: 14px;
-  background: none;
-  border: none;
-  color: #a1a1aa;
-  font-size: 16px;
-  cursor: pointer;
-  padding: 4px;
-}
-
-.moodist-modal-close:hover {
-  color: #ffffff;
-}
-
-.moodist-breath-circle {
-  width: 140px;
-  height: 140px;
-  border-radius: 50%;
-  border: 2px solid rgba(255, 255, 255, 0.25);
-  background: rgba(255, 255, 255, 0.03);
+  right: 28px;
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  pointer-events: auto;
+}
+
+/* Black Capsule Play Button */
+.moodist-dock-play {
+  display: flex;
   align-items: center;
   justify-content: center;
-  margin: 24px 0;
-  position: relative;
-  transition: transform 4s ease, border-color 0.5s ease;
-}
-
-.moodist-breath-circle.inhale {
-  transform: scale(1.4);
-  border-color: #ffffff;
-  background: rgba(255, 255, 255, 0.1);
-  transition-duration: 4s;
-}
-
-.moodist-breath-circle.hold {
-  transform: scale(1.4);
-  border-color: #a1a1aa;
-  transition-duration: 7s;
-}
-
-.moodist-breath-circle.exhale {
-  transform: scale(1);
-  border-color: rgba(255, 255, 255, 0.25);
-  transition-duration: 8s;
-}
-
-.moodist-breath-action {
-  font-size: 16px;
+  gap: 8px;
+  width: 145px;
+  height: 46px;
+  border-radius: 100px;
+  background-color: var(--m-inv-bg);
+  color: var(--m-inv-fg);
+  font-size: 14px;
   font-weight: 600;
-  color: #ffffff;
+  border: 1px solid var(--m-inv-bg);
+  cursor: pointer;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  transition: transform 0.12s ease, opacity 0.18s ease;
 }
 
-.moodist-breath-time {
-  font-size: 22px;
-  font-weight: 700;
-  color: #a1a1aa;
-  margin-top: 4px;
+.moodist-dock-play:active {
+  transform: scale(0.97);
 }
 
-/* Mobile Responsive */
-@media (max-width: 700px), (pointer: coarse) {
+/* Circular Auxiliary Buttons (Unselect / Clear, Menu) */
+.moodist-dock-circle {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background-color: var(--m-surface);
+  border: 1px solid var(--m-border-strong);
+  color: var(--m-fg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+  transition: all 0.18s ease;
+}
+
+.moodist-dock-circle:hover {
+  background-color: var(--m-surface-hover);
+  border-color: var(--m-fg);
+}
+
+.moodist-dock-circle:active {
+  transform: scale(0.95);
+}
+
+/* Play a Mix Capsule */
+.moodist-dock-mix {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  height: 46px;
+  padding: 0 20px;
+  border-radius: 100px;
+  background-color: var(--m-inv-bg);
+  color: var(--m-inv-fg);
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid var(--m-inv-bg);
+  cursor: pointer;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  transition: transform 0.12s ease, opacity 0.18s ease;
+}
+
+.moodist-dock-mix:active {
+  transform: scale(0.97);
+}
+
+/* Menu Popover (Timer & Master Volume) */
+.moodist-dock-menu-wrapper {
+  position: relative;
+}
+
+.moodist-menu-popover {
+  position: absolute;
+  bottom: 56px;
+  right: 0;
+  width: 220px;
+  background-color: var(--m-surface);
+  border: 1px solid var(--m-border-strong);
+  border-radius: 8px;
+  padding: 14px;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.35);
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 120;
+}
+
+.moodist-menu-popover.open {
+  display: flex;
+}
+
+.moodist-menu-section-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--m-subtle);
+  letter-spacing: 0.5px;
+}
+
+.moodist-timer-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.moodist-timer-chip {
+  padding: 4px 8px;
+  font-size: 12px;
+  background: transparent;
+  border: 1px solid var(--m-border-strong);
+  border-radius: 4px;
+  color: var(--m-fg);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.moodist-timer-chip:hover {
+  background-color: var(--m-surface-hover);
+  border-color: var(--m-fg);
+}
+
+.moodist-timer-chip.active {
+  background-color: var(--m-inv-bg);
+  color: var(--m-inv-fg);
+  border-color: var(--m-inv-bg);
+  font-weight: 600;
+}
+
+.moodist-dock-vol-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Mobile Adjustments */
+@media (max-width: 680px) {
   .moodist-topbar {
-    padding: 10px 14px;
-    gap: 8px;
-  }
-  .moodist-cat-bar {
-    padding: 8px 14px;
-  }
-  .moodist-catalog {
-    padding: 16px 14px 80px;
-  }
-  .moodist-grid {
-    grid-template-columns: 1fr;
+    padding: 12px 16px;
   }
   .moodist-topbar-center {
-    order: 3;
-    max-width: 100%;
-    width: 100%;
+    display: none; /* Hide top pill list on small phones */
+  }
+  .moodist-dock-container {
+    padding: 0 16px;
+    bottom: 20px;
+  }
+  .moodist-dock-play {
+    width: 120px;
+    height: 42px;
+  }
+  .moodist-dock-mix {
+    padding: 0 14px;
+    height: 42px;
+  }
+  .moodist-dock-circle {
+    width: 42px;
+    height: 42px;
   }
 }

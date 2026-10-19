@@ -1,13 +1,12 @@
 // Moodist Ambient Sounds Data (89 tracks across 9 categories)
-// Streamed directly from moodist.mvze.net (Cloudflare global CDN with CORS enabled)
-// Chinese translation & presets adapted for dayroom
+// Official Moodist replica for dayroom
 const MOODIST_DATA = {
   categories: [
   {
     "id": "nature",
     "title": "自然",
     "enTitle": "Nature",
-    "icon": "🌿",
+    "icon": "<svg stroke=\"currentColor\" fill=\"currentColor\" stroke-width=\"0\" viewBox=\"0 0 24 24\" height=\"1em\" width=\"1em\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"m20 18-4-5h3l-4-5h2l-5-6-5 6h2l-4 5h3l-4 5h7v4h2v-4z\"></path></svg>",
     "sounds": [
       {
         "id": "river",
@@ -99,7 +98,7 @@ const MOODIST_DATA = {
     "id": "rain",
     "title": "雨声",
     "enTitle": "Rain",
-    "icon": "🌧️",
+    "icon": "<svg stroke=\"currentColor\" fill=\"currentColor\" stroke-width=\"0\" viewBox=\"0 0 16 16\" height=\"1em\" width=\"1em\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M4.158 12.025a.5.5 0 0 1 .316.633l-.5 1.5a.5.5 0 0 1-.948-.316l.5-1.5a.5.5 0 0 1 .632-.317zm3 0a.5.5 0 0 1 .316.633l-1 3a.5.5 0 0 1-.948-.316l1-3a.5.5 0 0 1 .632-.317zm3 0a.5.5 0 0 1 .316.633l-.5 1.5a.5.5 0 0 1-.948-.316l.5-1.5a.5.5 0 0 1 .632-.317zm3 0a.5.5 0 0 1 .316.633l-1 3a.5.5 0 1 1-.948-.316l1-3a.5.5 0 0 1 .632-.317zm.247-6.998a5.001 5.001 0 0 0-9.499-1.004A3.5 3.5 0 1 0 3.5 11H13a3 3 0 0 0 .405-5.973z\"></path></svg>",
     "sounds": [
       {
         "id": "light-rain",
@@ -163,7 +162,7 @@ const MOODIST_DATA = {
     "id": "animals",
     "title": "动物",
     "enTitle": "Animals",
-    "icon": "🐾",
+    "icon": "<svg stroke=\"currentColor\" fill=\"currentColor\" stroke-width=\"0\" viewBox=\"0 0 512 512\" height=\"1em\" width=\"1em\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M256 224c-79.5 0-144 64.5-144 144s64.5 144 144 144 144-64.5 144-144-64.5-144-144-144zm0 240c-52.9 0-96-43.1-96-96s43.1-96 96-96 96 43.1 96 96-43.1 96-96 96zM112 128C50.1 128 0 178.1 0 240s50.1 112 112 112c10.3 0 20.3-1.4 29.8-4.1-1.2-6.5-1.8-13.1-1.8-19.9 0-66.2 46.2-121.7 108.6-136.5C227.1 154.2 173.3 128 112 128zm288 0c-61.3 0-115.1 26.2-136.6 63.5 62.4 14.8 108.6 70.3 108.6 136.5 0 6.8-.6 13.4-1.8 19.9 9.5 2.7 19.5 4.1 29.8 4.1 61.9 0 112-50.1 112-112s-50.1-112-112-112z\"></path></svg>",
     "sounds": [
       {
         "id": "birds",
@@ -283,7 +282,7 @@ const MOODIST_DATA = {
     "id": "urban",
     "title": "城市",
     "enTitle": "Urban",
-    "icon": "🏙️",
+    "icon": "<svg stroke=\"currentColor\" fill=\"currentColor\" stroke-width=\"0\" viewBox=\"0 0 24 24\" height=\"1em\" width=\"1em\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M19 2H9c-1.103 0-2 .897-2 2v6H5c-1.103 0-2 .897-2 2v8c0 1.103.897 2 2 2h14c1.103 0 2-.897 2-2V4c0-1.103-.897-2-2-2zM5 20v-8h2v8H5zm14 0H9v-8h4V4h6v16z\"></path></svg>",
     "sounds": [
       {
         "id": "highway",
@@ -340,7 +339,7 @@ const MOODIST_DATA = {
     "id": "places",
     "title": "场所",
     "enTitle": "Places",
-    "icon": "☕",
+    "icon": "<svg stroke=\"currentColor\" fill=\"currentColor\" stroke-width=\"0\" viewBox=\"0 0 24 24\" height=\"1em\" width=\"1em\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M12 2C7.589 2 4 5.589 4 9.995 3.971 16.44 11.696 21.784 12 22c0 0 8.029-5.56 8-12 0-4.411-3.589-8-8-8zm0 12c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4z\"></path></svg>",
     "sounds": [
       {
         "id": "cafe",
@@ -460,7 +459,7 @@ const MOODIST_DATA = {
     "id": "transport",
     "title": "出行",
     "enTitle": "Transport",
-    "icon": "🚂",
+    "icon": "<svg stroke=\"currentColor\" fill=\"currentColor\" stroke-width=\"0\" viewBox=\"0 0 24 24\" height=\"1em\" width=\"1em\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.85 7h10.29l1.04 3H5.81l1.04-3zM19 17H5v-4.66l.12-.34h13.77l.11.34V17z\"></path><circle cx=\"7.5\" cy=\"14.5\" r=\"1.5\"></circle><circle cx=\"16.5\" cy=\"14.5\" r=\"1.5\"></circle></svg>",
     "sounds": [
       {
         "id": "train",
@@ -510,7 +509,7 @@ const MOODIST_DATA = {
     "id": "things",
     "title": "物件",
     "enTitle": "Things",
-    "icon": "🕰️",
+    "icon": "<svg stroke=\"currentColor\" fill=\"currentColor\" stroke-width=\"0\" viewBox=\"0 0 24 24\" height=\"1em\" width=\"1em\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z\"></path><path d=\"M13 7h-2v6h6v-2h-4z\"></path></svg>",
     "sounds": [
       {
         "id": "keyboard",
@@ -630,7 +629,7 @@ const MOODIST_DATA = {
     "id": "noise",
     "title": "噪音",
     "enTitle": "Noise",
-    "icon": "📻",
+    "icon": "<svg stroke=\"currentColor\" fill=\"currentColor\" stroke-width=\"0\" viewBox=\"0 0 24 24\" height=\"1em\" width=\"1em\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M14 20.4V3.6a1 1 0 0 0-1.6-.8L7.2 6.6H3a1 1 0 0 0-1 1v8.8a1 1 0 0 0 1 1h4.2l5.2 3.8a1 1 0 0 0 1.6-.8zM18.4 12a4.4 4.4 0 0 0-1.4-3.2 1 1 0 0 0-1.4 1.4 2.4 2.4 0 0 1 0 3.6 1 1 0 0 0 1.4 1.4 4.4 4.4 0 0 0 1.4-3.2z\"></path></svg>",
     "sounds": [
       {
         "id": "white-noise",
@@ -659,7 +658,7 @@ const MOODIST_DATA = {
     "id": "binaural",
     "title": "脑波节拍",
     "enTitle": "Binaural Beats",
-    "icon": "🧠",
+    "icon": "<svg stroke=\"currentColor\" fill=\"currentColor\" stroke-width=\"0\" viewBox=\"0 0 24 24\" height=\"1em\" width=\"1em\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm1 14.93V19a1 1 0 0 1-2 0v-2.07A6 6 0 0 1 6 11a1 1 0 0 1 2 0 4 4 0 0 0 8 0 1 1 0 0 1 2 0 6 6 0 0 1-5 5.93z\"></path></svg>",
     "sounds": [
       {
         "id": "binaural-delta",
@@ -704,7 +703,6 @@ const MOODIST_DATA = {
     "id": "rainy_cabin",
     "name": "深夜雨屋",
     "desc": "轻柔雨声敲打窗沿，伴随壁炉篝火的噼啪暖意",
-    "icon": "🌧️",
     "sounds": [
       {
         "id": "light-rain",
@@ -732,7 +730,6 @@ const MOODIST_DATA = {
     "id": "forest_zen",
     "name": "林间冥想",
     "desc": "穿过林梢的微风，伴着远处的清澈溪流与鸟鸣",
-    "icon": "🌲",
     "sounds": [
       {
         "id": "wind-in-trees",
@@ -760,7 +757,6 @@ const MOODIST_DATA = {
     "id": "cafe_corner",
     "name": "街角咖啡",
     "desc": "午后街角咖啡馆，轻微杯盘声与微雨键盘交织",
-    "icon": "☕",
     "sounds": [
       {
         "id": "cafe",
@@ -788,7 +784,6 @@ const MOODIST_DATA = {
     "id": "ocean_breeze",
     "name": "宁静海岛",
     "desc": "轻柔海浪拍岸，海鸥在微风中远鸣，惬意舒缓",
-    "icon": "🌊",
     "sounds": [
       {
         "id": "waves",
@@ -811,7 +806,6 @@ const MOODIST_DATA = {
     "id": "deep_space",
     "name": "深空漫游",
     "desc": "沉浸式塞塔脑波与深频棕噪，如同置身无垠星空",
-    "icon": "🌌",
     "sounds": [
       {
         "id": "binaural-theta",
@@ -834,7 +828,6 @@ const MOODIST_DATA = {
     "id": "deep_focus",
     "name": "沉浸专注",
     "desc": "粉红噪音消除外界杂音，阿尔法脑波激发专注心流",
-    "icon": "🎯",
     "sounds": [
       {
         "id": "pink-noise",
