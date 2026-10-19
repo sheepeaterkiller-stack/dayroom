@@ -301,3 +301,18 @@ The test: Every changed line should trace directly to the user's request.
     - 画布高度从 `145px` 提升到 **`240px`**，呈现两倍纵深的宽画幅示波视效；
     - 三轨混音台由单列上下堆叠重构为 **横向 3 列卡片式栅格**（`grid-template-columns: repeat(3, 1fr)`），每轨独立卡片、色彩主题、滑块与解释说明；
     - 底部操作底座增加键盘快捷键 `[M]` 一键紧急静音/唤醒监听（智能避开输入框编辑态）。
+- **声音空间示波器波形全轨融合、暂停平息与跳动节奏调优（2026-10-19）**：
+  - **暂停波纹平息与平坦基线（解决"暂停之后波纹还在"）**：
+    - 根因：此前点击暂停/静音时，`stopAudioEngine()` 直接调用 `stopScopeVisualizer()` 取消了 `requestAnimationFrame` 循环，导致画布冻结在暂停瞬间的活跃振幅帧；
+    - 修复：引入 `currentVisualAmp` 平滑阻尼插值（开机 0.3s 缓升至 1.0，暂停/静音 0.3s 平滑沉降至 0.0）；暂停时抽屉保持展开则渲染循环继续运行，波形顺滑回落至一条极简温和的水平中轴基准线（`midY * 0.52`），频谱柱平滑归零；抽屉关闭时才真正停止循环以节省系统资源；
+  - **三轨波形全量视觉特征融汇（解决"后面两个选项没有波纹"）**：
+    - 根因：此前时域波形算法中仅叠加了 `volTide` 的长波起伏，未将轨2（有机颗粒 crackle）与轨3（漂移垫音 drone）的能量与振幅注入波形方程；
+    - 修复：重构时域波形为三轨混合声学方程：
+      - 轨1（暖色基底）：低频广阔长波 `tideWave = Math.sin(i * 0.045 + wavePhase) * (volTide * 22)`；
+      - 轨2（有机颗粒）：高频微细微波涟漪 `crackleWave = Math.sin(i * 0.28 + wavePhase * 3.2) * crackleVisualEnergy * (volCrackle * 14)`；
+      - 轨3（漂移垫音）：大七度/纯五度复音谐波干涉驻波 `droneWave = (Math.sin(...) * 0.65 + Math.sin(...) * 0.35) * (volDrone * 16)`；
+      - 任意拖动三个滑块均能在画布时域区产生即时、独特的物理视觉波纹；
+  - **视觉节奏放慢与有机颗粒能量平缓阻尼（解决"时间特别短、放慢音频跳动"）**：
+    - 激荡时注能 `crackleVisualEnergy = Math.min(1.0, crackleVisualEnergy + 0.6)`，衰减系数优化为 `*= 0.96`（放慢至 400ms~600ms 柔和消散），让雨滴与火星的视觉涟漪呈现出水墨扩散般舒缓、有机、富有质感的微动效；
+  - **示波器中层信息浮层解耦与防遮挡**：
+    - HTML 浮层增加 `.row-top` 与 `.row-mid`（CSS 配置 `margin-top: 86px`），将 `FREQUENCY SPECTRUM` 与 `Filter Cutoff` 铭牌置于中轴线上方，彻底与底部的频谱柱与滚降包络虚线分层，解决图文撞车重叠。

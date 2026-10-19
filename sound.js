@@ -44,6 +44,8 @@
   let scopeCanvas = null;
   let scopeCtx = null;
   let wavePhase = 0;
+  let currentVisualAmp = 0;
+  let crackleVisualEnergy = 0;
 
   // 示波器粒子与波纹池
   const scopeParticles = [];
@@ -365,6 +367,7 @@
       filter.Q.setTargetAtTime(isRainMode ? 3.5 : 8.0, now, 0.05);
 
       if (isDrawerOpen) {
+        crackleVisualEnergy = Math.min(1.0, crackleVisualEnergy + 0.6);
         const pCount = Math.min(3, Math.ceil(density / 6));
         for (let k = 0; k < pCount; k++) {
           addScopeParticle(
@@ -525,7 +528,9 @@
       cancelAnimationFrame(visualAnimId);
       visualAnimId = null;
     }
-    stopScopeVisualizer();
+    if (!isDrawerOpen) {
+      stopScopeVisualizer();
+    }
     if (audioCtx && audioCtx.state !== 'closed') {
       try { audioCtx.suspend(); } catch (e) {}
     }
@@ -720,6 +725,16 @@
 
       const midY = h * 0.46; // 上下动态分界中轴线
 
+      // 0. 全局视觉振幅阻尼插值 (开机 0.3s 平滑抬升，暂停 0.3s 平滑归零休眠)
+      currentVisualAmp += ((isPoweredOn ? 1.0 : 0.0) - currentVisualAmp) * 0.12;
+      if (!isPoweredOn && currentVisualAmp < 0.003) {
+        currentVisualAmp = 0;
+      }
+
+      // 有机颗粒视觉涟漪能量衰减 (400ms~600ms 柔和放慢消散，突显视觉效果)
+      crackleVisualEnergy *= 0.96;
+      if (crackleVisualEnergy < 0.004) crackleVisualEnergy = 0;
+
       // 1. 清空画布
       scopeCtx.clearRect(0, 0, w, h);
       scopeCtx.fillStyle = bgColor;
@@ -733,7 +748,7 @@
       if (lfoReadoutEl) {
         lfoReadoutEl.textContent = isPoweredOn 
           ? `LFO 潮汐调制: 0.087 Hz (呼吸 ${volTide > 0 ? Math.round(volTide * 100) + '%' : '静音'})`
-          : 'LFO 潮汐调制: 待机挂起';
+          : 'LFO 潮汐调制: 已静音暂停 (待机)';
       }
 
       // 获取实时音频数据
@@ -797,22 +812,32 @@
       }
       scopeCtx.restore();
 
-      // ================= 3. 上半部：时域合成波形 (256采样 + 流体潮汐波) =================
+      // ================= 3. 上半部：时域合成波形 (三轨视觉特征全量融合 + 阻尼平息) =================
       scopeCtx.save();
       scopeCtx.beginPath();
       const numWavePoints = 256;
       const sliceWidth = w / (numWavePoints - 1);
-      wavePhase += isPoweredOn ? 0.024 : 0.008;
+      if (currentVisualAmp > 0.001) {
+        wavePhase += isPoweredOn ? 0.024 : 0.008;
+      }
 
       for (let i = 0; i < numWavePoints; i++) {
-        const sampleIdx = Math.floor((i / numWavePoints) * (timeData.length - 1));
         let yOffset = 0;
-        if (isPoweredOn) {
+        if (currentVisualAmp > 0.001) {
+          const sampleIdx = Math.floor((i / numWavePoints) * (timeData.length - 1));
           const v = (timeData[sampleIdx] - 128) / 128.0;
-          const fluidWave = Math.sin(i * 0.045 + wavePhase) * (volTide * 18);
-          yOffset = v * 38 + fluidWave;
-        } else {
-          yOffset = Math.sin(i * 0.035 + wavePhase) * 2.5;
+
+          // 轨1: 暖色基底 (深海潮汐长波)
+          const tideWave = Math.sin(i * 0.045 + wavePhase) * (volTide * 22);
+
+          // 轨2: 有机颗粒 (木柴噼啪与落雨激荡的高频微波涟漪，放慢衰减周期)
+          const crackleWave = Math.sin(i * 0.28 + wavePhase * 3.2) * crackleVisualEnergy * (volCrackle * 14);
+
+          // 轨3: 漂移垫音 (大七度五度复音谐波干涉驻波)
+          const droneWave = (Math.sin(i * 0.12 + wavePhase * 1.5) * 0.65 + Math.sin(i * 0.24 + wavePhase * 0.8) * 0.35) * (volDrone * 16);
+
+          // 三轨全量融汇与真实采样叠加
+          yOffset = (v * 24 + tideWave + crackleWave + droneWave) * currentVisualAmp;
         }
 
         const y = midY * 0.52 + yOffset;
@@ -823,9 +848,9 @@
 
       scopeCtx.strokeStyle = isPoweredOn
         ? (isMuffled || isManualMuffled ? (isDay ? '#d97706' : '#f59e0b') : waveColor)
-        : (isDay ? 'rgba(71, 85, 105, 0.35)' : 'rgba(100, 116, 139, 0.35)');
-      scopeCtx.lineWidth = 2;
-      if (!isDay && isPoweredOn) {
+        : (isDay ? 'rgba(71, 85, 105, 0.4)' : 'rgba(100, 116, 139, 0.4)');
+      scopeCtx.lineWidth = isPoweredOn ? 2 : 1.5;
+      if (!isDay && isPoweredOn && currentVisualAmp > 0.1) {
         scopeCtx.shadowColor = isMuffled || isManualMuffled ? 'rgba(245, 158, 11, 0.45)' : 'rgba(56, 189, 248, 0.45)';
         scopeCtx.shadowBlur = 6;
       }
@@ -850,7 +875,7 @@
 
       for (let b = 0; b < numBars; b++) {
         let mag = 0;
-        if (isPoweredOn && masterAnalyser) {
+        if (isPoweredOn && masterAnalyser && currentVisualAmp > 0.001) {
           // 对数映射频段取样
           const binIdx = Math.min(
             freqData.length - 1,
@@ -868,31 +893,30 @@
           attenuation = Math.max(0.04, Math.pow(0.5, dist * 2.2));
         }
 
-        const barH = isPoweredOn
-          ? Math.max(2, mag * specHeight * attenuation)
-          : (2 + Math.sin(b * 0.35 + Date.now() * 0.003) * 1.5);
-
+        const barH = Math.max(0, mag * specHeight * attenuation * currentVisualAmp);
         const by = h - 10 - barH;
 
-        // 颜色渐变: 0~25 蓝, 26~44 绿, 45~63 黄/金
-        let barColor = isDay ? '#0284c7' : '#38bdf8';
-        if (isMuffled || isManualMuffled) {
-          barColor = isDay ? '#d97706' : '#f59e0b';
-        } else if (b >= 45) {
-          barColor = isDay ? '#d97706' : '#fbbf24';
-        } else if (b >= 26) {
-          barColor = isDay ? '#059669' : '#34d399';
-        }
+        if (barH > 0.5) {
+          // 颜色渐变: 0~25 蓝, 26~44 绿, 45~63 黄/金
+          let barColor = isDay ? '#0284c7' : '#38bdf8';
+          if (isMuffled || isManualMuffled) {
+            barColor = isDay ? '#d97706' : '#f59e0b';
+          } else if (b >= 45) {
+            barColor = isDay ? '#d97706' : '#fbbf24';
+          } else if (b >= 26) {
+            barColor = isDay ? '#059669' : '#34d399';
+          }
 
-        scopeCtx.fillStyle = barColor;
-        scopeCtx.beginPath();
-        const r = Math.min(barWidth / 2, 2);
-        if (scopeCtx.roundRect) {
-          scopeCtx.roundRect(bx, by, barWidth, barH, [r, r, 0, 0]);
-        } else {
-          scopeCtx.rect(bx, by, barWidth, barH);
+          scopeCtx.fillStyle = barColor;
+          scopeCtx.beginPath();
+          const r = Math.min(barWidth / 2, 2);
+          if (scopeCtx.roundRect) {
+            scopeCtx.roundRect(bx, by, barWidth, barH, [r, r, 0, 0]);
+          } else {
+            scopeCtx.rect(bx, by, barWidth, barH);
+          }
+          scopeCtx.fill();
         }
-        scopeCtx.fill();
       }
 
       // ================= 5. 下半部：低通滤波器滚降包络虚线 (Filter Roll-off Envelope) =================

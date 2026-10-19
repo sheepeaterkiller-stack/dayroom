@@ -4054,7 +4054,6 @@
       pointer-events: none;
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
       padding: 8px 12px;
       font-size: 0.68rem;
       color: #64748b;
@@ -4062,10 +4061,17 @@
       letter-spacing: 0.2px;
     }
 
-    .sd-label-row {
+    .sd-label-row.row-top {
       display: flex;
       justify-content: space-between;
       align-items: center;
+    }
+
+    .sd-label-row.row-mid {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 86px;
     }
 
     /* ========== Presets / Recommended Recipes ========== */
