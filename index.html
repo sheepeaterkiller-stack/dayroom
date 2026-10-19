@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=1792401500232">
+  <link rel="stylesheet" href="style.css?v=1792402511247">
   <script>
     try {
       if (localStorage.getItem('theme_mode') === 'day') {
@@ -52,9 +52,12 @@
           </div>
           <span class="sd-badge" id="sdStateBadge">静音中</span>
         </div>
-        <button class="sd-master-toggle" id="sdMasterToggle" title="开启/关闭声音空间">
-          <span class="sd-toggle-knob"></span>
-        </button>
+        <div class="sd-header-actions">
+          <button class="sd-master-toggle" id="sdMasterToggle" title="开启/关闭声音空间">
+            <span class="sd-toggle-knob"></span>
+          </button>
+          <button class="sd-close-btn" id="sdBtnClose" title="收起控制台 (Esc)" aria-label="收起面板">✕</button>
+        </div>
       </div>
 
       <!-- 2. Acoustic Visualizer Canvas (Time-Domain & Log Spectrum) -->
@@ -9182,6 +9185,6 @@ v1.0 — 基于 AI写作助手 v5.3 色情化改造。删除商业网文方法�
   <script src="waifu/autoload.js"></script>
 
   <!-- ========== Sound Space Audio Engine ========== -->
-  <script src="sound.js?v=1792401500232"></script>
+  <script src="sound.js?v=1792402511247"></script>
 </body>
 </html>

@@ -1013,11 +1013,13 @@
 
     initScopeCanvas();
 
-    // 抽屉展开与延时自动收起计时器
-    let closeTimer = null;
+    // 抽屉展开与延时自动收起控制器 (支持常驻锁定与安全防抖)
+    let isPinned = false;
+    let hoverCloseTimer = null;
 
-    function openDrawer() {
-      clearTimeout(closeTimer);
+    function openDrawer(pinned = false) {
+      clearTimeout(hoverCloseTimer);
+      if (pinned) isPinned = true;
       if (!isDrawerOpen) {
         isDrawerOpen = true;
         drawer.classList.add('open');
@@ -1027,51 +1029,89 @@
       }
     }
 
-    function closeDrawerDelayed() {
-      clearTimeout(closeTimer);
-      closeTimer = setTimeout(() => {
-        isDrawerOpen = false;
-        drawer.classList.remove('open');
-        drawer.setAttribute('aria-hidden', 'true');
-        stopScopeVisualizer();
-      }, 360);
+    function closeDrawer(force = false) {
+      clearTimeout(hoverCloseTimer);
+      if (!force && isPinned) return;
+      isPinned = false;
+      isDrawerOpen = false;
+      drawer.classList.remove('open');
+      drawer.setAttribute('aria-hidden', 'true');
+      stopScopeVisualizer();
+    }
+
+    function scheduleHoverClose() {
+      if (isPinned) return;
+      clearTimeout(hoverCloseTimer);
+      hoverCloseTimer = setTimeout(() => {
+        closeDrawer(true);
+      }, 900);
     }
 
     if (anchor && drawer) {
-      anchor.addEventListener('mouseenter', openDrawer);
-      anchor.addEventListener('mouseleave', closeDrawerDelayed);
-      drawer.addEventListener('mouseenter', openDrawer);
-      drawer.addEventListener('mouseleave', closeDrawerDelayed);
+      // 鼠标悬停窥视展开 (Hover Peek)
+      anchor.addEventListener('mouseenter', () => openDrawer(false));
+      anchor.addEventListener('mouseleave', scheduleHoverClose);
 
+      drawer.addEventListener('mouseenter', () => {
+        clearTimeout(hoverCloseTimer);
+      });
+      drawer.addEventListener('mouseleave', scheduleHoverClose);
+
+      // 面板内任意点击或交互即锁定常驻，绝不在选配方或调参数时误收起
+      drawer.addEventListener('click', () => {
+        isPinned = true;
+        clearTimeout(hoverCloseTimer);
+      });
+      drawer.addEventListener('mousedown', () => {
+        isPinned = true;
+        clearTimeout(hoverCloseTimer);
+      });
+
+      // 入口胶囊点击：标准 Toggle 开关 (已展开时点击收起，未展开时点击展开并常驻锁定)
       anchor.addEventListener('click', (e) => {
         e.stopPropagation();
-        if (!drawer.classList.contains('open')) {
-          openDrawer();
+        if (isDrawerOpen) {
+          closeDrawer(true);
+        } else {
+          openDrawer(true);
           if (!isPoweredOn) {
             togglePower();
           }
-        } else {
-          togglePower();
         }
       });
 
+      // 显式关闭按钮
+      const btnClose = document.getElementById('sdBtnClose');
+      if (btnClose) {
+        btnClose.addEventListener('click', (e) => {
+          e.stopPropagation();
+          closeDrawer(true);
+        });
+      }
+
+      // 点击外部空白区域自动收起 (Click-Outside to Dismiss)
       document.addEventListener('click', (e) => {
         if (!drawer.contains(e.target) && !anchor.contains(e.target)) {
-          isDrawerOpen = false;
-          drawer.classList.remove('open');
-          drawer.setAttribute('aria-hidden', 'true');
-          stopScopeVisualizer();
+          closeDrawer(true);
         }
       });
 
-      // 键盘快捷键 [M] 一键紧急静音 / 唤醒
+      // 键盘快捷键监听
       window.addEventListener('keydown', (e) => {
         const tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : '';
         if (tag === 'input' || tag === 'textarea' || (e.target && e.target.isContentEditable)) return;
+
+        // [Esc] 键退出关闭声音控制台
+        if (e.key === 'Escape' && isDrawerOpen) {
+          closeDrawer(true);
+          return;
+        }
+
+        // [M] 键一键紧急静音 / 唤醒
         if (e.key.toLowerCase() === 'm' && !e.ctrlKey && !e.altKey && !e.metaKey) {
           togglePower();
           if (isPoweredOn && !isDrawerOpen) {
-            openDrawer();
+            openDrawer(true);
           }
         }
       });

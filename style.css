@@ -3899,14 +3899,14 @@
       pointer-events: auto;
     }
 
-    /* Hover Bridge to bridge the 10px gap between anchor and drawer */
+    /* Hover Bridge to bridge the gap between anchor and drawer across entire width */
     .sound-drawer::before {
       content: '';
       position: absolute;
-      top: -14px;
+      top: -20px;
       left: 0;
       right: 0;
-      height: 14px;
+      height: 20px;
       background: transparent;
       pointer-events: auto;
     }
@@ -3918,6 +3918,38 @@
       justify-content: space-between;
       padding-bottom: 12px;
       border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .sd-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .sd-close-btn {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.06);
+      color: #94a3b8;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.78rem;
+      line-height: 1;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      padding: 0;
+      outline: none;
+      user-select: none;
+    }
+
+    .sd-close-btn:hover {
+      background: rgba(239, 68, 68, 0.2);
+      color: #f87171;
+      border-color: rgba(239, 68, 68, 0.4);
+      transform: scale(1.08);
     }
 
     .sd-title-wrap {
@@ -4465,6 +4497,18 @@
 
     [data-theme="day"] .sd-header {
       border-bottom-color: rgba(0, 0, 0, 0.08);
+    }
+
+    [data-theme="day"] .sd-close-btn {
+      border-color: rgba(0, 0, 0, 0.12);
+      background: rgba(0, 0, 0, 0.05);
+      color: #64748b;
+    }
+
+    [data-theme="day"] .sd-close-btn:hover {
+      background: rgba(239, 68, 68, 0.12);
+      color: #dc2626;
+      border-color: rgba(239, 68, 68, 0.3);
     }
 
     [data-theme="day"] .sd-title {
