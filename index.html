@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="style.css?v=1792413800000">
   <script>
     try {
-      if (localStorage.getItem('theme_mode') === 'day') {
+      if (localStorage.getItem('theme_mode') !== 'night') {
         document.documentElement.setAttribute('data-theme', 'day');
       }
     } catch (e) {}
@@ -1083,7 +1083,7 @@ const TOOL_DATA=[{h:'/tools/cn-mirrors/',n:'国内镜像源',d:'pip/npm/Ubuntu/D
         let height = 0;
         let running = false;
         let listenersAttached = false;
-        let currentTheme = localStorage.getItem('theme_mode') || 'night';
+        let currentTheme = localStorage.getItem('theme_mode') || 'day';
 
         // Interaction state (PC only)
         const mouse = { x: -1000, y: -1000, active: false, lastActive: 0 };
@@ -2022,7 +2022,7 @@ const TOOL_DATA=[{h:'/tools/cn-mirrors/',n:'国内镜像源',d:'pip/npm/Ubuntu/D
 
       // ==================== Day / Night Theme Controller ====================
       const themeToggle = document.getElementById('themeToggle');
-      let currentThemeMode = localStorage.getItem('theme_mode') || 'night';
+      let currentThemeMode = localStorage.getItem('theme_mode') || 'day';
 
       // 手机端自适应排布：将 #themeToggle 动态整合至设置按钮 ⚙️ 的左侧（桌面端恢复至 body 悬浮）
       function updateThemeTogglePosition() {
