@@ -613,6 +613,17 @@
     (function () {
       'use strict';
 
+      // Inline safe HTML escaping
+      function hEscape(str) {
+        if (str == null) return '';
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
+
       // ==================== Model & Context Controls ====================
       var personaModelSelect = document.getElementById('personaModelSelect');
       var personaTempSlider = document.getElementById('personaTempSlider');
@@ -7952,6 +7963,10 @@ v1.0 — 基于 AI写作助手 v5.3 色情化改造。删除商业网文方法�
       // Handle window resize for mobile detection
       window.addEventListener('resize', function() {
         isMobile = window.innerWidth <= 700 || window.matchMedia('(pointer: coarse)').matches;
+        if (isMobile) {
+          chatApp.style.left = '';
+          chatApp.style.top = '';
+        }
       });
 
       // ==================== Chat Window Resize & Drag ====================
@@ -7993,6 +8008,11 @@ v1.0 — 基于 AI写作助手 v5.3 色情化改造。删除商业网文方法�
       }
 
       function applyChatPos(x, y) {
+        if (isMobile) {
+          chatApp.style.left = '';
+          chatApp.style.top = '';
+          return;
+        }
         chatApp.style.left = x + 'px';
         chatApp.style.top = y + 'px';
       }
